@@ -104,7 +104,8 @@ app.post("/make-server-24f1182d/employees", async (c) => {
       department: body.department ?? "",
       outlet: body.outlet ?? "",
       email: body.email ?? "",
-      phone: body.phone ?? "",
+      contact: body.contact ?? "",
+      phone: body.phone ?? body.contact ?? "",
       address: body.address ?? "",
       hireDate: body.hireDate ?? new Date().toISOString().split("T")[0],
       status: body.status ?? "Active",
@@ -432,7 +433,9 @@ app.post("/make-server-24f1182d/payroll/generate", async (c) => {
       kv.getByPrefix("employee:"),
       kv.getByPrefix("attendance:"),
     ]);
-    const activeEmployees = employees.filter((e: any) => e?.status === "Active");
+    const activeEmployees = employees.filter(
+      (e: any) => e?.status === "Active" && (!body.position || e.position === body.position)
+    );
     const existing = await kv.getByPrefix("payroll:");
     let counter = existing.length;
     const created: any[] = [];
@@ -440,20 +443,19 @@ app.post("/make-server-24f1182d/payroll/generate", async (c) => {
       const alreadyExists = existing.some((p: any) => p?.employee === emp.name && p?.period === period);
       if (alreadyExists) continue;
       const empAtt = attendances.filter((a: any) => a?.employee === emp.name && a?.date?.startsWith(period));
-      const totalHours = empAtt.reduce((sum: number, a: any) => sum + (parseFloat(a.totalHours) || 0), 0);
+      const attendanceHrs = empAtt.reduce((sum: number, a: any) => sum + (parseFloat(a.totalHours) || 0), 0);
       const overtimeHrs = empAtt.reduce((sum: number, a: any) => {
         const ot = parseFloat(String(a.overtime).replace(" min", "")) || 0;
         return sum + (a.overtime?.includes("min") ? ot / 60 : ot);
       }, 0);
       const baseSalary = body.baseSalary ?? 18000;
+      const fmt = (n: number) => `\u20b1${Math.round(n).toLocaleString()}`;
       const hourlyRate = baseSalary / 160;
-      const otPay = overtimeHrs * hourlyRate * 1.25;
-      const grossPay = baseSalary + otPay;
-      const sss = Math.round(grossPay * 0.045);
-      const philhealth = Math.round(grossPay * 0.02);
-      const pagibig = 100;
-      const totalDeductions = sss + philhealth + pagibig;
-      const netPay = grossPay - totalDeductions;
+      // Compute actual basic pay from attendance hours; fallback to full base salary if no records
+      const actualHrs = attendanceHrs > 0 ? attendanceHrs : 160;
+      const basicPay = Math.round(actualHrs * hourlyRate);
+      const otPay = Math.round(overtimeHrs * hourlyRate * 1.25);
+      const grossPay = basicPay + otPay;
       counter++;
       const id = `PAY-${String(counter).padStart(4, "0")}`;
       const record = {
@@ -461,14 +463,13 @@ app.post("/make-server-24f1182d/payroll/generate", async (c) => {
         employee: emp.name,
         position: emp.position,
         period,
-        totalHours: totalHours > 0 ? totalHours.toFixed(1) : "160",
+        // totalHours stores the Base Monthly Salary — shown in Days/Hours/Mins. column for Basic Pay row
+        totalHours: baseSalary.toFixed(2),
         overtime: overtimeHrs.toFixed(1),
-        deductions: `\u20b1${totalDeductions.toLocaleString()}`,
-        grossPay: `\u20b1${Math.round(grossPay).toLocaleString()}`,
-        netPay: `\u20b1${Math.round(netPay).toLocaleString()}`,
-        sss: `\u20b1${sss.toLocaleString()}`,
-        philhealth: `\u20b1${philhealth.toLocaleString()}`,
-        pagibig: `\u20b1${pagibig.toLocaleString()}`,
+        basicPayAmt: fmt(basicPay),   // auto-calculated: actual hours × hourly rate
+        deductions: "\u20b10",        // default 0; HR fills deductions manually in payslip edit
+        grossPay: fmt(grossPay),
+        netPay: fmt(grossPay),        // net = gross until manual deductions are entered
         status: "Draft",
         releasedAt: null,
         releasedBy: null,
@@ -503,14 +504,16 @@ app.post("/make-server-24f1182d/evaluations", async (c) => {
     const nextNum = String(existing.length + 1).padStart(4, "0");
     const id = `EVAL-${nextNum}`;
     const finalScore =
-      (body.workQuality ?? 0) * 0.15 +
-      (body.jobKnowledge ?? 0) * 0.10 +
-      (body.teamwork ?? 0) * 0.10 +
-      (body.initiative ?? 0) * 0.10 +
-      (body.peerEvaluation ?? 0) * 0.10 +
-      (body.conduct ?? 0) * 0.10 +
-      (body.attendance ?? 0) * 0.20 +
-      (body.performanceOutput ?? 0) * 0.25;
+      body.finalScore !== undefined
+        ? body.finalScore
+        : (body.workQuality ?? 0) * 0.15 +
+          (body.jobKnowledge ?? 0) * 0.10 +
+          (body.teamwork ?? 0) * 0.10 +
+          (body.initiative ?? 0) * 0.10 +
+          (body.peerEvaluation ?? 0) * 0.10 +
+          (body.conduct ?? 0) * 0.10 +
+          (body.attendance ?? 0) * 0.20 +
+          (body.performanceOutput ?? 0) * 0.25;
     const record = {
       id,
       employee: body.employee,
@@ -751,6 +754,76 @@ app.get("/make-server-24f1182d/dashboard/stats", async (c) => {
   } catch (error) {
     console.log("Error fetching dashboard stats:", error);
     return c.json({ error: `Failed to fetch stats: ${error}` }, 500);
+  }
+});
+
+// ── NOTIFICATIONS ─────────────────────────────────────────────────────────────
+app.get("/make-server-24f1182d/notifications", async (c) => {
+  try {
+    const recipient = c.req.query("recipient");
+    const records = await kv.getByPrefix("notification:");
+    const notifications = records.filter(
+      (n: any) => n != null && (!recipient || n.recipientEmployee === recipient)
+    );
+    // sort newest first
+    notifications.sort((a: any, b: any) =>
+      new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+    );
+    return c.json({ notifications });
+  } catch (error) {
+    console.log("Error fetching notifications:", error);
+    return c.json({ error: `Failed to fetch notifications: ${error}` }, 500);
+  }
+});
+
+app.post("/make-server-24f1182d/notifications", async (c) => {
+  try {
+    const body = await c.req.json();
+    const existing = await kv.getByPrefix("notification:");
+    const nextNum = String(existing.length + 1).padStart(5, "0");
+    const id = `NOTIF-${nextNum}`;
+    const record = {
+      id,
+      recipientEmployee: body.recipientEmployee,
+      type: body.type, // 'schedule_published' | 'schedule_edited'
+      message: body.message,
+      scheduleId: body.scheduleId ?? "",
+      week: body.week ?? "",
+      createdBy: body.createdBy ?? "",
+      createdAt: new Date().toISOString(),
+      read: false,
+    };
+    await kv.set(`notification:${id}`, record);
+    return c.json({ record }, 201);
+  } catch (error) {
+    console.log("Error creating notification:", error);
+    return c.json({ error: `Failed to create notification: ${error}` }, 500);
+  }
+});
+
+app.put("/make-server-24f1182d/notifications/:id", async (c) => {
+  try {
+    const id = c.req.param("id");
+    const body = await c.req.json();
+    const existing: any = await kv.get(`notification:${id}`);
+    if (!existing) return c.json({ error: "Notification not found" }, 404);
+    const updated = { ...existing, ...body, updatedAt: new Date().toISOString() };
+    await kv.set(`notification:${id}`, updated);
+    return c.json({ record: updated });
+  } catch (error) {
+    console.log("Error updating notification:", error);
+    return c.json({ error: `Failed to update notification: ${error}` }, 500);
+  }
+});
+
+app.delete("/make-server-24f1182d/notifications/:id", async (c) => {
+  try {
+    const id = c.req.param("id");
+    await kv.del(`notification:${id}`);
+    return c.json({ success: true });
+  } catch (error) {
+    console.log("Error deleting notification:", error);
+    return c.json({ error: `Failed to delete notification: ${error}` }, 500);
   }
 });
 

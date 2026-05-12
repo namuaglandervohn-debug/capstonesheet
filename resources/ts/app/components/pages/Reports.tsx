@@ -86,6 +86,7 @@ export default function Reports() {
     win.document.write(`
       <html><head><title>${selected.label} Report</title>
       <style>
+        @media print { @page { size: A4 landscape; margin: 15mm; } body { padding: 0; } }
         body { font-family: Arial, sans-serif; padding: 24px; font-size: 12px; }
         h2 { color: #2e7d32; margin-bottom: 4px; }
         p { color: #666; margin-top: 0; }
@@ -94,10 +95,12 @@ export default function Reports() {
         td { padding: 6px 8px; border-bottom: 1px solid #ddd; font-size: 11px; }
         tr:nth-child(even) td { background: #f5f5f5; }
         .meta { display: flex; gap: 24px; margin-bottom: 16px; font-size: 12px; color: #444; }
+        .footer { color: #999; font-size: 10px; text-align: center; margin-top: 20px; }
       </style></head><body>
       <h2>Buenaventura Estate HRIS — ${selected.label} Report</h2>
       <p>Period: ${dateFrom} to ${dateTo} &nbsp;|&nbsp; Total records: ${filtered.length} &nbsp;|&nbsp; Generated: ${new Date().toLocaleString()}</p>
       ${content}
+      <div class="footer">Buenaventura Estate HRIS &nbsp;·&nbsp; Printed: ${new Date().toLocaleString()} &nbsp;·&nbsp; Confidential</div>
       </body></html>
     `);
     win.document.close();
@@ -141,7 +144,7 @@ export default function Reports() {
           </Grid>
         </Grid>
         <Box sx={{ display: 'flex', gap: 2, mt: 3, flexWrap: 'wrap' }}>
-          <Button variant="outlined" startIcon={<Print />} onClick={handlePrint} disabled={loadingAll || filtered.length === 0}>Print Report</Button>
+          <Button variant="contained" startIcon={<Print />} onClick={handlePrint} disabled={loadingAll || filtered.length === 0}>Print Report</Button>
           <Button variant="contained" startIcon={<FileDownload />} color="success" onClick={exportCSV} disabled={loadingAll || filtered.length === 0}>Export CSV</Button>
         </Box>
       </Paper>
@@ -178,7 +181,7 @@ export default function Reports() {
         <Divider sx={{ mb: 2 }} />
 
         {loadingAll ? (
-          <Box sx={{ display: 'flex', justifyContent: 'center', py: 6, gap: 2 }}><CircularProgress /><Typography color="text.secondary">Loading from Supabase…</Typography></Box>
+          <Box sx={{ display: 'flex', justifyContent: 'center', py: 6, gap: 2 }}><CircularProgress /><Typography color="text.secondary">Loading…</Typography></Box>
         ) : filtered.length === 0 ? (
           <Box sx={{ py: 6, textAlign: 'center', color: 'text.secondary' }}>
             <Typography>No records found for this report type and date range.</Typography>

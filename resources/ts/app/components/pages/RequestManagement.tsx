@@ -5,7 +5,7 @@ import {
   DialogContent, DialogActions, TextField, MenuItem, Grid,
   CircularProgress, Alert, Snackbar, Tooltip, IconButton, Tabs, Tab,
 } from '@mui/material';
-import { AddCircleOutline, TaskAlt, CancelOutlined, Sync, Visibility, Security, DeleteOutline } from '@mui/icons-material';
+import { AddCircleOutline, TaskAlt, CancelOutlined, Sync, Security, DeleteOutline } from '@mui/icons-material';
 import { useAuth } from '../../context/AuthContext';
 import { API, HEADERS } from '../../lib/api';
 
@@ -183,30 +183,48 @@ export default function RequestManagement() {
                     <TableCell>{req.submittedDate}</TableCell>
                     <TableCell><Chip label={s.label} size="small" color={s.color} /></TableCell>
                     <TableCell>
-                      <Box sx={{ display: 'flex', gap: 0.5, flexWrap: 'wrap' }}>
-                        <Tooltip title="View Details">
-                          <IconButton size="small" onClick={() => { setSelectedReq(req); setNoteInput(''); setViewDialog(true); }}>
-                            <Visibility fontSize="small" />
-                          </IconButton>
-                        </Tooltip>
-                        {isSupervisor && req.status === 'Pending' && (
-                          <>
-                            <Button size="small" variant="contained" color="success" startIcon={<TaskAlt />} onClick={() => { setSelectedReq(req); setNoteInput(''); setViewDialog(true); }}>Approve</Button>
-                            <Button size="small" variant="outlined" color="error" startIcon={<CancelOutlined />} onClick={() => supervisorDisapprove(req.id)}>Deny</Button>
-                          </>
-                        )}
+                      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5, alignItems: 'flex-start' }}>
+                        <Chip
+                          label="View Details"
+                          size="small"
+                          clickable
+                          variant="outlined"
+                          color="primary"
+                          onClick={() => { setSelectedReq(req); setNoteInput(''); setViewDialog(true); }}
+                          sx={{ minWidth: 110 }}
+                        />
                         {isHR && req.status === 'Supervisor Approved' && (
                           <>
-                            <Button size="small" variant="contained" color="success" startIcon={<Security />} onClick={() => { setSelectedReq(req); setNoteInput(''); setViewDialog(true); }}>Validate</Button>
-                            <Button size="small" variant="outlined" color="error" startIcon={<CancelOutlined />} onClick={() => hrReject(req.id)}>Reject</Button>
+                            <Chip
+                              label="Validate"
+                              size="small"
+                              clickable
+                              variant="outlined"
+                              color="success"
+                              onClick={() => { setSelectedReq(req); setNoteInput(''); setViewDialog(true); }}
+                              sx={{ minWidth: 110 }}
+                            />
+                            <Chip
+                              label="Reject"
+                              size="small"
+                              clickable
+                              variant="outlined"
+                              color="warning"
+                              onClick={() => hrReject(req.id)}
+                              sx={{ minWidth: 110 }}
+                            />
                           </>
                         )}
                         {isHR && (
-                          <Tooltip title="Delete Request">
-                            <IconButton size="small" color="error" onClick={() => handleDelete(req.id)}>
-                              <DeleteOutline fontSize="small" />
-                            </IconButton>
-                          </Tooltip>
+                          <Chip
+                            label="Delete"
+                            size="small"
+                            clickable
+                            variant="outlined"
+                            color="error"
+                            onClick={() => handleDelete(req.id)}
+                            sx={{ minWidth: 110 }}
+                          />
                         )}
                       </Box>
                     </TableCell>

@@ -256,8 +256,16 @@ export default function MyProfile() {
                     <Grid key={key} size={{ xs: 12, sm: 6 }}>
                       <TextField fullWidth label={label} size="small"
                         value={editing ? (editForm as any)[key] ?? '' : (employee as any)[key] ?? '—'}
-                        onChange={editing ? e => setEditForm({ ...editForm, [key]: e.target.value }) : undefined}
+                        onChange={editing ? e => {
+                          const v = key === 'contact'
+                            ? e.target.value.replace(/\D/g, '').slice(0, 11)
+                            : e.target.value;
+                          setEditForm({ ...editForm, [key]: v });
+                        } : undefined}
                         disabled={!editing}
+                        inputProps={key === 'contact' ? { maxLength: 11, inputMode: 'numeric' } : undefined}
+                        placeholder={key === 'contact' && editing ? '09XXXXXXXXX' : undefined}
+                        helperText={key === 'contact' && editing ? `${((editForm as any)[key] ?? '').length}/11` : undefined}
                         InputProps={{ startAdornment: <Box sx={{ mr: 1, color: 'text.secondary', display: 'flex' }}>{icon}</Box> }}
                       />
                     </Grid>

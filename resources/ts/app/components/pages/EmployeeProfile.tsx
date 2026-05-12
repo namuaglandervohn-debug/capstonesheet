@@ -9,6 +9,7 @@ import { ArrowBackIosNew, EditNote, Save, CancelOutlined, AccountCircle, FileDow
 import { API, HEADERS } from '../../lib/api';
 import { OUTLETS, POSITIONS, DEPARTMENTS } from '../../lib/constants';
 import FileUploadField from '../FileUploadField';
+import { useAuth } from '../../context/AuthContext';
 
 interface DocFile {
   name: string; type: string; data: string;
@@ -54,6 +55,7 @@ function DocIcon({ name, type }: { name: string; type?: string }) {
 export default function EmployeeProfile() {
   const navigate = useNavigate();
   const { id } = useParams<{ id: string }>();
+  const { user } = useAuth();
   const [employee, setEmployee] = useState<Employee | null>(null);
   const [editForm, setEditForm] = useState<Employee | null>(null);
   const [loading, setLoading] = useState(true);
@@ -136,7 +138,7 @@ export default function EmployeeProfile() {
   if (loading) {
     return (
       <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: 300, gap: 2 }}>
-        <CircularProgress /><Typography color="text.secondary">Loading from Supabase…</Typography>
+        <CircularProgress /><Typography color="text.secondary">Loading…</Typography>
       </Box>
     );
   }
@@ -160,6 +162,15 @@ export default function EmployeeProfile() {
             <MenuItem key="__empty__" value="">Select {label}…</MenuItem>
             {options.map(o => <MenuItem key={o} value={o}>{o}</MenuItem>)}
           </TextField>
+        );
+      }
+      if (key === 'contact') {
+        return (
+          <TextField fullWidth label={label} value={editForm[key] ?? ''} margin="normal"
+            placeholder="09XXXXXXXXX"
+            inputProps={{ maxLength: 11, inputMode: 'numeric' }}
+            helperText={`${((editForm[key] ?? '') as string).length}/11`}
+            onChange={e => setEditForm({ ...editForm, [key]: e.target.value.replace(/\D/g, '').slice(0, 11) as any })} />
         );
       }
       return (
@@ -189,18 +200,20 @@ export default function EmployeeProfile() {
           </Box>
           <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap', alignItems: 'center' }}>
             <Chip label={employee.status} color={employee.status === 'Active' ? 'success' : employee.status === 'On Leave' ? 'warning' : 'default'} />
-            {editing ? (
-              <>
-                <Button variant="contained" startIcon={saving ? <CircularProgress size={16} color="inherit" /> : <Save />} onClick={handleSave} disabled={saving} color="success">
-                  {saving ? 'Saving…' : 'Save Changes'}
-                </Button>
-                <Button variant="outlined" startIcon={<CancelOutlined />} onClick={() => { setEditing(false); setEditForm(employee); setNewDocFiles([]); }}>Cancel</Button>
-              </>
-            ) : (
-              <>
-                <Button variant="outlined" startIcon={<EditNote />} onClick={() => setEditing(true)}>Edit Profile</Button>
-                <Button variant="outlined" color="error" size="small" onClick={() => setDeleteDialog(true)}>Remove</Button>
-              </>
+            {user?.role !== 'supervisor' && (
+              editing ? (
+                <>
+                  <Button variant="contained" startIcon={saving ? <CircularProgress size={16} color="inherit" /> : <Save />} onClick={handleSave} disabled={saving} color="success">
+                    {saving ? 'Saving…' : 'Save Changes'}
+                  </Button>
+                  <Button variant="outlined" startIcon={<CancelOutlined />} onClick={() => { setEditing(false); setEditForm(employee); setNewDocFiles([]); }}>Cancel</Button>
+                </>
+              ) : (
+                <>
+                  <Button variant="outlined" startIcon={<EditNote />} onClick={() => setEditing(true)}>Edit Profile</Button>
+                  <Button variant="outlined" color="error" size="small" onClick={() => setDeleteDialog(true)}>Remove</Button>
+                </>
+              )
             )}
           </Box>
         </Box>

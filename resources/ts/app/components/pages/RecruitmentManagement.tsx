@@ -319,8 +319,8 @@ export default function RecruitmentManagement() {
                   <TableCell sx={{ whiteSpace: 'nowrap' }}>{app.interviewDate ? `${app.interviewDate} ${app.interviewTime ?? ''}` : '—'}</TableCell>
                   <TableCell><Chip label={app.status} color={STATUS_COLORS[app.status]} size="small" sx={{ whiteSpace: 'nowrap' }} /></TableCell>
                   <TableCell sx={{ whiteSpace: 'nowrap' }}>
-                    {/* All actions are icon-only to keep column width consistent */}
-                    <Stack direction="row" spacing={0.5} alignItems="center">
+                    {/* All actions use consistent Chip style */}
+                    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5, alignItems: 'flex-start' }}>
                       <Chip
                         label="View Profile"
                         size="small"
@@ -328,7 +328,19 @@ export default function RecruitmentManagement() {
                         variant="outlined"
                         color="primary"
                         onClick={() => openView(app)}
+                        sx={{ minWidth: 110 }}
                       />
+                      {isGM && app.status === 'For Interview' && (
+                        <Chip
+                          label="Hiring Decision"
+                          size="small"
+                          clickable
+                          variant="outlined"
+                          color="success"
+                          onClick={() => openView(app)}
+                          sx={{ minWidth: 110 }}
+                        />
+                      )}
                       {(isHR || isGM) && (
                         <Chip
                           label="Delete"
@@ -337,14 +349,10 @@ export default function RecruitmentManagement() {
                           variant="outlined"
                           color="error"
                           onClick={() => handleDelete(app.id)}
+                          sx={{ minWidth: 110 }}
                         />
                       )}
-                      {isGM && app.status === 'For Interview' && (
-                        <Tooltip title="Enter Hiring Decision">
-                          <IconButton size="small" color="success" onClick={() => openView(app)}><HowToReg fontSize="small" /></IconButton>
-                        </Tooltip>
-                      )}
-                    </Stack>
+                    </Box>
                   </TableCell>
                 </TableRow>
               ))}

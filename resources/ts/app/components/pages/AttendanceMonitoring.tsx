@@ -456,16 +456,19 @@ export default function AttendanceMonitoring() {
         </Box>
       </Box>
 
-      {error && <Alert severity="error"
-        sx={{ mb: 2 }}
-        action={
-          <Button size="small" onClick={fetchAttendance}>
-            Retry
-          </Button>
-        }
-      >
-        {error}
-      </Alert>}
+      {error && (
+        <Alert
+          severity="error"
+          sx={{ mb: 2 }}
+          action={
+            <Button size="small" onClick={fetchAttendance}>
+              Retry
+            </Button>
+          }
+        >
+          {error}
+        </Alert>
+      )}
 
       <Paper sx={{ p: 2, mb: 2 }}>
         <Grid container spacing={2}>
@@ -536,7 +539,7 @@ export default function AttendanceMonitoring() {
           >
             <CircularProgress size={28} />
             <Typography color="text.secondary">
-              Loading from Supabase…
+              Loading…
             </Typography>
           </Box>
         ) : (
@@ -633,27 +636,25 @@ export default function AttendanceMonitoring() {
                     </TableCell>
                     {user?.role === "hr" && (
                       <TableCell>
-                        <Box sx={{ display: "flex", gap: 0.5 }}>
-                          <Tooltip title="Correct / Reprocess Record">
-                            <IconButton
-                              size="small"
-                              color="warning"
-                              onClick={() => openEdit(att)}
-                            >
-                              <EditNote fontSize="small" />
-                            </IconButton>
-                          </Tooltip>
-                          <Tooltip title="Delete Record">
-                            <IconButton
-                              size="small"
-                              color="error"
-                              onClick={() =>
-                                handleDelete(att.id)
-                              }
-                            >
-                              <DeleteOutline fontSize="small" />
-                            </IconButton>
-                          </Tooltip>
+                        <Box sx={{ display: "flex", flexDirection: 'column', gap: 0.5, alignItems: 'flex-start' }}>
+                          <Chip
+                            label="Correct"
+                            size="small"
+                            clickable
+                            variant="outlined"
+                            color="warning"
+                            onClick={() => openEdit(att)}
+                            sx={{ minWidth: 110 }}
+                          />
+                          <Chip
+                            label="Delete"
+                            size="small"
+                            clickable
+                            variant="outlined"
+                            color="error"
+                            onClick={() => handleDelete(att.id)}
+                            sx={{ minWidth: 110 }}
+                          />
                         </Box>
                       </TableCell>
                     )}

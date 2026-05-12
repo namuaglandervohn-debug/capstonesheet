@@ -35,7 +35,7 @@ import {
   DeleteOutline,
   Sync,
 } from "@mui/icons-material";
-import { projectId, publicAnonKey } from "../../../utils/supabase/info";
+import { projectId, publicAnonKey } from "/utils/supabase/info";
 import {
   OUTLETS,
   POSITIONS,
@@ -264,9 +264,9 @@ export default function EmployeeRecords() {
         .includes(search.toLowerCase()),
   );
 
-  // Only HR can add employees; HR, Supervisor, and GM can delete
+  // Only HR can add employees; HR and GM can delete
   const canModify = user?.role === "hr";
-  const canDelete = user?.role === "hr" || user?.role === "supervisor" || user?.role === "gm";
+  const canDelete = user?.role === "hr" || user?.role === "gm";
 
   return (
     <Box>
@@ -430,14 +430,15 @@ export default function EmployeeRecords() {
                     </TableCell>
                     <TableCell>{emp.contact}</TableCell>
                     <TableCell>
-                      <Box sx={{ display: 'flex', gap: 0.75, flexWrap: 'wrap' }}>
+                      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5, alignItems: 'flex-start' }}>
                         <Chip
-                          label="Edit Profile"
+                          label={user?.role === "supervisor" ? "View Profile" : "Edit Profile"}
                           size="small"
                           clickable
                           variant="outlined"
                           color="primary"
                           onClick={() => navigate(`/dashboard/employees/${emp.id}`)}
+                          sx={{ minWidth: 110 }}
                         />
                         {canDelete && (
                           <Chip
@@ -447,6 +448,7 @@ export default function EmployeeRecords() {
                             variant="outlined"
                             color="error"
                             onClick={() => handleDelete(emp)}
+                            sx={{ minWidth: 110 }}
                           />
                         )}
                       </Box>
@@ -588,11 +590,12 @@ export default function EmployeeRecords() {
                 required
                 value={form.contact}
                 onChange={(e) =>
-                  setForm({ ...form, contact: e.target.value })
+                  setForm({ ...form, contact: e.target.value.replace(/\D/g, '').slice(0, 11) })
                 }
                 error={!!formErrors.contact}
-                helperText={formErrors.contact}
+                helperText={formErrors.contact || `${form.contact.length}/11`}
                 placeholder="09XXXXXXXXX"
+                inputProps={{ maxLength: 11, inputMode: 'numeric' }}
               />
             </Grid>
             <Grid size={{ xs: 12, md: 6 }}>

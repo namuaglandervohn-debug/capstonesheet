@@ -86,6 +86,44 @@ export default function RootLayout() {
           });
         }
 
+        // Employee: schedule notifications (published / edited)
+        if (user.role === 'employee' && user.name) {
+          try {
+            const res = await fetch(`${API}/notifications?recipient=${encodeURIComponent(user.name)}`, { headers: HEADERS });
+            const data = await res.json();
+            const schedNotifs = (data.notifications ?? []).filter((n: any) => n != null && !n.read);
+            schedNotifs.forEach((n: any) => {
+              notifs.push({
+                id: n.id,
+                type: 'schedule',
+                title: n.type === 'schedule_published' ? '📅 Schedule Published' : '✏️ Schedule Updated',
+                message: n.message,
+                link: '/dashboard/schedule',
+                timestamp: n.createdAt,
+              });
+            });
+          } catch { /* non-critical */ }
+        }
+
+        // GM: new evaluation submissions from supervisors
+        if (user.role === 'gm') {
+          try {
+            const res = await fetch(`${API}/notifications?recipient=gm`, { headers: HEADERS });
+            const data = await res.json();
+            const evalNotifs = (data.notifications ?? []).filter((n: any) => n != null && !n.read);
+            evalNotifs.forEach((n: any) => {
+              notifs.push({
+                id: n.id,
+                type: 'evaluation',
+                title: '📊 New Evaluation Submitted',
+                message: n.message,
+                link: '/dashboard/evaluation',
+                timestamp: n.createdAt,
+              });
+            });
+          } catch { /* non-critical */ }
+        }
+
         setNotifications(notifs);
         setNotifCount(notifs.length);
       } catch (e) {

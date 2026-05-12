@@ -1,8 +1,11 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router';
-import { Card, CardContent, Typography, Box, Button, Grid, Paper, Chip, CircularProgress } from '@mui/material';
 import {
-  CalendarMonth, ReceiptLong, Assignment, Payments,
+  Card, CardContent, Typography, Box, Button, Grid, Paper,
+  Chip, CircularProgress, Divider,
+} from '@mui/material';
+import {
+  CalendarMonth, Assignment, Payments,
   QueryStats, ManageAccounts, Fingerprint,
 } from '@mui/icons-material';
 import { useAuth } from '../../context/AuthContext';
@@ -47,63 +50,83 @@ export default function EmployeeDashboard() {
   const pendingReqs = myRequests.filter(r => r.status === 'Pending').length;
   const latestPayslip = myPayslips[myPayslips.length - 1];
 
+  const statCards = [
+    {
+      title: 'Attendance Today',
+      value: loading ? '…' : (todayAtt ? todayAtt.status : 'No entry'),
+      icon: <Fingerprint />,
+      color: '#2F8F8B',
+    },
+    {
+      title: 'Active Schedule',
+      value: loading ? '…' : (mySchedule ? (mySchedule.outlet ?? mySchedule.week ?? 'Assigned') : 'No schedule'),
+      icon: <CalendarMonth />,
+      color: '#1F7A47',
+    },
+    {
+      title: 'Pending Requests',
+      value: loading ? '…' : String(pendingReqs),
+      icon: <Assignment />,
+      color: '#D9A441',
+    },
+    {
+      title: 'Latest Net Pay',
+      value: loading ? '…' : (latestPayslip ? latestPayslip.netPay : '—'),
+      icon: <Payments />,
+      color: '#9C27B0',
+    },
+  ];
+
   const shortcuts = [
-    { label: 'My Schedule',       icon: <CalendarMonth />,           path: '/dashboard/schedule',    color: '#1F7A47', desc: mySchedule ? `Week: ${mySchedule.week}` : 'No schedule yet' },
-    { label: 'Daily Time Record', icon: <Fingerprint />,             path: '/dashboard/time',        color: '#2F8F8B', desc: 'Clock in/out & view DTR history' },
-    { label: 'My Requests',       icon: <Assignment />,             path: '/dashboard/requests',    color: '#D9A441', desc: `${pendingReqs} pending request${pendingReqs !== 1 ? 's' : ''}` },
-    { label: 'My Payslips',       icon: <Payments />,                path: '/dashboard/payslips',    color: '#9C27B0', desc: latestPayslip ? `Latest: ${latestPayslip.period} — ${latestPayslip.netPay}` : 'No payslips yet' },
-    { label: 'My Evaluation',     icon: <QueryStats />,              path: '/dashboard/evaluation',  color: '#D32F2F', desc: 'View DSS performance results' },
-    { label: 'My Profile',        icon: <ManageAccounts />,  path: '/dashboard/profile',     color: '#0277BD', desc: 'Edit profile & upload documents' },
+    { title: 'My Schedule',       icon: <CalendarMonth />, path: '/dashboard/schedule',   color: '#1F7A47' },
+    { title: 'Daily Time Record', icon: <Fingerprint />,   path: '/dashboard/time',       color: '#2F8F8B' },
+    { title: 'My Requests',       icon: <Assignment />,    path: '/dashboard/requests',   color: '#D9A441' },
+    { title: 'My Payslips',       icon: <Payments />,      path: '/dashboard/payslips',   color: '#9C27B0' },
+    { title: 'My Evaluation',     icon: <QueryStats />,    path: '/dashboard/evaluation', color: '#D32F2F' },
+    { title: 'My Profile',        icon: <ManageAccounts />,path: '/dashboard/profile',    color: '#0277BD' },
   ];
 
   return (
     <Box>
+      {/* Header */}
       <Box sx={{ mb: 3 }}>
         <Typography variant="h4" fontWeight="bold" sx={{ fontSize: { xs: '1.35rem', sm: '1.75rem', md: '2.125rem' } }}>
           Welcome back, {user?.name}! 👋
         </Typography>
-        <Typography variant="body1" color="text.secondary">
+        <Typography variant="body2" color="text.secondary">
           Employee Portal — Buenaventura Estate
         </Typography>
       </Box>
 
+      {/* Loading */}
       {loading && (
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, my: 2 }}>
-          <CircularProgress size={18} /><Typography variant="body2" color="text.secondary">Loading your data…</Typography>
+          <CircularProgress size={18} />
+          <Typography variant="body2" color="text.secondary">Loading your data…</Typography>
         </Box>
       )}
 
-      {/* Today's Summary */}
-      <Paper sx={{ p: 2.5, mb: 3, bgcolor: 'primary.main', color: 'white', borderRadius: 3 }}>
-        <Typography variant="h6" fontWeight="bold" gutterBottom>Today's Summary</Typography>
-        <Grid container spacing={2}>
-          {[
-            ['Attendance Today', todayAtt ? `${todayAtt.status} — ${todayAtt.timeIn || 'No time-in'}` : 'No entry yet'],
-            ['Active Schedule', mySchedule ? `${mySchedule.outlet} · ${mySchedule.timeIn}–${mySchedule.timeOut}` : 'No schedule'],
-            ['Pending Requests', String(pendingReqs)],
-            ['Latest Payslip', latestPayslip ? latestPayslip.netPay : '—'],
-          ].map(([k, v]) => (
-            <Grid key={k} size={{ xs: 12, sm: 6, md: 3 }}>
-              <Typography variant="caption" sx={{ opacity: 0.8 }}>{k}</Typography>
-              <Typography variant="body1" fontWeight="bold">{v}</Typography>
-            </Grid>
-          ))}
-        </Grid>
-      </Paper>
-
-      {/* Quick Access */}
-      <Typography variant="h6" fontWeight="bold" gutterBottom>Quick Access</Typography>
-      <Grid container spacing={2} sx={{ mb: 3 }}>
-        {shortcuts.map((s) => (
-          <Grid key={s.label} size={{ xs: 12, sm: 6, md: 4 }}>
-            <Card sx={{ cursor: 'pointer', transition: 'all 0.2s', '&:hover': { transform: 'translateY(-2px)', boxShadow: 4 } }}
-              onClick={() => navigate(s.path)}>
-              <CardContent>
-                <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 2 }}>
-                  <Box sx={{ bgcolor: s.color, borderRadius: 2, p: 1.25, display: 'flex', color: 'white', flexShrink: 0 }}>{s.icon}</Box>
-                  <Box>
-                    <Typography variant="subtitle1" fontWeight="bold">{s.label}</Typography>
-                    <Typography variant="caption" color="text.secondary">{s.desc}</Typography>
+      {/* Stat Cards */}
+      <Grid container spacing={{ xs: 2, md: 2.5 }} sx={{ mb: 4 }}>
+        {statCards.map((stat, index) => (
+          <Grid key={index} size={{ xs: 12, sm: 6, md: 4, lg: 3 }} sx={{ display: 'flex' }}>
+            <Card elevation={0} sx={{
+              height: 96, width: '100%',
+              border: '1px solid', borderColor: 'divider',
+              transition: 'box-shadow 0.2s', '&:hover': { boxShadow: 4 },
+            }}>
+              <CardContent sx={{ height: '100%', display: 'flex', alignItems: 'center', p: '16px !important' }}>
+                <Box sx={{ display: 'flex', alignItems: 'center', width: '100%', gap: 2 }}>
+                  <Box sx={{ bgcolor: stat.color, borderRadius: '14px', p: 1.5, display: 'flex', flexShrink: 0 }}>
+                    <Box sx={{ color: 'white', display: 'flex', fontSize: '1.35rem' }}>{stat.icon}</Box>
+                  </Box>
+                  <Box sx={{ minWidth: 0, flex: 1 }}>
+                    <Typography fontWeight="bold" sx={{ fontSize: '1.25rem', lineHeight: 1.2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      {stat.value}
+                    </Typography>
+                    <Typography variant="caption" color="text.secondary" sx={{ display: 'block', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      {stat.title}
+                    </Typography>
                   </Box>
                 </Box>
               </CardContent>
@@ -111,6 +134,26 @@ export default function EmployeeDashboard() {
           </Grid>
         ))}
       </Grid>
+
+      {/* Quick Actions */}
+      <Paper elevation={0} sx={{ p: { xs: 2, sm: 3 }, border: '1px solid', borderColor: 'divider', mb: 3 }}>
+        <Typography variant="h6" gutterBottom fontWeight="bold">Quick Actions</Typography>
+        <Divider sx={{ mb: 2 }} />
+        <Grid container spacing={2}>
+          {shortcuts.map((shortcut, index) => (
+            <Grid key={index} size={{ xs: 12, sm: 6, md: 4 }}>
+              <Button
+                fullWidth variant="outlined" size="large"
+                startIcon={<Box sx={{ color: shortcut.color, display: 'flex' }}>{shortcut.icon}</Box>}
+                onClick={() => navigate(shortcut.path)}
+                sx={{ py: 1.5, justifyContent: 'flex-start', borderColor: 'divider', color: 'text.primary', '&:hover': { borderColor: shortcut.color, bgcolor: `${shortcut.color}11` } }}
+              >
+                {shortcut.title}
+              </Button>
+            </Grid>
+          ))}
+        </Grid>
+      </Paper>
 
       {/* Recent Attendance */}
       {myAttendance.length > 0 && (

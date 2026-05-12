@@ -69,7 +69,7 @@ export default function UserManagement() {
   // Tracks whether we're computing the next EMP ID before opening the dialog
   const [empIdLoading, setEmpIdLoading] = useState(false);
 
-  /* ── Data fetching ──────────────────────────────────────────────────── */
+  /* ── Data fetching ───────────────────────────────────────────────────��� */
   const fetchUsers = async () => {
     setLoading(true); setError(null);
     try {
@@ -281,37 +281,35 @@ export default function UserManagement() {
                   </TableCell>
                 </TableRow>
               ) : users.map(u => (
-                <TableRow key={u.id} hover sx={{ opacity: u.active === false ? 0.5 : 1 }}>
-                  <TableCell><Chip label={u.id} size="small" variant="outlined" /></TableCell>
-                  <TableCell sx={{ fontWeight: 600 }}>{u.name}</TableCell>
-                  <TableCell>{u.email}</TableCell>
-                  <TableCell>
+                <TableRow key={u.id} hover>
+                  <TableCell sx={{ opacity: u.active === false ? 0.45 : 1, fontWeight: 500 }}><Chip label={u.id} size="small" variant="outlined" /></TableCell>
+                  <TableCell sx={{ opacity: u.active === false ? 0.45 : 1, fontWeight: 600 }}>{u.name}</TableCell>
+                  <TableCell sx={{ opacity: u.active === false ? 0.45 : 1 }}>{u.email}</TableCell>
+                  <TableCell sx={{ opacity: u.active === false ? 0.45 : 1 }}>
                     <Chip
                       label={ROLES.find(r => r.value === u.role)?.label ?? u.role}
                       size="small"
                       color={ROLE_COLORS[u.role] ?? 'default'}
                     />
                   </TableCell>
-                  <TableCell>{u.outlet || '—'}</TableCell>
-                  <TableCell>{u.employeeId || '—'}</TableCell>
-                  <TableCell>
+                  <TableCell sx={{ opacity: u.active === false ? 0.45 : 1 }}>{u.outlet || '—'}</TableCell>
+                  <TableCell sx={{ opacity: u.active === false ? 0.45 : 1 }}>{u.employeeId || '—'}</TableCell>
+                  <TableCell sx={{ opacity: u.active === false ? 0.45 : 1 }}>
                     <Chip
                       label={u.active === false ? 'Inactive' : 'Active'}
                       size="small"
                       color={u.active === false ? 'default' : 'success'}
                     />
                   </TableCell>
+                  {/* Actions — always full opacity regardless of account status */}
                   <TableCell>
-                    <Box sx={{ display: 'flex', gap: 0.75, alignItems: 'center' }}>
-
-                      {/* Edit Account — same height as the Active/Inactive chip (size="small") */}
+                    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5, alignItems: 'flex-start' }}>
                       <Chip
                         label="Edit Account"
                         size="small"
                         clickable
                         variant="outlined"
                         color="primary"
-                        icon={<EditNote style={{ fontSize: '0.9rem' }} />}
                         onClick={() => {
                           setSelectedUser(u);
                           setEditForm({ name: u.name, email: u.email, role: u.role, outlet: u.outlet, employeeId: u.employeeId });
@@ -319,9 +317,8 @@ export default function UserManagement() {
                           setShowEditPwd(false);
                           setOpenEdit(true);
                         }}
+                        sx={{ minWidth: 110 }}
                       />
-
-                      {/* Delete Account — same chip size as Edit Account and Active/Inactive */}
                       <Chip
                         label="Delete Account"
                         size="small"
@@ -329,8 +326,8 @@ export default function UserManagement() {
                         variant="outlined"
                         color="error"
                         onClick={() => handleDelete(u)}
+                        sx={{ minWidth: 110 }}
                       />
-
                     </Box>
                   </TableCell>
                 </TableRow>
