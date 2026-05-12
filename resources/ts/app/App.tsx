@@ -3,8 +3,7 @@ import { router } from './routes';
 import { AuthProvider } from './context/AuthContext';
 import { ThemeProvider, createTheme, CssBaseline } from '@mui/material';
 import { localDbFetch } from './lib/localDb';
-import { projectId, publicAnonKey } from '/utils/supabase/info';
-
+import { projectId, publicAnonKey } from "../utils/supabase/info";
 // ── Suppress Figma Make preview-environment prop warnings ─────────────────────
 // FGCmp (Figma's inspector wrapper) injects data-fg-* / data-fgid-* props onto
 // every component — MUI rejects them. We scan ALL console.error arguments

@@ -35,7 +35,7 @@ import {
   DeleteOutline,
   Sync,
 } from "@mui/icons-material";
-import { projectId, publicAnonKey } from "/utils/supabase/info";
+import { projectId, publicAnonKey } from "../../../utils/supabase/info";
 import {
   OUTLETS,
   POSITIONS,
