@@ -488,12 +488,46 @@ export default function LandingPage() {
                       </Stack>
 
                       <Stack spacing={1.2} sx={{ mb: 2 }}>
-                        <Typography color="text.secondary"><Work fontSize="small" /> {job.department}</Typography>
-                        <Typography color="text.secondary"><LocationOn fontSize="small" /> {job.location}</Typography>
-                        <Typography color="text.secondary">
-                          <AccessTime fontSize="small" /> {job.salary_range || "Salary Negotiable"}
-                        </Typography>
-                      </Stack>
+                      <Typography
+                        sx={{
+                          display: "flex",
+                          alignItems: "center",
+                          gap: 1,
+                          color: "text.secondary",
+                        }}
+                      >
+                        <Work fontSize="small" />
+                        <strong>Department:</strong> {job.department}
+                      </Typography>
+
+                      <Typography
+                        sx={{
+                          display: "flex",
+                          alignItems: "center",
+                          gap: 1,
+                          color: "text.secondary",
+                        }}
+                      >
+                        <LocationOn fontSize="small" />
+                        <strong>Location:</strong> {job.location}
+                      </Typography>
+
+                      <Typography
+                        sx={{
+                          display: "flex",
+                          alignItems: "center",
+                          gap: 1,
+                          color: "#166534",
+                          fontWeight: 700,
+                        }}
+                      >
+                        <AccessTime fontSize="small" />
+                        <strong>Salary Range:</strong>{" "}
+                        {job.salary_range
+                          ? `₱ ${job.salary_range}`
+                          : "Salary Negotiable"}
+                      </Typography>
+                    </Stack>
 
                       <Divider sx={{ my: 2 }} />
 

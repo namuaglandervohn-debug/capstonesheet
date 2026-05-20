@@ -15,6 +15,9 @@ import {
   TextField,
   Snackbar,
   Alert,
+  MenuItem,
+  useMediaQuery,
+  useTheme,
 } from "@mui/material";
 
 import { Add, Edit, Delete } from "@mui/icons-material";
@@ -28,6 +31,8 @@ interface JobPosting {
   employment_type: string;
   salary_range: string;
   description: string;
+  qualifications: string;
+  responsibilities: string;
   is_active: boolean;
 }
 
@@ -38,13 +43,27 @@ const EMPTY_FORM = {
   employment_type: "Full-Time",
   salary_range: "",
   description: "",
+  qualifications: "",
+  responsibilities: "",
 };
 
+const DEPARTMENTS = [
+  "Management",
+  "Operations",
+  "Human Resource and Administration",
+  "Accounting and Finance",
+  "Restaurant",
+  "Resort",
+  "Café",
+];
+
 export default function JobPostingManagement() {
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
+
   const [jobs, setJobs] = useState<JobPosting[]>([]);
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<JobPosting | null>(null);
-
   const [form, setForm] = useState(EMPTY_FORM);
 
   const [snackbar, setSnackbar] = useState({
@@ -82,119 +101,121 @@ export default function JobPostingManagement() {
       employment_type: job.employment_type,
       salary_range: job.salary_range,
       description: job.description,
+      qualifications: job.qualifications ?? "",
+      responsibilities: job.responsibilities ?? "",
     });
 
     setOpen(true);
   };
 
   const handleSave = async () => {
-  try {
-    if (editing) {
-      const { error } = await supabase
-        .from("job_postings")
-        .update(form)
-        .eq("id", editing.id);
+    try {
+      if (editing) {
+        const { error } = await supabase
+          .from("job_postings")
+          .update(form)
+          .eq("id", editing.id);
 
-      if (error) throw error;
+        if (error) throw error;
 
-      setSnackbar({
-        open: true,
-        message: "Job posting updated!",
-        severity: "success",
-      });
-    } else {
-      const { error } = await supabase
-        .from("job_postings")
-        .insert({
-          ...form,
-          is_active: true,
+        setSnackbar({
+          open: true,
+          message: "Job posting updated!",
+          severity: "success",
         });
+      } else {
+        const { error } = await supabase
+          .from("job_postings")
+          .insert({
+            ...form,
+            is_active: true,
+          });
 
-      if (error) throw error;
+        if (error) throw error;
 
+        setSnackbar({
+          open: true,
+          message: "Job posting created!",
+          severity: "success",
+        });
+      }
+
+      setOpen(false);
+      setEditing(null);
+      setForm(EMPTY_FORM);
+      fetchJobs();
+    } catch (e: any) {
       setSnackbar({
         open: true,
-        message: "Job posting created!",
-        severity: "success",
+        message: `Failed: ${e.message}`,
+        severity: "error",
       });
     }
-
-    setOpen(false);
-    setEditing(null);
-    setForm(EMPTY_FORM);
-    fetchJobs();
-  } catch (e: any) {
-    setSnackbar({
-      open: true,
-      message: `Failed: ${e.message}`,
-      severity: "error",
-    });
-  }
-};
+  };
 
   const handleDelete = async (id: string) => {
-  if (!window.confirm("Remove this job posting?")) return;
+    if (!window.confirm("Remove this job posting?")) return;
 
-  try {
-    const { error } = await supabase
-      .from("job_postings")
-      .update({ is_active: false })
-      .eq("id", id);
+    try {
+      const { error } = await supabase
+        .from("job_postings")
+        .update({ is_active: false })
+        .eq("id", id);
 
-    if (error) throw error;
+      if (error) throw error;
 
-    setJobs(prev =>
-      prev.map(job =>
-        job.id === id ? { ...job, is_active: false } : job
-      )
-    );
+      setJobs(prev =>
+        prev.map(job =>
+          job.id === id ? { ...job, is_active: false } : job
+        )
+      );
 
-    setSnackbar({
-      open: true,
-      message: "Job posting removed!",
-      severity: "success",
-    });
+      setSnackbar({
+        open: true,
+        message: "Job posting removed!",
+        severity: "success",
+      });
 
-    fetchJobs();
-  } catch (e: any) {
-    setSnackbar({
-      open: true,
-      message: `Failed: ${e.message}`,
-      severity: "error",
-    });
-  }
-};
+      fetchJobs();
+    } catch (e: any) {
+      setSnackbar({
+        open: true,
+        message: `Failed: ${e.message}`,
+        severity: "error",
+      });
+    }
+  };
 
-const handleToggleActive = async (job: JobPosting) => {
-  const newStatus = !job.is_active;
+  const handleToggleActive = async (job: JobPosting) => {
+    const newStatus = !job.is_active;
 
-  try {
-    const { error } = await supabase
-      .from("job_postings")
-      .update({ is_active: newStatus })
-      .eq("id", job.id);
+    try {
+      const { error } = await supabase
+        .from("job_postings")
+        .update({ is_active: newStatus })
+        .eq("id", job.id);
 
-    if (error) throw error;
+      if (error) throw error;
 
-    setJobs(prev =>
-      prev.map(j =>
-        j.id === job.id ? { ...j, is_active: newStatus } : j
-      )
-    );
+      setJobs(prev =>
+        prev.map(j =>
+          j.id === job.id ? { ...j, is_active: newStatus } : j
+        )
+      );
 
-    setSnackbar({
-      open: true,
-      message: `Job posting ${newStatus ? "activated" : "deactivated"}!`,
-      severity: "success",
-    });
-  } catch (e: any) {
-    setSnackbar({
-      open: true,
-      message: `Failed: ${e.message}`,
-      severity: "error",
-    });
-  }
-};
+      setSnackbar({
+        open: true,
+        message: `Job posting ${newStatus ? "activated" : "deactivated"}!`,
+        severity: "success",
+      });
+    } catch (e: any) {
+      setSnackbar({
+        open: true,
+        message: `Failed: ${e.message}`,
+        severity: "error",
+      });
+    }
+  };
 
   return (
     <Box>
@@ -203,11 +224,19 @@ const handleToggleActive = async (job: JobPosting) => {
           mb: 4,
           display: "flex",
           justifyContent: "space-between",
-          alignItems: "center",
+          alignItems: { xs: "stretch", md: "center" },
+          flexDirection: { xs: "column", md: "row" },
+          gap: 2,
         }}
       >
         <Box>
-          <Typography variant="h4" fontWeight={900}>
+          <Typography
+            variant="h4"
+            fontWeight={900}
+            sx={{
+              fontSize: { xs: "1.7rem", sm: "2rem", md: "2.125rem" },
+            }}
+          >
             Job Posting Management
           </Typography>
 
@@ -225,42 +254,93 @@ const handleToggleActive = async (job: JobPosting) => {
             fontWeight: 800,
             background:
               "linear-gradient(135deg, #1F7A47 0%, #3FA46A 100%)",
+            width: { xs: "100%", sm: "fit-content" },
+            py: { xs: 1.3, sm: 1 },
+            alignSelf: { xs: "stretch", sm: "flex-start", md: "center" },
           }}
         >
           Create Job Posting
         </Button>
       </Box>
 
-      <Grid container spacing={3}>
+      <Grid container spacing={{ xs: 2, md: 3 }}>
         {jobs.map((job) => (
-          <Grid key={job.id} size={{ xs: 12, md: 6 }}>
-            <Card sx={{ borderRadius: 4 }}>
-              <CardContent>
+          <Grid
+            key={job.id}
+            size={{
+              xs: 12,
+              sm: 12,
+              md: 6,
+              lg: 4,
+            }}
+          >
+            <Card
+              sx={{
+                borderRadius: 4,
+                height: "100%",
+                display: "flex",
+                flexDirection: "column",
+              }}
+            >
+              <CardContent
+                sx={{
+                  height: "100%",
+                  display: "flex",
+                  flexDirection: "column",
+                  p: { xs: 2.2, sm: 3 },
+                }}
+              >
                 <Stack
-                  direction="row"
+                  direction={{ xs: "column", sm: "row" }}
                   justifyContent="space-between"
-                  alignItems="center"
+                  alignItems={{ xs: "flex-start", sm: "center" }}
+                  spacing={1}
                   sx={{ mb: 2 }}
                 >
-                  <Typography variant="h5" fontWeight={800}>
+                  <Typography
+                    variant="h5"
+                    fontWeight={800}
+                    sx={{
+                      fontSize: { xs: "1.2rem", sm: "1.5rem" },
+                      wordBreak: "break-word",
+                    }}
+                  >
                     {job.title}
                   </Typography>
 
                   <Chip
                     label={job.is_active ? "Active" : "Inactive"}
                     color={job.is_active ? "success" : "default"}
+                    size="small"
                   />
                 </Stack>
 
-                <Typography>{job.department}</Typography>
-                <Typography>{job.location}</Typography>
+                <Typography sx={{ wordBreak: "break-word" }}>
+                  {job.department}
+                </Typography>
 
-                <Typography sx={{ mt: 2 }} color="text.secondary">
+                <Typography sx={{ wordBreak: "break-word" }}>
+                  {job.location}
+                </Typography>
+
+                <Typography
+                  sx={{
+                    mt: 2,
+                    flexGrow: 1,
+                    wordBreak: "break-word",
+                  }}
+                  color="text.secondary"
+                >
                   {job.description}
                 </Typography>
 
-                <Stack direction="row" spacing={1} sx={{ mt: 3 }}>
+                <Stack
+                  direction={{ xs: "column", sm: "row" }}
+                  spacing={1}
+                  sx={{ mt: 3 }}
+                >
                   <Button
+                    fullWidth={isMobile}
                     variant="outlined"
                     startIcon={<Edit />}
                     onClick={() => handleEdit(job)}
@@ -269,6 +349,7 @@ const handleToggleActive = async (job: JobPosting) => {
                   </Button>
 
                   <Button
+                    fullWidth={isMobile}
                     color="error"
                     variant="outlined"
                     startIcon={<Delete />}
@@ -278,12 +359,13 @@ const handleToggleActive = async (job: JobPosting) => {
                   </Button>
 
                   <Button
+                    fullWidth={isMobile}
                     color={job.is_active ? "warning" : "success"}
                     variant="outlined"
                     onClick={() => handleToggleActive(job)}
-                    >
+                  >
                     {job.is_active ? "Set Inactive" : "Set Active"}
-                    </Button>
+                  </Button>
                 </Stack>
               </CardContent>
             </Card>
@@ -291,7 +373,13 @@ const handleToggleActive = async (job: JobPosting) => {
         ))}
       </Grid>
 
-      <Dialog open={open} onClose={() => setOpen(false)} maxWidth="md" fullWidth>
+      <Dialog
+        open={open}
+        onClose={() => setOpen(false)}
+        maxWidth="md"
+        fullWidth
+        fullScreen={isMobile}
+      >
         <DialogTitle>
           {editing ? "Edit Job Posting" : "Create Job Posting"}
         </DialogTitle>
@@ -312,12 +400,21 @@ const handleToggleActive = async (job: JobPosting) => {
             <Grid size={{ xs: 12, md: 6 }}>
               <TextField
                 fullWidth
+                select
                 label="Department"
                 value={form.department}
                 onChange={(e) =>
                   setForm({ ...form, department: e.target.value })
                 }
-              />
+                InputLabelProps={{ shrink: true }}
+              >
+                <MenuItem value="">Select Department...</MenuItem>
+                {DEPARTMENTS.map((dept) => (
+                  <MenuItem key={dept} value={dept}>
+                    {dept}
+                  </MenuItem>
+                ))}
+              </TextField>
             </Grid>
 
             <Grid size={{ xs: 12 }}>
@@ -329,6 +426,36 @@ const handleToggleActive = async (job: JobPosting) => {
                   setForm({ ...form, location: e.target.value })
                 }
               />
+            </Grid>
+
+            <Grid size={{ xs: 12, md: 6 }}>
+              <TextField
+                fullWidth
+                label="Salary Range"
+                value={form.salary_range}
+                onChange={(e) =>
+                  setForm({ ...form, salary_range: e.target.value })
+                }
+              />
+            </Grid>
+
+            <Grid size={{ xs: 12, md: 6 }}>
+              <TextField
+                fullWidth
+                select
+                label="Employment Type"
+                value={form.employment_type}
+                onChange={(e) =>
+                  setForm({ ...form, employment_type: e.target.value })
+                }
+                InputLabelProps={{ shrink: true }}
+              >
+                <MenuItem value="">Select Employment Type...</MenuItem>
+                <MenuItem value="Full-Time">Full-Time</MenuItem>
+                <MenuItem value="Part-Time">Part-Time</MenuItem>
+                <MenuItem value="Contractual">Contractual</MenuItem>
+                <MenuItem value="Internship">Internship</MenuItem>
+              </TextField>
             </Grid>
 
             <Grid size={{ xs: 12 }}>
@@ -343,13 +470,58 @@ const handleToggleActive = async (job: JobPosting) => {
                 }
               />
             </Grid>
+
+            <Grid size={{ xs: 12 }}>
+              <TextField
+                fullWidth
+                multiline
+                minRows={3}
+                label="Qualifications"
+                value={form.qualifications}
+                onChange={(e) =>
+                  setForm({ ...form, qualifications: e.target.value })
+                }
+              />
+            </Grid>
+
+            <Grid size={{ xs: 12 }}>
+              <TextField
+                fullWidth
+                multiline
+                minRows={3}
+                label="Responsibilities"
+                value={form.responsibilities}
+                onChange={(e) =>
+                  setForm({ ...form, responsibilities: e.target.value })
+                }
+              />
+            </Grid>
           </Grid>
         </DialogContent>
 
-        <DialogActions>
-          <Button onClick={() => setOpen(false)}>Cancel</Button>
+        <DialogActions
+          sx={{
+            flexDirection: { xs: "column-reverse", sm: "row" },
+            gap: 1,
+            p: 2,
+          }}
+        >
+          <Button
+            fullWidth={isMobile}
+            onClick={() => setOpen(false)}
+          >
+            Cancel
+          </Button>
 
-          <Button variant="contained" onClick={handleSave}>
+          <Button
+            fullWidth={isMobile}
+            variant="contained"
+            onClick={handleSave}
+            sx={{
+              background:
+                "linear-gradient(135deg, #1F7A47 0%, #3FA46A 100%)",
+            }}
+          >
             Save
           </Button>
         </DialogActions>
