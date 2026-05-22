@@ -642,7 +642,7 @@ const scheduleId =
               ) : filtered.map(s => (
                 <TableRow key={s.id} hover>
                   <TableCell><Chip label={s.id} size="small" variant="outlined" /></TableCell>
-                  <TableCell sx={{ fontWeight: 600 }}>{s.employee}</TableCell>
+                  <TableCell>{s.employee}</TableCell>
                   <TableCell sx={{ fontSize: '0.8rem' }}>{s.position}</TableCell>
                   <TableCell>
                     <Chip label={s.outlet || '—'} size="small" color={

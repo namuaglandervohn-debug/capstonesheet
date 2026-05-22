@@ -90,11 +90,11 @@ export default function RootLayout() {
 }, [user]);
 
   // Early return AFTER all hooks
-  if (!user) return <Navigate to="/" replace />;
+  if (!user) return <Navigate to="/login" replace />;
 
   const filteredMenuItems = ALL_MENU_ITEMS.filter(item => item.roles.includes(user.role));
 
-  const handleLogout = () => { logout(); navigate('/'); };
+  const handleLogout = () => { logout(); navigate('/login'); };
   const handleNavigate = (path: string) => { navigate(path); if (!isDesktop) setMobileOpen(false); };
 
   const unreadCount = notifications.filter(n => !readIds.has(n.id)).length;

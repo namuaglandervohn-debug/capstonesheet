@@ -516,6 +516,23 @@ const buildDocumentsForApplication = (app: Application | null, submittedDocument
   return docs;
 };
 
+const getSubmittedDocumentsForApplication = (app: Application | null): string[] => {
+  if (!app) return [];
+
+  const raw = app.raw ?? {};
+  const extra = safeJsonParse(app.coverLetter);
+
+  if (Array.isArray(raw.submitted_documents) && raw.submitted_documents.length) {
+    return raw.submitted_documents;
+  }
+
+  if (Array.isArray(extra.submittedDocuments) && extra.submittedDocuments.length) {
+    return extra.submittedDocuments;
+  }
+
+  return app.supportingDocuments ?? [];
+};
+
 export default function RecruitmentManagement() {
   const { user } = useAuth();
   const [applications, setApplications] = useState<Application[]>([]);
@@ -576,6 +593,7 @@ export default function RecruitmentManagement() {
   const hasLoadedApplicationsRef = useRef(false);
   const fetchRequestIdRef = useRef(0);
   const profileFetchRequestIdRef = useRef(0);
+  const autoLoadedDocumentKeyRef = useRef('');
   const isMountedRef = useRef(true);
 
   const fetchApplications = useCallback(async (options?: { silent?: boolean }) => {
@@ -933,6 +951,7 @@ export default function RecruitmentManagement() {
     setDocumentsLoading(false);
     setLoadingDocumentName(null);
     setPreviewDoc(null);
+    autoLoadedDocumentKeyRef.current = '';
     setViewDialog(true);
     setProfileLoading(true);
 
@@ -977,6 +996,7 @@ export default function RecruitmentManagement() {
     setProfileLoading(false);
     setDocumentsLoading(false);
     setLoadingDocumentName(null);
+    autoLoadedDocumentKeyRef.current = '';
     setViewDialog(false);
   };
 
@@ -1166,6 +1186,78 @@ export default function RecruitmentManagement() {
     </Grid>
   );
 
+  const autoLoadDocumentData = useCallback(async (app: Application) => {
+    setDocumentsLoading(true);
+    setLoadingDocumentName(null);
+
+    // Let the dialog and document cards paint first, then load the saved base64 data automatically.
+    await waitForNextPaint();
+
+    try {
+      let mergedApp = app;
+
+      try {
+        const fileData = loadApplicationFiles(app.id);
+        if (fileData) {
+          mergedApp = { ...mergedApp, ...fileData } as Application;
+        }
+      } catch (fileError) {
+        console.warn('[RecruitmentManagement] Automatic local file load failed:', fileError);
+      }
+
+      const submittedDocumentNames = getSubmittedDocumentsForApplication(mergedApp);
+      const docs = buildDocumentsForApplication(mergedApp, submittedDocumentNames);
+      const resumeNeedsData = Boolean(
+        mergedApp.resumeFileName &&
+          !mergedApp.resumeFileData &&
+          docs.some(document => document.name === mergedApp.resumeFileName && !document.data)
+      );
+
+      let resumeFileData = mergedApp.resumeFileData;
+
+      if (resumeNeedsData) {
+        try {
+          const { data, error: resumeFetchError } = await withTimeout(
+            supabase.from('applicants').select('resume_file_data').eq('applicant_id', mergedApp.id).single(),
+            DOCUMENT_LOAD_TIMEOUT_MS,
+            'Loading the selected document took too long. Please try again.'
+          );
+
+          if (!resumeFetchError && data?.resume_file_data) {
+            resumeFileData = data.resume_file_data;
+          }
+        } catch (resumeError) {
+          console.warn('[RecruitmentManagement] Automatic resume data fetch failed:', resumeError);
+        }
+      }
+
+      if (!isMountedRef.current) return;
+
+      setSelectedApp(prev => {
+        if (!prev || prev.id !== app.id) return prev;
+        return { ...prev, ...mergedApp, resumeFileData };
+      });
+    } finally {
+      if (!isMountedRef.current) return;
+      setDocumentsLoading(false);
+      setLoadingDocumentName(null);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!viewDialog || !selectedApp || profileLoading || documentsLoading) return;
+
+    const submittedDocumentNames = getSubmittedDocumentsForApplication(selectedApp);
+    const docs = buildDocumentsForApplication(selectedApp, submittedDocumentNames);
+    if (docs.length === 0 || docs.every(document => Boolean(document.data))) return;
+
+    const documentKey = `${selectedApp.id}:${docs.map(document => document.name).join('|')}`;
+    if (autoLoadedDocumentKeyRef.current === documentKey) return;
+
+    autoLoadedDocumentKeyRef.current = documentKey;
+    void autoLoadDocumentData(selectedApp);
+  }, [autoLoadDocumentData, documentsLoading, profileLoading, selectedApp, viewDialog]);
+
   const loadDocumentDataForAction = async (doc: DocumentItem): Promise<DocumentItem | null> => {
     if (doc.data) return doc;
 
@@ -1190,17 +1282,13 @@ export default function RecruitmentManagement() {
         console.warn('[RecruitmentManagement] Local file load failed:', fileError);
       }
 
-      const submittedDocumentNames = ensureArray<string>(
-        Array.isArray(mergedApp.raw?.submitted_documents) && mergedApp.raw.submitted_documents.length
-          ? mergedApp.raw.submitted_documents
-          : mergedApp.supportingDocuments
-      );
+      const submittedDocumentNames = getSubmittedDocumentsForApplication(mergedApp);
 
       let loadedDoc = buildDocumentsForApplication(mergedApp, submittedDocumentNames).find(
         item => item.name === doc.name && Boolean(item.data)
       );
 
-      // Only load heavy Supabase base64 data when the user explicitly opens/downloads the resume.
+      // Manual fallback: if automatic loading has not completed yet, fetch the resume data here.
       if (!loadedDoc?.data && mergedApp.resumeFileName === doc.name) {
         try {
           const { data, error: resumeFetchError } = await withTimeout(
@@ -1257,7 +1345,7 @@ export default function RecruitmentManagement() {
   const renderDocumentCard = (doc: DocumentItem, index: number) => {
     const type = doc.type || getFileTypeFromName(doc.name);
     const hasData = Boolean(doc.data);
-    const isLoadingThisDocument = documentsLoading && loadingDocumentName === doc.name;
+    const isLoadingThisDocument = documentsLoading && (!loadingDocumentName || loadingDocumentName === doc.name);
 
     return (
       <Grid key={`${doc.name}-${index}`} size={{ xs: 12, sm: 6 }}>
@@ -1269,7 +1357,11 @@ export default function RecruitmentManagement() {
                 {doc.name}
               </Typography>
               <Typography variant="caption" color="text.secondary">
-                {hasData ? 'File ready' : 'Filename shown first — click to load file data'}
+                {hasData
+                  ? 'File ready for preview and download'
+                  : documentsLoading
+                    ? 'Loading file data automatically…'
+                    : 'File data will load automatically when the application opens'}
               </Typography>
             </Box>
           </Box>
@@ -1282,7 +1374,7 @@ export default function RecruitmentManagement() {
               disabled={documentsLoading}
               onClick={() => handlePreviewDocument({ ...doc, type })}
             >
-              {isLoadingThisDocument ? 'Loading…' : hasData ? 'Preview' : 'Load Preview'}
+              {isLoadingThisDocument ? 'Loading…' : 'Preview'}
             </Button>
             <Button
               size="small"
@@ -1317,7 +1409,7 @@ export default function RecruitmentManagement() {
               <Grid size={12}>
                 <LinearProgress sx={{ mb: 0.75 }} />
                 <Typography variant="caption" color="text.secondary">
-                  Loading selected document data only when needed…
+                  Loading document data automatically…
                 </Typography>
               </Grid>
             )}
@@ -1549,12 +1641,7 @@ export default function RecruitmentManagement() {
                     }
                   : {});
 
-              const submittedDocuments =
-                Array.isArray(raw.submitted_documents) && raw.submitted_documents.length
-                  ? raw.submitted_documents
-                  : Array.isArray(extra.submittedDocuments)
-                    ? extra.submittedDocuments
-                    : selectedApp.supportingDocuments ?? [];
+              const submittedDocuments = getSubmittedDocumentsForApplication(selectedApp);
 
               const currentAddress =
                 raw.current_address ?? extra.currentAddress ?? buildAddressText(extra.currentAddressParts, selectedApp.address);
@@ -1683,6 +1770,24 @@ export default function RecruitmentManagement() {
 
         <DialogActions sx={{ px: 3, pb: 2, gap: 1, flexWrap: 'wrap' }}>
           {selectedApp && (isHR || isGM) && (
+            <TextField
+              select
+              size="small"
+              variant="standard"
+              label="Status Update"
+              value={selectedApp.status}
+              onChange={event => handleUpdateStatus(selectedApp.id, event.target.value as AppStatus)}
+              disabled={saving}
+              sx={{ minWidth: 190, mr: 'auto' }}
+            >
+              {ALL_STATUSES.map(status => (
+                <MenuItem key={status} value={status}>
+                  {status}
+                </MenuItem>
+              ))}
+            </TextField>
+          )}
+          {selectedApp && (isHR || isGM) && (
             <Button
               variant={viewEditMode ? 'contained' : 'outlined'}
               onClick={async () => {
@@ -1710,25 +1815,6 @@ export default function RecruitmentManagement() {
             >
               Cancel Edit
             </Button>
-          )}
-
-          {selectedApp && (isHR || isGM) && (
-            <TextField
-              select
-              size="small"
-              variant="standard"
-              label="Status Update"
-              value={selectedApp.status}
-              onChange={event => handleUpdateStatus(selectedApp.id, event.target.value as AppStatus)}
-              disabled={saving}
-              sx={{ minWidth: 190 }}
-            >
-              {ALL_STATUSES.map(status => (
-                <MenuItem key={status} value={status}>
-                  {status}
-                </MenuItem>
-              ))}
-            </TextField>
           )}
 
           <Button onClick={closeViewDialog}>Close</Button>

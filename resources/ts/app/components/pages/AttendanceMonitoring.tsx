@@ -1,4 +1,5 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
+import * as XLSX from "xlsx";
 import {
   Box,
   Typography,
@@ -11,6 +12,9 @@ import {
   TableHead,
   TableRow,
   Chip,
+  Stack,
+  useMediaQuery,
+  useTheme,
   TextField,
   Grid,
   Dialog,
@@ -19,6 +23,7 @@ import {
   DialogActions,
   MenuItem,
   CircularProgress,
+  LinearProgress,
   Alert,
   Snackbar,
   Tooltip,
@@ -30,7 +35,10 @@ import {
   Sync,
   TaskAlt,
   EditNote,
-  DeleteOutline,
+  DeleteSweep,
+  WarningAmber,
+  ArrowBackIosNew,
+  ArrowForwardIos,
 } from "@mui/icons-material";
 import { API, HEADERS } from "../../lib/api";
 import { useAuth } from "../../context/AuthContext";
@@ -48,7 +56,10 @@ interface Attendance {
   status: "Present" | "Late" | "Absent" | "On Leave";
 }
 
-const EMPTY = {
+type AttendanceDraft = Omit<Attendance, "id">;
+type SheetRow = Array<string | number | boolean | Date | null | undefined>;
+
+const EMPTY: AttendanceDraft = {
   employee: "",
   date: "",
   timeIn: "",
@@ -57,101 +68,683 @@ const EMPTY = {
   late: "0",
   undertime: "0",
   overtime: "0",
-  status: "Present" as const,
+  status: "Present",
 };
 
-// Auto-compute attendance metrics based on time-in and time-out vs expected schedule
+const IMPORT_CONCURRENCY = 10;
+const DELETE_CONCURRENCY = 10;
+const PREVIEW_ROW_LIMIT = 50;
+
+type SaveImportTask = {
+  kind: "create" | "update";
+  key: string;
+  row: Partial<Attendance> & { correctedBy?: string };
+  existingId?: string;
+};
+
+type ImportSaveResult =
+  | {
+      ok: true;
+      kind: "create" | "update";
+      record: Attendance;
+      key: string;
+    }
+  | {
+      ok: false;
+      key: string;
+      error: string;
+    };
+
+// Auto-compute attendance metrics based on time-in and time-out vs expected schedule.
+// Manual entries still use the default 8:00 AM - 5:00 PM schedule.
 function computeAttendance(
   timeIn: string,
   timeOut: string,
   expectedIn = "8:00 AM",
   expectedOut = "5:00 PM",
-): Partial<typeof EMPTY> {
-  try {
-    const parseTime = (t: string) => {
-      const d = new Date(`01/01/2000 ${t}`);
-      return isNaN(d.getTime()) ? null : d;
-    };
-    const tin = parseTime(timeIn);
-    const tout = parseTime(timeOut);
-    const ein = parseTime(expectedIn);
-    const eout = parseTime(expectedOut);
-    if (!tin || !tout || !ein || !eout) return {};
+): Partial<AttendanceDraft> {
+  return computeAttendanceFromPunches(
+    [timeIn, timeOut],
+    expectedIn,
+    expectedOut,
+  );
+}
 
-    const totalMs = tout.getTime() - tin.getTime();
-    if (totalMs <= 0) return {}; // invalid clock data
+function computeAttendanceFromPunches(
+  punches: string[],
+  expectedIn?: string,
+  expectedOut?: string,
+): Partial<AttendanceDraft> {
+  const minutes = punches
+    .map((t) => parseClockToMinutes(t))
+    .filter((m): m is number => m !== null);
 
-    const totalHours = (totalMs / 3600000).toFixed(2);
+  if (minutes.length === 0) return {};
 
-    // Late = minutes arrived after expected start (0 if on time or early)
-    const lateMs = Math.max(0, tin.getTime() - ein.getTime());
-    const lateMin = Math.round(lateMs / 60000);
+  const timeIn = formatMinutesAsTime(minutes[0]);
+  const timeOut =
+    minutes.length >= 2 ? formatMinutesAsTime(minutes[minutes.length - 1]) : "";
 
-    // Undertime = minutes left before expected end (0 if stayed till end or later)
-    // Uses actual time-out vs scheduled end — independent of late arrival
-    const undertimeMs = Math.max(
+  let workedMinutes = 0;
+  for (let i = 0; i + 1 < minutes.length; i += 2) {
+    workedMinutes += diffMinutes(minutes[i], minutes[i + 1]);
+  }
+
+  if (workedMinutes === 0 && minutes.length >= 2) {
+    workedMinutes = diffMinutes(minutes[0], minutes[minutes.length - 1]);
+  }
+
+  const result: Partial<AttendanceDraft> = {
+    timeIn,
+    timeOut,
+    totalHours: workedMinutes > 0 ? (workedMinutes / 60).toFixed(2) : "",
+    late: "0",
+    undertime: "0",
+    overtime: "0",
+    status: "Present",
+  };
+
+  const scheduledIn = expectedIn ? parseClockToMinutes(expectedIn) : null;
+  const scheduledOut = expectedOut ? parseClockToMinutes(expectedOut) : null;
+
+  if (scheduledIn !== null && scheduledOut !== null && minutes.length >= 2) {
+    const scheduledMinutes = diffMinutes(scheduledIn, scheduledOut);
+    const lateMin = Math.max(0, minutes[0] - scheduledIn);
+    const undertimeMin = Math.max(
       0,
-      eout.getTime() - tout.getTime(),
+      scheduledOut - minutes[minutes.length - 1],
     );
-    const undertimeMin = Math.round(undertimeMs / 60000);
+    const overtimeMin = Math.max(0, workedMinutes - scheduledMinutes);
 
-    // Overtime = time worked beyond the full scheduled duration
-    const scheduledMs = eout.getTime() - ein.getTime();
-    const overtimeMs = Math.max(0, totalMs - scheduledMs);
-    const overtimeMin = Math.round(overtimeMs / 60000);
+    result.late = String(lateMin);
+    result.undertime = String(undertimeMin);
+    result.overtime = String(overtimeMin);
+    result.status = lateMin > 0 ? "Late" : "Present";
+  }
 
-    // Status: if arrived after expected start → Late; otherwise Present
-    const status = lateMin > 0 ? "Late" : "Present";
+  return result;
+}
 
-    return {
-      totalHours,
-      late: String(lateMin),
-      undertime: String(undertimeMin),
-      overtime: String(overtimeMin),
+function parseClockToMinutes(value: string): number | null {
+  const cleaned = value.trim().replace(/\s+/g, " ");
+  const match = cleaned.match(/^(\d{1,2}):(\d{2})(?:\s*([AP]M))?$/i);
+  if (!match) return null;
+
+  let hour = Number(match[1]);
+  const minute = Number(match[2]);
+  const ampm = match[3]?.toUpperCase();
+
+  if (minute > 59 || hour > 23) return null;
+  if (ampm === "PM" && hour < 12) hour += 12;
+  if (ampm === "AM" && hour === 12) hour = 0;
+
+  return hour * 60 + minute;
+}
+
+function diffMinutes(start: number, end: number) {
+  const diff = end - start;
+  return diff >= 0 ? diff : diff + 24 * 60;
+}
+
+function formatMinutesAsTime(totalMinutes: number) {
+  const normalized = ((totalMinutes % 1440) + 1440) % 1440;
+  const hour24 = Math.floor(normalized / 60);
+  const minute = normalized % 60;
+  const suffix = hour24 >= 12 ? "PM" : "AM";
+  const hour12 = hour24 % 12 || 12;
+  return `${hour12}:${String(minute).padStart(2, "0")} ${suffix}`;
+}
+
+function formatMinutesAs24Hour(totalMinutes: number) {
+  const normalized = ((totalMinutes % 1440) + 1440) % 1440;
+  const hour = Math.floor(normalized / 60);
+  const minute = normalized % 60;
+  return `${String(hour).padStart(2, "0")}:${String(minute).padStart(2, "0")}`;
+}
+
+function excelSerialToDate(serial: number) {
+  const utcDays = Math.floor(serial - 25569);
+  const utcValue = utcDays * 86400;
+  const date = new Date(utcValue * 1000);
+  return date.toISOString().slice(0, 10);
+}
+
+function extractPunchTimes(value: unknown): string[] {
+  if (value === null || value === undefined) return [];
+
+  if (typeof value === "number") {
+    if (value > 0 && value < 1) {
+      return [formatMinutesAs24Hour(Math.round(value * 24 * 60))];
+    }
+    return [];
+  }
+
+  if (value instanceof Date && !Number.isNaN(value.getTime())) {
+    return [formatMinutesAs24Hour(value.getHours() * 60 + value.getMinutes())];
+  }
+
+  const text = String(value).replace(/\u00a0/g, " ");
+  const matches = text.match(/\b(?:[01]?\d|2[0-3]):[0-5]\d(?:\s*[AP]M)?\b/gi);
+  return matches?.map((m) => m.replace(/\s+/g, " ").trim()) ?? [];
+}
+
+function normalizeCell(value: unknown) {
+  return String(value ?? "")
+    .replace(/\u00a0/g, " ")
+    .trim();
+}
+
+function normalizeHeader(value: unknown) {
+  return normalizeCell(value).toLowerCase().replace(/\s+/g, " ");
+}
+
+function findCellIndex(row: SheetRow, label: string) {
+  const target = label.toLowerCase();
+  return row.findIndex((cell) => normalizeHeader(cell) === target);
+}
+
+function rowHasUserId(row: SheetRow) {
+  return findCellIndex(row, "user id:") !== -1;
+}
+
+function parseReportDateRange(rows: SheetRow[]) {
+  for (const row of rows.slice(0, 10)) {
+    for (const cell of row) {
+      const text = normalizeCell(cell);
+      const match = text.match(
+        /(?:Attendance\s*)?date\s*:\s*(\d{4}-\d{2}-\d{2})\s*~\s*(\d{4}-\d{2}-\d{2})/i,
+      );
+      if (match) {
+        return { start: match[1], end: match[2] };
+      }
+    }
+  }
+  return null;
+}
+
+function buildDateFromDay(
+  day: number,
+  range: { start: string; end: string } | null,
+) {
+  if (!range) {
+    const now = new Date();
+    return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+  }
+
+  const [startYear, startMonth, startDay] = range.start.split("-").map(Number);
+  const [endYear, endMonth] = range.end.split("-").map(Number);
+
+  let year = startYear;
+  let month = startMonth;
+
+  if ((endYear > startYear || endMonth > startMonth) && day < startDay) {
+    year = endYear;
+    month = endMonth;
+  }
+
+  return `${year}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+}
+
+function normalizeDateValue(value: unknown) {
+  if (value instanceof Date && !Number.isNaN(value.getTime())) {
+    return value.toISOString().slice(0, 10);
+  }
+
+  if (typeof value === "number" && value > 20000) {
+    return excelSerialToDate(value);
+  }
+
+  const text = normalizeCell(value);
+  if (!text) return "";
+
+  const iso = text.match(/\d{4}-\d{2}-\d{2}/);
+  if (iso) return iso[0];
+
+  const slash = text.match(/^(\d{1,2})\/(\d{1,2})\/(\d{2,4})$/);
+  if (slash) {
+    const month = Number(slash[1]);
+    const day = Number(slash[2]);
+    let year = Number(slash[3]);
+    if (year < 100) year += 2000;
+    return `${year}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+  }
+
+  return text;
+}
+
+function toNumber(value: unknown): number | null {
+  if (typeof value === "number" && Number.isFinite(value)) return value;
+
+  const text = normalizeCell(value);
+  if (!text || /^none$/i.test(text)) return null;
+
+  const parsed = Number(text.replace(/,/g, ""));
+  return Number.isFinite(parsed) ? parsed : null;
+}
+
+function getReportText(rows: SheetRow[]) {
+  return rows
+    .slice(0, 20)
+    .flatMap((row) => row.map((cell) => normalizeCell(cell)))
+    .join(" ")
+    .toLowerCase();
+}
+
+function buildDateFromAttendanceReportCell(
+  value: unknown,
+  range: { start: string; end: string } | null,
+) {
+  const normalized = normalizeDateValue(value);
+  if (/^\d{4}-\d{2}-\d{2}$/.test(normalized)) return normalized;
+
+  const dayMatch = normalizeCell(value).match(/^(\d{1,2})\b/);
+  if (!dayMatch) return "";
+
+  return buildDateFromDay(Number(dayMatch[1]), range);
+}
+
+function computeFromReportPunches(punches: string[]): Partial<AttendanceDraft> {
+  // Summary/time-card imports do not have the employee's finalized schedule,
+  // so this only derives Time In, Time Out, Total Hours, and Present status.
+  // Late/undertime/overtime should still come from the Abnormal Report or
+  // from the finalized Schedule module once connected.
+  return computeAttendanceFromPunches(punches);
+}
+
+function parseAbnormalReportRows(rows: SheetRow[]): Partial<Attendance>[] {
+  const headerIndex = rows.findIndex((row) => {
+    const headers = row.map(normalizeHeader);
+    return (
+      headers.includes("user id") &&
+      headers.includes("name") &&
+      headers.includes("department") &&
+      headers.includes("date")
+    );
+  });
+
+  if (headerIndex === -1) return [];
+
+  const parsedRows: Partial<Attendance>[] = [];
+
+  rows.slice(headerIndex + 2).forEach((row) => {
+    const employee = normalizeCell(row[1]);
+    const date = normalizeDateValue(row[3]);
+    if (!employee || !date) return;
+
+    const rowText = row.map((cell) => normalizeCell(cell)).join(" ");
+    const punches = [row[4], row[5], row[6], row[7]].flatMap((cell) =>
+      extractPunchTimes(cell),
+    );
+    const computed =
+      punches.length > 0 ? computeFromReportPunches(punches) : {};
+
+    const lateMinutes = toNumber(row[8]) ?? 0;
+    const earlyMinutes = toNumber(row[9]) ?? 0;
+    const totalMinutes = toNumber(row[10]);
+
+    let status: Attendance["status"] = "Present";
+    if (/absence/i.test(rowText)) {
+      status = "Absent";
+    } else if (lateMinutes > 0) {
+      status = "Late";
+    }
+
+    parsedRows.push({
+      employee,
+      date,
+      timeIn: computed.timeIn ?? "",
+      timeOut: computed.timeOut ?? "",
+      totalHours:
+        computed.totalHours ??
+        (totalMinutes !== null ? (totalMinutes / 60).toFixed(2) : "0"),
+      late: String(lateMinutes),
+      undertime: String(earlyMinutes),
+      overtime: "0",
       status,
+    });
+  });
+
+  return parsedRows;
+}
+
+function parseAttendanceReportDetailRows(
+  rows: SheetRow[],
+): Partial<Attendance>[] {
+  const dateRange = parseReportDateRange(rows);
+  const parsedRows: Partial<Attendance>[] = [];
+
+  const employeeHeaderRowIndex = rows.findIndex((row) =>
+    row.some((cell) => normalizeHeader(cell) === "name"),
+  );
+  const timeCardRowIndex = rows.findIndex((row) =>
+    row.some((cell) => normalizeHeader(cell).includes("time card")),
+  );
+
+  if (employeeHeaderRowIndex === -1 || timeCardRowIndex === -1) return [];
+
+  const employeeHeaderRow = rows[employeeHeaderRowIndex] ?? [];
+  const blockStarts = employeeHeaderRow
+    .map((cell, index) => ({ cell, index }))
+    .filter(({ cell }) => normalizeHeader(cell) === "name")
+    .map(({ index }) => Math.max(0, index - 8));
+
+  blockStarts.forEach((startCol) => {
+    const nameIndex = startCol + 8;
+    const employee = normalizeCell(employeeHeaderRow[nameIndex + 1]);
+    if (!employee) return;
+
+    const dataRows = rows.slice(timeCardRowIndex + 3);
+
+    dataRows.forEach((row) => {
+      const date = buildDateFromAttendanceReportCell(row[startCol], dateRange);
+      if (!date) return;
+
+      const punches = [
+        row[startCol + 1],
+        row[startCol + 3],
+        row[startCol + 6],
+        row[startCol + 8],
+        row[startCol + 10],
+        row[startCol + 12],
+      ].flatMap((cell) => extractPunchTimes(cell));
+
+      if (punches.length === 0) return;
+
+      parsedRows.push({
+        employee,
+        date,
+        ...computeFromReportPunches(punches),
+      });
+    });
+  });
+
+  return parsedRows;
+}
+
+function attendanceKey(row: Partial<Attendance>) {
+  return `${normalizeCell(row.employee).toLowerCase()}__${normalizeCell(row.date)}`;
+}
+
+function normalizeDateForFilter(value: unknown) {
+  const normalized = normalizeDateValue(value);
+  const iso = normalized.match(/\d{4}-\d{2}-\d{2}/);
+  return iso ? iso[0] : normalized;
+}
+
+function normalizeStatusForFilter(value: unknown) {
+  return normalizeCell(value)
+    .toLowerCase()
+    .replace(/[_-]+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim()
+    .replace(/\s/g, "");
+}
+
+function getStatusValue(value: unknown): Attendance["status"] {
+  const normalized = normalizeStatusForFilter(value);
+
+  if (normalized === "late") return "Late";
+  if (normalized === "absent") return "Absent";
+  if (normalized === "onleave" || normalized === "leave") return "On Leave";
+
+  return "Present";
+}
+
+function parseSimpleAttendanceRows(rows: SheetRow[]): Partial<Attendance>[] {
+  const headerIndex = rows.findIndex((row) => {
+    const headers = row.map(normalizeHeader);
+    const hasEmployee = headers.some(
+      (h) => h.includes("employee") || h === "name",
+    );
+    const hasDate = headers.some((h) => h === "date" || h.includes("date"));
+    const hasIn = headers.some((h) => h.includes("time in") || h === "in");
+    const hasOut = headers.some((h) => h.includes("time out") || h === "out");
+    return hasEmployee && hasDate && hasIn && hasOut;
+  });
+
+  if (headerIndex === -1) return [];
+
+  const headers = rows[headerIndex].map(normalizeHeader);
+  const employeeIndex = headers.findIndex(
+    (h) => h.includes("employee") || h === "name",
+  );
+  const dateIndex = headers.findIndex(
+    (h) => h === "date" || h.includes("date"),
+  );
+  const timeInIndex = headers.findIndex(
+    (h) => h.includes("time in") || h === "in",
+  );
+  const timeOutIndex = headers.findIndex(
+    (h) => h.includes("time out") || h === "out",
+  );
+
+  return rows
+    .slice(headerIndex + 1)
+    .map((row) => {
+      const employee = normalizeCell(row[employeeIndex]);
+      const date = normalizeDateValue(row[dateIndex]);
+      const inTimes = extractPunchTimes(row[timeInIndex]);
+      const outTimes = extractPunchTimes(row[timeOutIndex]);
+      const punches = [...inTimes, ...outTimes];
+
+      if (!employee || !date || punches.length === 0) return null;
+
+      return {
+        employee,
+        date,
+        ...computeAttendanceFromPunches(punches, "8:00 AM", "5:00 PM"),
+      } as Partial<Attendance>;
+    })
+    .filter((row): row is Partial<Attendance> => row !== null);
+}
+
+function parseEmployeeAttendanceRecordRows(
+  rows: SheetRow[],
+): Partial<Attendance>[] {
+  const dateRange = parseReportDateRange(rows);
+  const parsedRows: Partial<Attendance>[] = [];
+
+  for (let i = 0; i < rows.length; i++) {
+    const currentRow = rows[i] ?? [];
+    const userIdIndex = findCellIndex(currentRow, "user id:");
+    if (userIdIndex === -1) continue;
+
+    const nameIndex = findCellIndex(currentRow, "name:");
+    const employeeName =
+      nameIndex !== -1
+        ? normalizeCell(currentRow[nameIndex + 1])
+        : normalizeCell(currentRow[userIdIndex + 1]);
+
+    const employee =
+      employeeName || `User ${normalizeCell(currentRow[userIdIndex + 1])}`;
+    const dateRow = rows[i + 1] ?? [];
+    const punchRows: SheetRow[] = [];
+
+    let j = i + 2;
+    while (j < rows.length && !rowHasUserId(rows[j] ?? [])) {
+      punchRows.push(rows[j] ?? []);
+      j++;
+    }
+
+    dateRow.forEach((dayValue, colIndex) => {
+      const day = Number(normalizeCell(dayValue));
+      if (!Number.isInteger(day) || day < 1 || day > 31) return;
+
+      const punches = punchRows.flatMap((row) =>
+        extractPunchTimes(row[colIndex]),
+      );
+      if (punches.length === 0) return;
+
+      parsedRows.push({
+        employee,
+        date: buildDateFromDay(day, dateRange),
+        ...computeAttendanceFromPunches(punches),
+      });
+    });
+
+    i = j - 1;
+  }
+
+  return parsedRows;
+}
+
+function worksheetRows(sheet: XLSX.WorkSheet): SheetRow[] {
+  return XLSX.utils.sheet_to_json(sheet, {
+    header: 1,
+    defval: "",
+    raw: true,
+    blankrows: false,
+  }) as SheetRow[];
+}
+
+function parseWorkbookForAttendance(workbook: XLSX.WorkBook) {
+  const records: Partial<Attendance>[] = [];
+  const formats = new Set<string>();
+  const simpleRows: Partial<Attendance>[] = [];
+
+  for (const sheetName of workbook.SheetNames) {
+    const sheet = workbook.Sheets[sheetName];
+    const rows = worksheetRows(sheet);
+    const reportText = `${sheetName} ${getReportText(rows)}`.toLowerCase();
+
+    const hasEmployeeAttendanceRecord = rows.some((row) =>
+      row.some((cell) =>
+        normalizeCell(cell)
+          .toLowerCase()
+          .includes("employee attendance record"),
+      ),
+    );
+    const hasUserBlocks = rows.some(rowHasUserId);
+    const hasAbnormalReport = reportText.includes("abnormal report");
+    const hasEmployeeAttendanceTable =
+      reportText.includes("employee attendance table") &&
+      !reportText.includes("shift setting table") &&
+      !reportText.includes("attendance statistic table");
+
+    if (hasEmployeeAttendanceRecord || hasUserBlocks) {
+      const parsed = parseEmployeeAttendanceRecordRows(rows);
+      records.push(...parsed);
+      if (parsed.length > 0) formats.add("Employee Attendance Record");
+      continue;
+    }
+
+    if (hasAbnormalReport) {
+      const parsed = parseAbnormalReportRows(rows);
+      records.push(...parsed);
+      if (parsed.length > 0) formats.add("Abnormal Report");
+      continue;
+    }
+
+    if (hasEmployeeAttendanceTable) {
+      const parsed = parseAttendanceReportDetailRows(rows);
+      records.push(...parsed);
+      if (parsed.length > 0) formats.add("Attendance Report Time Card");
+      continue;
+    }
+
+    simpleRows.push(...parseSimpleAttendanceRows(rows));
+  }
+
+  if (records.length > 0) {
+    return {
+      records,
+      format: Array.from(formats).join(" + "),
     };
+  }
+
+  return {
+    records: simpleRows,
+    format: simpleRows.length > 0 ? "Simple CSV/Table" : "Unsupported report",
+  };
+}
+
+function parseTextForAttendance(text: string) {
+  try {
+    const workbook = XLSX.read(text, { type: "string", cellDates: false });
+    return parseWorkbookForAttendance(workbook);
   } catch {
-    return {};
+    const rows = text
+      .split("\n")
+      .map((line) => line.split(",").map((cell) => cell.trim()));
+    const records = parseSimpleAttendanceRows(rows);
+    return {
+      records,
+      format:
+        records.length > 0 ? "Simple CSV/Table" : "Unsupported text format",
+    };
   }
 }
 
-// Parse biometric CSV row: employee_name, date, time_in, time_out
-function parseCSV(text: string): Partial<Attendance>[] {
-  const lines = text
-    .split("\n")
-    .map((l) => l.trim())
-    .filter(Boolean);
-  const rows: Partial<Attendance>[] = [];
-  for (const line of lines) {
-    if (
-      line.toLowerCase().startsWith("employee") ||
-      line.toLowerCase().startsWith("#")
-    )
-      continue; // skip header
-    const parts = line
-      .split(",")
-      .map((p) => p.trim().replace(/"/g, ""));
-    if (parts.length < 4) continue;
-    const [employee, date, timeIn, timeOut] = parts;
-    const computed = computeAttendance(timeIn, timeOut);
-    rows.push({ employee, date, timeIn, timeOut, ...computed });
+function waitForBrowserPaint() {
+  return new Promise<void>((resolve) => {
+    window.setTimeout(resolve, 0);
+  });
+}
+
+async function readErrorMessage(res: Response, fallback: string) {
+  try {
+    const data = await res.json();
+    return data?.error ?? data?.message ?? fallback;
+  } catch {
+    return fallback;
   }
-  return rows;
+}
+
+async function saveImportTask(task: SaveImportTask): Promise<ImportSaveResult> {
+  const url =
+    task.kind === "update" && task.existingId
+      ? `${API}/attendance/${task.existingId}`
+      : `${API}/attendance`;
+
+  const res = await fetch(url, {
+    method: task.kind === "update" ? "PUT" : "POST",
+    headers: HEADERS,
+    body: JSON.stringify(task.row),
+  });
+
+  if (!res.ok) {
+    return {
+      ok: false,
+      key: task.key,
+      error: await readErrorMessage(
+        res,
+        task.kind === "update" ? "Update failed" : "Import failed",
+      ),
+    };
+  }
+
+  const data = await res.json();
+
+  if (!data?.record?.id) {
+    return {
+      ok: false,
+      key: task.key,
+      error:
+        "Server saved the row but did not return a valid attendance record.",
+    };
+  }
+
+  return {
+    ok: true,
+    kind: task.kind,
+    record: data.record,
+    key: task.key,
+  };
 }
 
 export default function AttendanceMonitoring() {
   const { user } = useAuth();
-  const [attendances, setAttendances] = useState<Attendance[]>(
-    [],
-  );
+  const theme = useTheme();
+  const isSmallScreen = useMediaQuery(theme.breakpoints.down("md"));
+  const [attendances, setAttendances] = useState<Attendance[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [importDialog, setImportDialog] = useState(false);
-  const [importPreview, setImportPreview] = useState<
-    Partial<Attendance>[]
-  >([]);
+  const [importPreview, setImportPreview] = useState<Partial<Attendance>[]>([]);
   const [importText, setImportText] = useState("");
+  const [importFormat, setImportFormat] = useState("");
+  const [parsingImport, setParsingImport] = useState(false);
   const [importing, setImporting] = useState(false);
   const [form, setForm] = useState(EMPTY);
   const [saving, setSaving] = useState(false);
@@ -162,6 +755,21 @@ export default function AttendanceMonitoring() {
   });
   const [filterDate, setFilterDate] = useState("");
   const [filterStatus, setFilterStatus] = useState("all");
+  const [deleteAllDialog, setDeleteAllDialog] = useState(false);
+  const [deleteAllConfirm, setDeleteAllConfirm] = useState("");
+  const [deletingAll, setDeletingAll] = useState(false);
+  const [deleteProgress, setDeleteProgress] = useState({
+    current: 0,
+    total: 0,
+    failed: 0,
+  });
+  const [importProgress, setImportProgress] = useState({
+    current: 0,
+    total: 0,
+    failed: 0,
+  });
+  const [page, setPage] = useState(0);
+  const [rowsPerPage, setRowsPerPage] = useState(50);
   const fileRef = useRef<HTMLInputElement>(null);
 
   const fetchAttendance = async () => {
@@ -172,10 +780,15 @@ export default function AttendanceMonitoring() {
         headers: HEADERS,
       });
       const data = await res.json();
-      if (!res.ok)
-        throw new Error(data.error ?? "Server error");
+      if (!res.ok) throw new Error(data.error ?? "Server error");
       setAttendances(
-        (data.attendance ?? []).filter((a: any) => a != null),
+        (data.attendance ?? [])
+          .filter((a: any) => a != null)
+          .map((a: any) => ({
+            ...a,
+            date: normalizeDateForFilter(a.date),
+            status: getStatusValue(a.status),
+          })),
       );
     } catch (e: any) {
       setError(`Could not load attendance: ${e.message}`);
@@ -188,11 +801,12 @@ export default function AttendanceMonitoring() {
     fetchAttendance();
   }, []);
 
+  useEffect(() => {
+    setPage(0);
+  }, [filterDate, filterStatus]);
+
   // Auto-compute when time changes
-  const handleTimeChange = (
-    field: "timeIn" | "timeOut",
-    val: string,
-  ) => {
+  const handleTimeChange = (field: "timeIn" | "timeOut", val: string) => {
     const updated = { ...form, [field]: val };
     const computed = computeAttendance(
       field === "timeIn" ? val : form.timeIn,
@@ -211,9 +825,13 @@ export default function AttendanceMonitoring() {
         body: JSON.stringify(form),
       });
       const data = await res.json();
-      if (!res.ok)
-        throw new Error(data.error ?? "Server error");
-      setAttendances((prev) => [...prev, data.record]);
+      if (!res.ok) throw new Error(data.error ?? "Server error");
+      const savedRecord: Attendance = {
+        ...data.record,
+        date: normalizeDateForFilter(data.record.date),
+        status: getStatusValue(data.record.status),
+      };
+      setAttendances((prev) => [...prev, savedRecord]);
       setDialogOpen(false);
       setForm(EMPTY);
       setSnackbar({
@@ -232,75 +850,343 @@ export default function AttendanceMonitoring() {
     }
   };
 
-  const handleFileUpload = (
-    e: React.ChangeEvent<HTMLInputElement>,
+  const applyImportResult = (
+    records: Partial<Attendance>[],
+    format: string,
   ) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = (ev) => {
-      const text = ev.target?.result as string;
-      setImportText(text);
-      setImportPreview(parseCSV(text));
-    };
-    reader.readAsText(file);
+    setImportPreview(records);
+    setImportFormat(format);
+
+    if (records.length === 0) {
+      setSnackbar({
+        open: true,
+        message:
+          "No importable rows were found. Please upload Employee Attendance Record first, Abnormal Report second, then Attendance Report third.",
+        severity: "error",
+      });
+    } else {
+      setSnackbar({
+        open: true,
+        message: `Parsed ${records.length} record(s) from ${format}.`,
+        severity: "success",
+      });
+    }
   };
 
-  const handleParseTextInput = () => {
-    setImportPreview(parseCSV(importText));
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const isTextOnly = /\.(txt|csv)$/i.test(file.name);
+    const reader = new FileReader();
+
+    setParsingImport(true);
+    setImportPreview([]);
+    setImportFormat("");
+    setImportProgress({ current: 0, total: 0, failed: 0 });
+
+    reader.onerror = () => {
+      setParsingImport(false);
+      if (fileRef.current) fileRef.current.value = "";
+      setSnackbar({
+        open: true,
+        message: "Failed to read file. Please try uploading it again.",
+        severity: "error",
+      });
+    };
+
+    reader.onload = async (ev) => {
+      try {
+        // Allows the loading indicator to render before XLSX starts parsing.
+        await waitForBrowserPaint();
+
+        if (isTextOnly) {
+          const text = String(ev.target?.result ?? "");
+          setImportText(text);
+          const result = parseTextForAttendance(text);
+          applyImportResult(result.records, result.format);
+          return;
+        }
+
+        const data = ev.target?.result;
+        const workbook = XLSX.read(data, {
+          type: "array",
+          cellDates: false,
+          dense: true,
+        });
+        const result = parseWorkbookForAttendance(workbook);
+        setImportText("");
+        applyImportResult(result.records, result.format);
+      } catch (err: any) {
+        setImportPreview([]);
+        setImportFormat("");
+        setSnackbar({
+          open: true,
+          message: `Failed to read file: ${err.message}`,
+          severity: "error",
+        });
+      } finally {
+        setParsingImport(false);
+        if (fileRef.current) fileRef.current.value = "";
+      }
+    };
+
+    if (isTextOnly) {
+      reader.readAsText(file);
+    } else {
+      reader.readAsArrayBuffer(file);
+    }
+  };
+
+  const handleParseTextInput = async () => {
+    if (!importText.trim()) return;
+
+    setParsingImport(true);
+    setImportPreview([]);
+    setImportFormat("");
+
+    try {
+      await waitForBrowserPaint();
+      const result = parseTextForAttendance(importText);
+      applyImportResult(result.records, result.format);
+    } finally {
+      setParsingImport(false);
+    }
   };
 
   const handleImport = async () => {
-    if (importPreview.length === 0) return;
+    if (importPreview.length === 0 || importing || parsingImport) return;
+
     setImporting(true);
+    setImportProgress({ current: 0, total: importPreview.length, failed: 0 });
+
     let successCount = 0;
+    let updatedCount = 0;
+    let duplicateCount = 0;
+    let failedCount = 0;
+
+    const newRecords: Attendance[] = [];
+    const updatedRecords: Attendance[] = [];
+    const existingByKey = new Map<string, Attendance>(
+      attendances.map(
+        (record) => [attendanceKey(record), record] as [string, Attendance],
+      ),
+    );
+    const importedKeys = new Set<string>();
+    const isAbnormalImport = importFormat.toLowerCase().includes("abnormal");
+    const tasks: SaveImportTask[] = [];
+
     for (const row of importPreview) {
-      try {
-        const res = await fetch(`${API}/attendance`, {
-          method: "POST",
-          headers: HEADERS,
-          body: JSON.stringify(row),
+      const employee = normalizeCell(row.employee);
+      const date = normalizeCell(row.date);
+      const key = attendanceKey(row);
+
+      if (!employee || !date || importedKeys.has(key)) {
+        duplicateCount++;
+        continue;
+      }
+
+      importedKeys.add(key);
+
+      const existing = existingByKey.get(key);
+
+      if (existing && isAbnormalImport) {
+        tasks.push({
+          kind: "update",
+          key,
+          existingId: existing.id,
+          row: {
+            ...existing,
+            ...row,
+            correctedBy: user?.name ?? "HR Admin",
+          },
         });
-        if (res.ok) {
-          const data = await res.json();
-          setAttendances((prev) => [...prev, data.record]);
-          successCount++;
-        }
-      } catch (_) {}
+      } else if (existing) {
+        duplicateCount++;
+      } else {
+        tasks.push({
+          kind: "create",
+          key,
+          row,
+        });
+      }
     }
-    setImporting(false);
-    setImportDialog(false);
-    setImportPreview([]);
-    setImportText("");
-    setSnackbar({
-      open: true,
-      message: `✅ Imported ${successCount} attendance record(s) from biometric data!`,
-      severity: "success",
+
+    if (tasks.length === 0) {
+      setImporting(false);
+      setImportProgress({
+        current: importPreview.length,
+        total: importPreview.length,
+        failed: 0,
+      });
+      setSnackbar({
+        open: true,
+        message: `No new records to import. Skipped ${duplicateCount} duplicate/invalid row(s).`,
+        severity: "success",
+      });
+      return;
+    }
+
+    let completedTasks = 0;
+
+    try {
+      for (let start = 0; start < tasks.length; start += IMPORT_CONCURRENCY) {
+        const batch = tasks.slice(start, start + IMPORT_CONCURRENCY);
+        const results = await Promise.all(
+          batch.map(async (task) => {
+            try {
+              return await saveImportTask(task);
+            } catch (err: any) {
+              return {
+                ok: false,
+                key: task.key,
+                error: err?.message ?? "Network error",
+              } as ImportSaveResult;
+            }
+          }),
+        );
+
+        for (const result of results) {
+          if (!result.ok) {
+            failedCount++;
+            continue;
+          }
+
+          if (result.kind === "update") {
+            updatedRecords.push({
+              ...result.record,
+              date: normalizeDateForFilter(result.record.date),
+              status: getStatusValue(result.record.status),
+            });
+            updatedCount++;
+          } else {
+            newRecords.push({
+              ...result.record,
+              date: normalizeDateForFilter(result.record.date),
+              status: getStatusValue(result.record.status),
+            });
+            successCount++;
+          }
+        }
+
+        completedTasks += batch.length;
+        setImportProgress({
+          current: Math.min(
+            duplicateCount + completedTasks,
+            importPreview.length,
+          ),
+          total: importPreview.length,
+          failed: failedCount,
+        });
+
+        // Gives React one small break between batches so the progress bar stays responsive.
+        await waitForBrowserPaint();
+      }
+
+      if (newRecords.length > 0 || updatedRecords.length > 0) {
+        setAttendances((prev) => {
+          const updatesById = new Map(
+            updatedRecords.map(
+              (record) => [record.id, record] as [string, Attendance],
+            ),
+          );
+          const next = prev.map(
+            (record) => updatesById.get(record.id) ?? record,
+          );
+          const existingIds = new Set(next.map((record) => record.id));
+          const uniqueNewRecords = newRecords.filter(
+            (record) => record?.id && !existingIds.has(record.id),
+          );
+          return [...next, ...uniqueNewRecords];
+        });
+      }
+
+      setImportDialog(false);
+      setImportPreview([]);
+      setImportText("");
+      setImportFormat("");
+      setSnackbar({
+        open: true,
+        message: `✅ Imported ${successCount} new record(s), updated ${updatedCount} abnormal record(s), skipped ${duplicateCount} duplicate/invalid row(s)${
+          failedCount > 0 ? `, and failed to save ${failedCount} row(s)` : ""
+        }.`,
+        severity: failedCount > 0 ? "error" : "success",
+      });
+    } finally {
+      setImporting(false);
+      setImportProgress({ current: 0, total: 0, failed: 0 });
+    }
+  };
+
+  const filtered = useMemo(() => {
+    const selectedDate = normalizeDateForFilter(filterDate);
+
+    return attendances.filter((a) => {
+      const recordDate = normalizeDateForFilter(a.date);
+      const dateMatch = !selectedDate || recordDate === selectedDate;
+      const statusMatch =
+        filterStatus === "all" ||
+        normalizeStatusForFilter(a.status) === filterStatus;
+
+      return dateMatch && statusMatch;
     });
+  }, [attendances, filterDate, filterStatus]);
+
+  const totalPages = useMemo(
+    () => Math.max(1, Math.ceil(filtered.length / rowsPerPage)),
+    [filtered.length, rowsPerPage],
+  );
+
+  useEffect(() => {
+    setPage((currentPage) => Math.min(currentPage, totalPages - 1));
+  }, [totalPages]);
+
+  const paginatedFiltered = useMemo(() => {
+    const start = page * rowsPerPage;
+    return filtered.slice(start, start + rowsPerPage);
+  }, [filtered, page, rowsPerPage]);
+
+  const pageStart = filtered.length === 0 ? 0 : page * rowsPerPage + 1;
+  const pageEnd = Math.min((page + 1) * rowsPerPage, filtered.length);
+  const canGoPrevious = page > 0;
+  const canGoNext = page < totalPages - 1;
+
+  const handlePreviousPage = () => {
+    setPage((currentPage) => Math.max(0, currentPage - 1));
   };
 
-  const filtered = attendances.filter((a) => {
-    const dateMatch = !filterDate || a.date === filterDate;
-    const statusMatch =
-      filterStatus === "all" ||
-      a.status.toLowerCase().replace(" ", "") === filterStatus;
-    return dateMatch && statusMatch;
-  });
-
-  const summary = {
-    present: filtered.filter(
-      (a) => a.status === "Present" || a.status === "Late",
-    ).length,
-    late: filtered.filter((a) => a.status === "Late").length,
-    absent: filtered.filter((a) => a.status === "Absent")
-      .length,
-    onLeave: filtered.filter((a) => a.status === "On Leave")
-      .length,
+  const handleNextPage = () => {
+    setPage((currentPage) => Math.min(totalPages - 1, currentPage + 1));
   };
+
+  const importPreviewRows = useMemo(
+    () => importPreview.slice(0, PREVIEW_ROW_LIMIT),
+    [importPreview],
+  );
+
+  const summary = useMemo(() => {
+    const totals = {
+      present: 0,
+      late: 0,
+      absent: 0,
+      onLeave: 0,
+    };
+
+    for (const record of filtered) {
+      if (record.status === "Present" || record.status === "Late") {
+        totals.present++;
+      }
+
+      if (record.status === "Late") totals.late++;
+      if (record.status === "Absent") totals.absent++;
+      if (record.status === "On Leave") totals.onLeave++;
+    }
+
+    return totals;
+  }, [filtered]);
 
   const [editDialog, setEditDialog] = useState(false);
-  const [editRecord, setEditRecord] =
-    useState<Attendance | null>(null);
+  const [editRecord, setEditRecord] = useState<Attendance | null>(null);
   const [editForm, setEditForm] = useState({
     timeIn: "",
     timeOut: "",
@@ -308,37 +1194,35 @@ export default function AttendanceMonitoring() {
     late: "0",
     undertime: "0",
     overtime: "0",
-    status: "Present" as const,
+    status: "Present" as Attendance["status"],
   });
 
   const handleEditSave = async () => {
     if (!editRecord) return;
     setSaving(true);
     try {
-      const res = await fetch(
-        `${API}/attendance/${editRecord.id}`,
-        {
-          method: "PUT",
-          headers: HEADERS,
-          body: JSON.stringify({
-            ...editForm,
-            correctedBy: user?.name ?? "HR Admin",
-          }),
-        },
-      );
+      const res = await fetch(`${API}/attendance/${editRecord.id}`, {
+        method: "PUT",
+        headers: HEADERS,
+        body: JSON.stringify({
+          ...editForm,
+          correctedBy: user?.name ?? "HR Admin",
+        }),
+      });
       const data = await res.json();
-      if (!res.ok)
-        throw new Error(data.error ?? "Server error");
+      if (!res.ok) throw new Error(data.error ?? "Server error");
+      const correctedRecord: Attendance = {
+        ...data.record,
+        date: normalizeDateForFilter(data.record.date),
+        status: getStatusValue(data.record.status),
+      };
       setAttendances((prev) =>
-        prev.map((a) =>
-          a.id === editRecord.id ? data.record : a,
-        ),
+        prev.map((a) => (a.id === editRecord.id ? correctedRecord : a)),
       );
       setEditDialog(false);
       setSnackbar({
         open: true,
-        message:
-          "✅ Attendance record corrected and reprocessed!",
+        message: "✅ Attendance record corrected and reprocessed!",
         severity: "success",
       });
     } catch (e: any) {
@@ -368,9 +1252,7 @@ export default function AttendanceMonitoring() {
 
   const handleDelete = async (id: string) => {
     if (
-      !window.confirm(
-        `Delete attendance record ${id}? This cannot be undone.`,
-      )
+      !window.confirm(`Delete attendance record ${id}? This cannot be undone.`)
     )
       return;
     try {
@@ -379,8 +1261,7 @@ export default function AttendanceMonitoring() {
         headers: HEADERS,
       });
       const data = await res.json();
-      if (!res.ok)
-        throw new Error(data.error ?? "Server error");
+      if (!res.ok) throw new Error(data.error ?? "Server error");
       setAttendances((prev) => prev.filter((a) => a.id !== id));
       setSnackbar({
         open: true,
@@ -393,6 +1274,87 @@ export default function AttendanceMonitoring() {
         message: `Failed: ${e.message}`,
         severity: "error",
       });
+    }
+  };
+
+  const handleDeleteAll = async () => {
+    if (deleteAllConfirm.trim().toLowerCase() !== "delete" || deletingAll)
+      return;
+
+    const recordsToDelete = [...attendances];
+    const totalRecords = recordsToDelete.length;
+    const deletedIds = new Set<string>();
+    let failedCount = 0;
+    let completedCount = 0;
+
+    setDeletingAll(true);
+    setDeleteProgress({ current: 0, total: totalRecords, failed: 0 });
+
+    try {
+      for (
+        let start = 0;
+        start < recordsToDelete.length;
+        start += DELETE_CONCURRENCY
+      ) {
+        const batch = recordsToDelete.slice(start, start + DELETE_CONCURRENCY);
+
+        const results = await Promise.all(
+          batch.map(async (record) => {
+            try {
+              const res = await fetch(`${API}/attendance/${record.id}`, {
+                method: "DELETE",
+                headers: HEADERS,
+              });
+
+              return {
+                id: record.id,
+                ok: res.ok,
+              };
+            } catch {
+              return {
+                id: record.id,
+                ok: false,
+              };
+            }
+          }),
+        );
+
+        for (const result of results) {
+          if (result.ok) {
+            deletedIds.add(result.id);
+          } else {
+            failedCount++;
+          }
+        }
+
+        completedCount += batch.length;
+        setDeleteProgress({
+          current: completedCount,
+          total: totalRecords,
+          failed: failedCount,
+        });
+
+        await waitForBrowserPaint();
+      }
+
+      if (deletedIds.size > 0) {
+        setAttendances((prev) =>
+          prev.filter((record) => !deletedIds.has(record.id)),
+        );
+      }
+
+      setDeleteAllDialog(false);
+      setDeleteAllConfirm("");
+      setSnackbar({
+        open: true,
+        message: `🗑️ Deleted ${deletedIds.size}/${totalRecords} attendance record(s)${
+          failedCount > 0 ? `; ${failedCount} failed` : ""
+        }.`,
+        severity: failedCount > 0 ? "error" : "success",
+      });
+    } finally {
+      setDeletingAll(false);
+      setDeleteProgress({ current: 0, total: 0, failed: 0 });
     }
   };
 
@@ -424,17 +1386,24 @@ export default function AttendanceMonitoring() {
             Attendance Monitoring
           </Typography>
           <Typography variant="body2" color="text.secondary">
-            Track biometric and manual attendance — validated
-            against finalized schedules
+            Track biometric and manual attendance — validated against finalized
+            schedules
           </Typography>
         </Box>
-        <Box sx={{ display: "flex", gap: 1, flexWrap: "wrap" }}>
+        <Box
+          sx={{
+            display: "flex",
+            gap: 1,
+            flexWrap: "wrap",
+            width: { xs: "100%", sm: "auto" },
+            "& .MuiButton-root": {
+              width: { xs: "100%", sm: "auto" },
+            },
+          }}
+        >
           <Tooltip title="Refresh">
             <span>
-              <IconButton
-                onClick={fetchAttendance}
-                disabled={loading}
-              >
+              <IconButton onClick={fetchAttendance} disabled={loading}>
                 <Sync />
               </IconButton>
             </span>
@@ -453,6 +1422,17 @@ export default function AttendanceMonitoring() {
           >
             Import Biometric Data
           </Button>
+          {user?.role === "hr" && (
+            <Button
+              variant="outlined"
+              color="error"
+              startIcon={<DeleteSweep />}
+              onClick={() => setDeleteAllDialog(true)}
+              disabled={attendances.length === 0 || deletingAll}
+            >
+              Delete All Data
+            </Button>
+          )}
         </Box>
       </Box>
 
@@ -471,14 +1451,17 @@ export default function AttendanceMonitoring() {
       )}
 
       <Paper sx={{ p: 2, mb: 2 }}>
-        <Grid container spacing={2}>
+        <Grid container spacing={2} alignItems="center">
           <Grid size={{ xs: 12, md: 3 }}>
             <TextField
               fullWidth
               label="Filter by Date"
               type="date"
               value={filterDate}
-              onChange={(e) => setFilterDate(e.target.value)}
+              onChange={(e) => {
+                setFilterDate(e.target.value);
+                setPage(0);
+              }}
               InputLabelProps={{ shrink: true }}
             />
           </Grid>
@@ -488,7 +1471,10 @@ export default function AttendanceMonitoring() {
               select
               label="Status"
               value={filterStatus}
-              onChange={(e) => setFilterStatus(e.target.value)}
+              onChange={(e) => {
+                setFilterStatus(e.target.value);
+                setPage(0);
+              }}
               InputLabelProps={{ shrink: true }}
             >
               <MenuItem key="all" value="all">
@@ -516,6 +1502,7 @@ export default function AttendanceMonitoring() {
               onClick={() => {
                 setFilterDate("");
                 setFilterStatus("all");
+                setPage(0);
               }}
             >
               Clear Filters
@@ -524,26 +1511,110 @@ export default function AttendanceMonitoring() {
         </Grid>
       </Paper>
 
-      <TableContainer
-        component={Paper}
-        sx={{ overflowX: "auto" }}
-      >
-        {loading ? (
-          <Box
-            sx={{
-              display: "flex",
-              justifyContent: "center",
-              py: 6,
-              gap: 2,
-            }}
-          >
-            <CircularProgress size={28} />
-            <Typography color="text.secondary">
-              Loading…
-            </Typography>
-          </Box>
-        ) : (
-          <Table sx={{ minWidth: 800 }}>
+      {loading ? (
+        <Paper
+          sx={{
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "center",
+            py: 6,
+            gap: 2,
+          }}
+        >
+          <CircularProgress size={28} />
+          <Typography color="text.secondary">Loading…</Typography>
+        </Paper>
+      ) : isSmallScreen ? (
+        <Stack spacing={1.25}>
+          {filtered.length === 0 ? (
+            <Paper sx={{ p: 3, textAlign: "center", color: "text.secondary" }}>
+              {attendances.length === 0
+                ? "No attendance records yet. Use Manual Entry or Import Biometric Data."
+                : "No results match your filters."}
+            </Paper>
+          ) : (
+            paginatedFiltered.map((att) => (
+              <Paper key={att.id} sx={{ p: 2 }}>
+                <Stack spacing={1.5}>
+                  <Box
+                    sx={{
+                      display: "flex",
+                      justifyContent: "space-between",
+                      alignItems: "flex-start",
+                      gap: 1,
+                    }}
+                  >
+                    <Box sx={{ minWidth: 0 }}>
+                      <Typography fontWeight={700} noWrap>
+                        {att.employee}
+                      </Typography>
+                      <Typography variant="caption" color="text.secondary">
+                        {normalizeDateForFilter(att.date)}
+                      </Typography>
+                    </Box>
+                    <Chip
+                      label={att.status}
+                      size="small"
+                      color={
+                        att.status === "Present"
+                          ? "success"
+                          : att.status === "Late"
+                            ? "warning"
+                            : att.status === "On Leave"
+                              ? "info"
+                              : "error"
+                      }
+                    />
+                  </Box>
+
+                  <Grid container spacing={1.5}>
+                    {[
+                      ["Time In", att.timeIn || "—"],
+                      ["Time Out", att.timeOut || "—"],
+                      ["Total Hours", att.totalHours || "—"],
+                      ["Late", `${att.late || 0} min`],
+                      ["Undertime", `${att.undertime || 0} min`],
+                      ["Overtime", `${att.overtime || 0} min`],
+                    ].map(([label, value]) => (
+                      <Grid key={label} size={{ xs: 6 }}>
+                        <Typography variant="caption" color="text.secondary">
+                          {label}
+                        </Typography>
+                        <Typography variant="body2" fontWeight={600}>
+                          {value}
+                        </Typography>
+                      </Grid>
+                    ))}
+                  </Grid>
+
+                  {user?.role === "hr" && (
+                    <Box sx={{ display: "flex", gap: 1, flexWrap: "wrap" }}>
+                      <Chip
+                        label="Correct"
+                        size="small"
+                        clickable
+                        variant="outlined"
+                        color="warning"
+                        onClick={() => openEdit(att)}
+                      />
+                      <Chip
+                        label="Delete"
+                        size="small"
+                        clickable
+                        variant="outlined"
+                        color="error"
+                        onClick={() => handleDelete(att.id)}
+                      />
+                    </Box>
+                  )}
+                </Stack>
+              </Paper>
+            ))
+          )}
+        </Stack>
+      ) : (
+        <TableContainer component={Paper} sx={{ overflowX: "auto" }}>
+          <Table sx={{ minWidth: 900 }}>
             <TableHead>
               <TableRow>
                 <TableCell>ID</TableCell>
@@ -556,16 +1627,14 @@ export default function AttendanceMonitoring() {
                 <TableCell>Undertime (min)</TableCell>
                 <TableCell>Overtime (min)</TableCell>
                 <TableCell>Status</TableCell>
-                {user?.role === "hr" && (
-                  <TableCell>Actions</TableCell>
-                )}
+                {user?.role === "hr" && <TableCell>Actions</TableCell>}
               </TableRow>
             </TableHead>
             <TableBody>
               {filtered.length === 0 ? (
                 <TableRow>
                   <TableCell
-                    colSpan={10}
+                    colSpan={user?.role === "hr" ? 11 : 10}
                     align="center"
                     sx={{ py: 5, color: "text.secondary" }}
                   >
@@ -575,26 +1644,20 @@ export default function AttendanceMonitoring() {
                   </TableCell>
                 </TableRow>
               ) : (
-                filtered.map((att) => (
+                paginatedFiltered.map((att) => (
                   <TableRow key={att.id} hover>
                     <TableCell>
-                      <Chip
-                        label={att.id}
-                        size="small"
-                        variant="outlined"
-                      />
+                      <Chip label={att.id} size="small" variant="outlined" />
                     </TableCell>
                     <TableCell>{att.employee}</TableCell>
-                    <TableCell>{att.date}</TableCell>
+                    <TableCell>{normalizeDateForFilter(att.date)}</TableCell>
                     <TableCell>{att.timeIn}</TableCell>
                     <TableCell>{att.timeOut}</TableCell>
                     <TableCell>{att.totalHours}</TableCell>
                     <TableCell
                       sx={{
                         color:
-                          Number(att.late) > 0
-                            ? "warning.main"
-                            : "inherit",
+                          Number(att.late) > 0 ? "warning.main" : "inherit",
                       }}
                     >
                       {att.late}
@@ -612,9 +1675,7 @@ export default function AttendanceMonitoring() {
                     <TableCell
                       sx={{
                         color:
-                          Number(att.overtime) > 0
-                            ? "success.main"
-                            : "inherit",
+                          Number(att.overtime) > 0 ? "success.main" : "inherit",
                       }}
                     >
                       {att.overtime}
@@ -636,7 +1697,14 @@ export default function AttendanceMonitoring() {
                     </TableCell>
                     {user?.role === "hr" && (
                       <TableCell>
-                        <Box sx={{ display: "flex", flexDirection: 'column', gap: 0.5, alignItems: 'flex-start' }}>
+                        <Box
+                          sx={{
+                            display: "flex",
+                            flexDirection: "column",
+                            gap: 0.5,
+                            alignItems: "flex-start",
+                          }}
+                        >
                           <Chip
                             label="Correct"
                             size="small"
@@ -663,31 +1731,116 @@ export default function AttendanceMonitoring() {
               )}
             </TableBody>
           </Table>
-        )}
-      </TableContainer>
+        </TableContainer>
+      )}
+
+      {!loading && filtered.length > 0 && (
+        <Paper
+          variant="outlined"
+          sx={{
+            mt: 1.5,
+            p: { xs: 1.25, sm: 1.5 },
+            display: "flex",
+            flexDirection: { xs: "column", sm: "row" },
+            alignItems: { xs: "stretch", sm: "center" },
+            justifyContent: "space-between",
+            gap: 1.5,
+          }}
+        >
+          <Box
+            sx={{
+              display: "flex",
+              alignItems: "center",
+              gap: 1,
+              flexWrap: "wrap",
+            }}
+          >
+            <Typography variant="body2" color="text.secondary">
+              Rows per page:
+            </Typography>
+            <TextField
+              select
+              size="small"
+              value={rowsPerPage}
+              onChange={(event) => {
+                setRowsPerPage(Number(event.target.value));
+                setPage(0);
+              }}
+              sx={{ width: 96 }}
+            >
+              {[25, 50, 100, 250].map((value) => (
+                <MenuItem key={value} value={value}>
+                  {value}
+                </MenuItem>
+              ))}
+            </TextField>
+          </Box>
+
+          <Box
+            sx={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: { xs: "space-between", sm: "flex-end" },
+              gap: 1,
+            }}
+          >
+            <Typography
+              variant="body2"
+              color="text.secondary"
+              sx={{ minWidth: 135 }}
+            >
+              {pageStart}-{pageEnd} of {filtered.length}
+            </Typography>
+            <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
+              <Tooltip title="Previous page">
+                <span>
+                  <IconButton
+                    type="button"
+                    size="small"
+                    onClick={handlePreviousPage}
+                    disabled={!canGoPrevious}
+                  >
+                    <ArrowBackIosNew fontSize="small" />
+                  </IconButton>
+                </span>
+              </Tooltip>
+              <Typography
+                variant="body2"
+                sx={{ px: 1, minWidth: 84, textAlign: "center" }}
+              >
+                Page {page + 1} / {totalPages}
+              </Typography>
+              <Tooltip title="Next page">
+                <span>
+                  <IconButton
+                    type="button"
+                    size="small"
+                    onClick={handleNextPage}
+                    disabled={!canGoNext}
+                  >
+                    <ArrowForwardIos fontSize="small" />
+                  </IconButton>
+                </span>
+              </Tooltip>
+            </Box>
+          </Box>
+        </Paper>
+      )}
 
       {!loading && (
         <Paper sx={{ p: 2, mt: 2 }}>
           <Typography variant="h6" gutterBottom>
-            Summary{" "}
-            {filterDate ? `for ${filterDate}` : "(All Records)"}
+            Summary {filterDate ? `for ${filterDate}` : "(All Records)"}
           </Typography>
           <Grid container spacing={2}>
             {[
-              [
-                "Present (incl. Late)",
-                summary.present,
-                "success",
-              ],
+              ["Present (incl. Late)", summary.present, "success"],
               ["Late", summary.late, "warning"],
               ["Absent", summary.absent, "error"],
               ["On Leave", summary.onLeave, "info"],
             ].map(([label, val]) => (
               <Grid key={String(label)} size={{ xs: 6, md: 3 }}>
-                <Typography
-                  variant="body2"
-                  color="text.secondary"
-                >
+                <Typography variant="body2" color="text.secondary">
                   {label}
                 </Typography>
                 <Typography variant="h6">{val}</Typography>
@@ -704,9 +1857,7 @@ export default function AttendanceMonitoring() {
         maxWidth="sm"
         fullWidth
       >
-        <DialogTitle fontWeight={700}>
-          Manual Attendance Entry
-        </DialogTitle>
+        <DialogTitle fontWeight={700}>Manual Attendance Entry</DialogTitle>
         <DialogContent
           sx={{
             display: "flex",
@@ -720,9 +1871,7 @@ export default function AttendanceMonitoring() {
             fullWidth
             required
             value={form.employee}
-            onChange={(e) =>
-              setForm({ ...form, employee: e.target.value })
-            }
+            onChange={(e) => setForm({ ...form, employee: e.target.value })}
           />
           <TextField
             label="Date"
@@ -730,9 +1879,7 @@ export default function AttendanceMonitoring() {
             fullWidth
             required
             value={form.date}
-            onChange={(e) =>
-              setForm({ ...form, date: e.target.value })
-            }
+            onChange={(e) => setForm({ ...form, date: e.target.value })}
             InputLabelProps={{ shrink: true }}
           />
           <Grid container spacing={2}>
@@ -741,9 +1888,7 @@ export default function AttendanceMonitoring() {
                 label="Time In"
                 fullWidth
                 value={form.timeIn}
-                onChange={(e) =>
-                  handleTimeChange("timeIn", e.target.value)
-                }
+                onChange={(e) => handleTimeChange("timeIn", e.target.value)}
                 placeholder="e.g. 8:00 AM"
                 helperText="Auto-computes metrics"
               />
@@ -753,9 +1898,7 @@ export default function AttendanceMonitoring() {
                 label="Time Out"
                 fullWidth
                 value={form.timeOut}
-                onChange={(e) =>
-                  handleTimeChange("timeOut", e.target.value)
-                }
+                onChange={(e) => handleTimeChange("timeOut", e.target.value)}
                 placeholder="e.g. 5:00 PM"
               />
             </Grid>
@@ -764,9 +1907,7 @@ export default function AttendanceMonitoring() {
             label="Total Hours"
             fullWidth
             value={form.totalHours}
-            onChange={(e) =>
-              setForm({ ...form, totalHours: e.target.value })
-            }
+            onChange={(e) => setForm({ ...form, totalHours: e.target.value })}
             placeholder="Auto-computed"
           />
           <Grid container spacing={2}>
@@ -775,9 +1916,7 @@ export default function AttendanceMonitoring() {
                 label="Late (min)"
                 fullWidth
                 value={form.late}
-                onChange={(e) =>
-                  setForm({ ...form, late: e.target.value })
-                }
+                onChange={(e) => setForm({ ...form, late: e.target.value })}
               />
             </Grid>
             <Grid size={4}>
@@ -798,9 +1937,7 @@ export default function AttendanceMonitoring() {
                 label="Overtime (min)"
                 fullWidth
                 value={form.overtime}
-                onChange={(e) =>
-                  setForm({ ...form, overtime: e.target.value })
-                }
+                onChange={(e) => setForm({ ...form, overtime: e.target.value })}
               />
             </Grid>
           </Grid>
@@ -820,19 +1957,15 @@ export default function AttendanceMonitoring() {
             <MenuItem key="status-empty" value="">
               Select Status…
             </MenuItem>
-            {["Present", "Late", "Absent", "On Leave"].map(
-              (s) => (
-                <MenuItem key={s} value={s}>
-                  {s}
-                </MenuItem>
-              ),
-            )}
+            {["Present", "Late", "Absent", "On Leave"].map((s) => (
+              <MenuItem key={s} value={s}>
+                {s}
+              </MenuItem>
+            ))}
           </TextField>
         </DialogContent>
         <DialogActions sx={{ px: 3, pb: 2 }}>
-          <Button onClick={() => setDialogOpen(false)}>
-            Cancel
-          </Button>
+          <Button onClick={() => setDialogOpen(false)}>Cancel</Button>
           <Button
             variant="contained"
             onClick={handleSave}
@@ -852,28 +1985,29 @@ export default function AttendanceMonitoring() {
       <Dialog
         open={importDialog}
         onClose={() => {
+          if (importing || parsingImport) return;
           setImportDialog(false);
           setImportPreview([]);
           setImportText("");
+          setImportFormat("");
         }}
         maxWidth="md"
         fullWidth
       >
-        <DialogTitle fontWeight={700}>
-          Import Biometric Data
-        </DialogTitle>
+        <DialogTitle fontWeight={700}>Import Biometric Data</DialogTitle>
         <DialogContent>
           <Alert severity="info" sx={{ mb: 2 }}>
-            <strong>CSV Format:</strong> Each row should be:{" "}
-            <code>
-              Employee Name, Date (YYYY-MM-DD), Time In (e.g.
-              8:00 AM), Time Out (e.g. 5:00 PM)
-            </code>
+            <strong>Import order:</strong>
             <br />
-            Example:{" "}
-            <code>
-              Maria Santos, 2026-05-09, 8:05 AM, 5:00 PM
-            </code>
+            <strong>1)</strong> Upload <code>Employee Attendance Record</code>{" "}
+            first to create the raw daily time-in/time-out rows.
+            <br />
+            <strong>2)</strong> Upload <code>Abnormal Report</code> second to
+            add absences, missing punches, late, and early-out exceptions.
+            <br />
+            <strong>3)</strong> Upload <code>Attendance Report</code> third for
+            time-card verification and missing daily rows. Duplicate
+            employee/date records are skipped automatically.
           </Alert>
           <Box
             sx={{
@@ -885,45 +2019,58 @@ export default function AttendanceMonitoring() {
           >
             <Button
               variant="outlined"
-              startIcon={<UploadFile />}
+              startIcon={
+                parsingImport ? (
+                  <CircularProgress size={16} color="inherit" />
+                ) : (
+                  <UploadFile />
+                )
+              }
               component="label"
+              disabled={parsingImport || importing}
             >
-              Upload CSV File
+              {parsingImport ? "Reading File…" : "Upload Report File"}
               <input
                 ref={fileRef}
                 type="file"
                 hidden
-                accept=".csv,.txt"
+                accept=".xls,.xlsx,.csv,.txt"
                 onChange={handleFileUpload}
               />
             </Button>
             <Button
               variant="outlined"
               onClick={handleParseTextInput}
-              disabled={!importText.trim()}
+              disabled={!importText.trim() || parsingImport || importing}
             >
-              Parse Pasted Data
+              {parsingImport ? "Parsing…" : "Parse Pasted Data"}
             </Button>
           </Box>
           <TextField
             fullWidth
             multiline
             rows={6}
-            label="Paste biometric data here (CSV format)"
+            label="Paste biometric data here (optional CSV/text import)"
             value={importText}
             onChange={(e) => setImportText(e.target.value)}
-            placeholder="Maria Santos, 2026-05-09, 8:05 AM, 5:00 PM&#10;Juan Dela Cruz, 2026-05-09, 7:58 AM, 5:30 PM"
+            placeholder="You may still paste a simple CSV here, but the Upload Report File button now supports the biometric Employee Attendance Record export directly."
+            disabled={importing}
           />
 
-          {importPreview.length > 0 && (
+          {parsingImport && (
             <Box sx={{ mt: 3 }}>
-              <Typography
-                variant="subtitle2"
-                gutterBottom
-                fontWeight={700}
-              >
-                Preview — {importPreview.length} record(s) to
-                import:
+              <Typography variant="body2" fontWeight={700} sx={{ mb: 1 }}>
+                Reading and preparing attendance records…
+              </Typography>
+              <LinearProgress />
+            </Box>
+          )}
+
+          {importPreview.length > 0 && !parsingImport && (
+            <Box sx={{ mt: 3 }}>
+              <Typography variant="subtitle2" gutterBottom fontWeight={700}>
+                Preview {importFormat ? `(${importFormat})` : ""} — showing{" "}
+                {importPreviewRows.length} of {importPreview.length} record(s):
               </Typography>
               <TableContainer
                 component={Paper}
@@ -943,7 +2090,7 @@ export default function AttendanceMonitoring() {
                     </TableRow>
                   </TableHead>
                   <TableBody>
-                    {importPreview.map((row, i) => (
+                    {importPreviewRows.map((row, i) => (
                       <TableRow key={i}>
                         <TableCell>{row.employee}</TableCell>
                         <TableCell>{row.date}</TableCell>
@@ -953,9 +2100,7 @@ export default function AttendanceMonitoring() {
                         <TableCell
                           sx={{
                             color:
-                              Number(row.late) > 0
-                                ? "warning.main"
-                                : "inherit",
+                              Number(row.late) > 0 ? "warning.main" : "inherit",
                           }}
                         >
                           {row.late} min
@@ -965,9 +2110,7 @@ export default function AttendanceMonitoring() {
                             label={row.status}
                             size="small"
                             color={
-                              row.status === "Present"
-                                ? "success"
-                                : "warning"
+                              row.status === "Present" ? "success" : "warning"
                             }
                           />
                         </TableCell>
@@ -976,15 +2119,50 @@ export default function AttendanceMonitoring() {
                   </TableBody>
                 </Table>
               </TableContainer>
+              {importPreview.length > importPreviewRows.length && (
+                <Typography
+                  variant="caption"
+                  color="text.secondary"
+                  sx={{ display: "block", mt: 1 }}
+                >
+                  Only the first 50 rows are displayed to keep the page smooth.
+                  All {importPreview.length} parsed records will still be
+                  imported.
+                </Typography>
+              )}
+            </Box>
+          )}
+
+          {importing && (
+            <Box sx={{ mt: 3 }}>
+              <Typography variant="body2" fontWeight={700} sx={{ mb: 1 }}>
+                Importing records: {importProgress.current}/
+                {importProgress.total}
+                {importProgress.failed > 0
+                  ? ` • Failed: ${importProgress.failed}`
+                  : ""}
+              </Typography>
+              <LinearProgress
+                variant="determinate"
+                value={
+                  importProgress.total > 0
+                    ? Math.round(
+                        (importProgress.current / importProgress.total) * 100,
+                      )
+                    : 0
+                }
+              />
             </Box>
           )}
         </DialogContent>
         <DialogActions sx={{ px: 3, pb: 2 }}>
           <Button
+            disabled={importing || parsingImport}
             onClick={() => {
               setImportDialog(false);
               setImportPreview([]);
               setImportText("");
+              setImportFormat("");
             }}
           >
             Cancel
@@ -1000,10 +2178,10 @@ export default function AttendanceMonitoring() {
               )
             }
             onClick={handleImport}
-            disabled={importing || importPreview.length === 0}
+            disabled={importing || parsingImport || importPreview.length === 0}
           >
             {importing
-              ? `Importing ${importPreview.length} records…`
+              ? `Importing ${importProgress.current}/${importProgress.total}…`
               : `Import ${importPreview.length} Record(s)`}
           </Button>
         </DialogActions>
@@ -1024,9 +2202,8 @@ export default function AttendanceMonitoring() {
               gap: 1,
             }}
           >
-            <EditNote color="warning" /> Correct & Reprocess
-            Attendance — {editRecord?.employee} (
-            {editRecord?.date})
+            <EditNote color="warning" /> Correct & Reprocess Attendance —{" "}
+            {editRecord?.employee} ({editRecord?.date})
           </Box>
         </DialogTitle>
         <DialogContent
@@ -1038,8 +2215,8 @@ export default function AttendanceMonitoring() {
           }}
         >
           <Alert severity="warning">
-            Editing this record will mark it as corrected by HR.
-            The original data will be overwritten.
+            Editing this record will mark it as corrected by HR. The original
+            data will be overwritten.
           </Alert>
           <Grid container spacing={2}>
             <Grid size={6}>
@@ -1137,19 +2314,15 @@ export default function AttendanceMonitoring() {
             <MenuItem key="edit-status-empty" value="">
               Select Status…
             </MenuItem>
-            {["Present", "Late", "Absent", "On Leave"].map(
-              (s) => (
-                <MenuItem key={s} value={s}>
-                  {s}
-                </MenuItem>
-              ),
-            )}
+            {["Present", "Late", "Absent", "On Leave"].map((s) => (
+              <MenuItem key={s} value={s}>
+                {s}
+              </MenuItem>
+            ))}
           </TextField>
         </DialogContent>
         <DialogActions sx={{ px: 3, pb: 2 }}>
-          <Button onClick={() => setEditDialog(false)}>
-            Cancel
-          </Button>
+          <Button onClick={() => setEditDialog(false)}>Cancel</Button>
           <Button
             variant="contained"
             color="warning"
@@ -1168,12 +2341,97 @@ export default function AttendanceMonitoring() {
         </DialogActions>
       </Dialog>
 
+      {/* Delete All Attendance Records Dialog */}
+      <Dialog
+        open={deleteAllDialog}
+        onClose={() => {
+          if (!deletingAll) {
+            setDeleteAllDialog(false);
+            setDeleteAllConfirm("");
+          }
+        }}
+        maxWidth="sm"
+        fullWidth
+      >
+        <DialogTitle fontWeight={700}>
+          <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+            <WarningAmber color="error" /> Delete All Attendance Data
+          </Box>
+        </DialogTitle>
+        <DialogContent sx={{ pt: "12px !important" }}>
+          <Alert severity="error" sx={{ mb: 2 }}>
+            This will delete all {attendances.length} attendance record(s)
+            currently saved in Attendance Monitoring. This action cannot be
+            undone.
+          </Alert>
+          <Typography variant="body2" sx={{ mb: 1 }}>
+            Type <strong>delete</strong> to confirm.
+          </Typography>
+          <TextField
+            fullWidth
+            value={deleteAllConfirm}
+            onChange={(e) => setDeleteAllConfirm(e.target.value)}
+            placeholder="delete"
+            disabled={deletingAll}
+          />
+          {deletingAll && (
+            <Box sx={{ mt: 3 }}>
+              <Typography variant="body2" fontWeight={700} sx={{ mb: 1 }}>
+                Deleting records: {deleteProgress.current}/
+                {deleteProgress.total}
+                {deleteProgress.failed > 0
+                  ? ` • Failed: ${deleteProgress.failed}`
+                  : ""}
+              </Typography>
+              <LinearProgress
+                variant="determinate"
+                value={
+                  deleteProgress.total > 0
+                    ? Math.round(
+                        (deleteProgress.current / deleteProgress.total) * 100,
+                      )
+                    : 0
+                }
+              />
+            </Box>
+          )}
+        </DialogContent>
+        <DialogActions sx={{ px: 3, pb: 2 }}>
+          <Button
+            onClick={() => {
+              setDeleteAllDialog(false);
+              setDeleteAllConfirm("");
+            }}
+            disabled={deletingAll}
+          >
+            Cancel
+          </Button>
+          <Button
+            variant="contained"
+            color="error"
+            startIcon={
+              deletingAll ? (
+                <CircularProgress size={16} color="inherit" />
+              ) : (
+                <DeleteSweep />
+              )
+            }
+            onClick={handleDeleteAll}
+            disabled={
+              deletingAll || deleteAllConfirm.trim().toLowerCase() !== "delete"
+            }
+          >
+            {deletingAll
+              ? `Deleting ${deleteProgress.current}/${deleteProgress.total}…`
+              : "Delete All Data"}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
       <Snackbar
         open={snackbar.open}
         autoHideDuration={5000}
-        onClose={() =>
-          setSnackbar((s) => ({ ...s, open: false }))
-        }
+        onClose={() => setSnackbar((s) => ({ ...s, open: false }))}
         anchorOrigin={{
           vertical: "bottom",
           horizontal: "center",
@@ -1181,9 +2439,7 @@ export default function AttendanceMonitoring() {
       >
         <Alert
           severity={snackbar.severity}
-          onClose={() =>
-            setSnackbar((s) => ({ ...s, open: false }))
-          }
+          onClose={() => setSnackbar((s) => ({ ...s, open: false }))}
         >
           {snackbar.message}
         </Alert>
