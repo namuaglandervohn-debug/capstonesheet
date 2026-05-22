@@ -165,6 +165,11 @@ export default function LandingPage() {
     fetchJobs();
   };
 
+  const handleApplyForPosition = (job: JobPosting) => {
+    const selectedPosition = encodeURIComponent(job.title.trim());
+    navigate(`/apply?position=${selectedPosition}`);
+  };
+
   return (
     <Box sx={{ minHeight: "100vh", background: "#f4faf5" }}>
       {/* NAVBAR */}
@@ -312,7 +317,6 @@ export default function LandingPage() {
                   onClick={() => navigate("/apply")}
                   fullWidth={isMobile}
                   sx={{
-                    borderRadius: "18px",
                     px: 4,
                     py: 1.4,
                     fontWeight: 900,
@@ -336,7 +340,6 @@ export default function LandingPage() {
                   onClick={() => navigate("/track")}
                   fullWidth={isMobile}
                   sx={{
-                    borderRadius: "18px",
                     px: 4,
                     py: 1.4,
                     fontWeight: 900,
@@ -405,7 +408,6 @@ export default function LandingPage() {
           sx={{
             mt: { xs: 2, md: -4 },
             p: { xs: 1.5, sm: 2 },
-            borderRadius: { xs: 3, sm: 5 },
             display: "flex",
             gap: 2,
             flexDirection: { xs: "column", md: "row" },
@@ -427,7 +429,6 @@ export default function LandingPage() {
             onClick={() => document.getElementById("jobs")?.scrollIntoView({ behavior: "smooth" })}
             fullWidth={isMobile}
             sx={{
-              borderRadius: "18px",
               px: 4,
               py: 1.6,
               fontWeight: 900,
@@ -500,7 +501,6 @@ export default function LandingPage() {
               sx={{
                 p: { xs: 3, md: 6 },
                 textAlign: "center",
-                borderRadius: 5,
                 border: "1px solid rgba(31,122,71,0.12)",
               }}
             >
@@ -515,7 +515,6 @@ export default function LandingPage() {
                   <Card
                     sx={{
                       height: "100%",
-                      borderRadius: 5,
                       boxShadow: "0 14px 36px rgba(15,23,42,0.08)",
                       border: "1px solid rgba(31,122,71,0.10)",
                     }}
@@ -585,7 +584,6 @@ export default function LandingPage() {
                             wordBreak: "break-word",
                           }}
                         >
-                          <AccessTime fontSize="small" />
                           <strong>Salary Range:</strong>{" "}
                           {job.salary_range
                             ? `₱ ${job.salary_range}`
@@ -613,9 +611,8 @@ export default function LandingPage() {
                       <Button
                         fullWidth
                         variant="contained"
-                        onClick={() => navigate("/apply")}
+                        onClick={() => handleApplyForPosition(job)}
                         sx={{
-                          borderRadius: 999,
                           fontWeight: 900,
                           background: "linear-gradient(135deg, #1F7A47 0%, #3FA46A 100%)",
                         }}

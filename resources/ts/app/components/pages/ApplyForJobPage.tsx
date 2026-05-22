@@ -1,5 +1,5 @@
-import { useState, type ChangeEvent, type FormEvent } from 'react';
-import { useNavigate } from 'react-router';
+import { useEffect, useState, type ChangeEvent, type FormEvent } from 'react';
+import { useNavigate, useSearchParams } from 'react-router';
 import {
   Box,
   Typography,
@@ -31,7 +31,6 @@ import {
 } from '@mui/icons-material';
 
 import AuthBackground from '../AuthBackground';
-import { POSITIONS } from '../../lib/constants';
 import { copyToClipboard } from '../../lib/copyToClipboard';
 import { saveApplicationFiles } from '../../lib/localDb';
 import { supabase } from '../../lib/supabaseClient';
@@ -191,8 +190,12 @@ const fallbackBarangays = ['Poblacion', 'Barangay 1', 'Barangay 2', 'Barangay 3'
 
 export default function ApplyForJobPage() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const requestedPosition = (searchParams.get('position') ?? '').trim();
 
   const [formData, setFormData] = useState<FormState>(EMPTY);
+  const [openPositions, setOpenPositions] = useState<string[]>([]);
+  const [positionsLoading, setPositionsLoading] = useState(true);
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
   const [resumeFiles, setResumeFiles] = useState<File[]>([]);
   const [supportingFiles, setSupportingFiles] = useState<File[]>([]);
@@ -209,23 +212,92 @@ export default function ApplyForJobPage() {
     '& .MuiInputLabel-root': { color: '#7b7b7b', fontWeight: 500 },
     '& .MuiInputLabel-root.Mui-focused': { color: '#2f9e5b' },
     '& .MuiOutlinedInput-root': {
-      borderRadius: '18px', backgroundColor: '#f9fcf9', transition: 'all 0.25s ease',
-      '& input': { padding: '16px 14px', fontSize: '0.95rem', fontWeight: 500 },
-      '& textarea': { padding: '16px 14px', fontSize: '0.95rem', fontWeight: 500 },
+      backgroundColor: '#f9fcf9',
+      transition: 'all 0.25s ease',
+      '& input': { padding: { xs: '14px 12px', sm: '16px 14px' }, fontSize: { xs: '0.9rem', sm: '0.95rem' }, fontWeight: 500 },
+      '& textarea': { padding: { xs: '14px 12px', sm: '16px 14px' }, fontSize: { xs: '0.9rem', sm: '0.95rem' }, fontWeight: 500 },
       '& fieldset': { borderColor: '#cfe5d5', borderWidth: '1.5px' },
       '&:hover fieldset': { borderColor: '#8dd5a2' },
       '&.Mui-focused fieldset': { borderColor: '#35a164', borderWidth: '2px', boxShadow: '0 0 0 5px rgba(53,161,100,0.10)' },
     },
+    '& .MuiFormHelperText-root': {
+      mx: { xs: 0.5, sm: 1.75 },
+      overflowWrap: 'anywhere',
+    },
   };
 
   const softButtonSx = {
-    borderRadius: '18px', textTransform: 'none', fontWeight: 800, minHeight: 52, px: 4,
-    transition: 'all 0.25s ease', boxShadow: '0 8px 20px rgba(31,122,71,0.14)',
+    textTransform: 'none',
+    fontWeight: 800,
+    minHeight: { xs: 46, sm: 52 },
+    px: { xs: 2.5, sm: 4 },
+    lineHeight: 1.25,
+    whiteSpace: 'normal',
+    overflowWrap: 'anywhere',
+    textAlign: 'center',
+    transition: 'all 0.25s ease',
+    boxShadow: '0 8px 20px rgba(31,122,71,0.14)',
     '&:hover': { transform: 'translateY(-2px)', boxShadow: '0 12px 26px rgba(31,122,71,0.20)' },
   };
 
-  const stepPaperSx = { p: { xs: 3, md: 4 }, mb: 3, borderRadius: 5, border: '1px solid rgba(22,101,52,0.08)', background: '#ffffff', minHeight: { xs: 'auto', md: 520 }, display: 'flex', flexDirection: 'column', justifyContent: 'flex-start', boxShadow: '0 10px 30px rgba(15,23,42,0.04)' };
-  const fieldGrid = { xs: 12, md: 4 };
+  const stepPaperSx = {
+    p: { xs: 2, sm: 2.5, md: 4 },
+    mb: { xs: 2, md: 3 },
+    borderRadius: { xs: 3, sm: 4, md: 5 },
+    border: '1px solid rgba(22,101,52,0.08)',
+    background: '#ffffff',
+    minHeight: { xs: 'auto', lg: 520 },
+    display: 'flex',
+    flexDirection: 'column',
+    justifyContent: 'flex-start',
+    boxShadow: '0 10px 30px rgba(15,23,42,0.04)',
+    width: '100%',
+    overflow: 'hidden',
+  };
+
+  const nestedPaperSx = {
+    p: { xs: 2, sm: 2.5 },
+    borderRadius: { xs: 3, sm: 4 },
+    border: '1px solid rgba(22,101,52,0.10)',
+    background: '#fbfefb',
+    overflow: 'hidden',
+  };
+
+  const fieldGrid = { xs: 12, sm: 6, lg: 4 };
+  const nameGrid = { xs: 12, sm: 6, lg: 3 };
+  const halfGrid = { xs: 12, md: 6 };
+  const addressGrid = { xs: 12, sm: 6, lg: 3 };
+  const fullOnMobileGrid = { xs: 12, md: 6, lg: 8 };
+  const responsiveHeroTitleSx = {
+    color: '#14532d',
+    lineHeight: 1.05,
+    fontSize: { xs: '1.85rem', sm: '2.35rem', md: '3rem' },
+    overflowWrap: 'anywhere',
+  };
+  const responsiveFormTitleSx = {
+    color: '#14532d',
+    mb: 1,
+    fontSize: { xs: '1.5rem', sm: '1.85rem', md: '2.125rem' },
+    overflowWrap: 'anywhere',
+  };
+  const compactChoiceSx = {
+    width: { xs: '100%', sm: '50%', lg: '32%' },
+    mr: 0,
+    alignItems: 'flex-start',
+    '& .MuiFormControlLabel-label': {
+      fontSize: { xs: '0.9rem', sm: '0.95rem' },
+      overflowWrap: 'anywhere',
+    },
+  };
+  const uploadButtonSx = {
+    ...softButtonSx,
+    borderColor: '#166534',
+    color: '#166534',
+    background: '#ffffff',
+    minHeight: { xs: 76, sm: 90 },
+    px: { xs: 2, sm: 3 },
+    '& .MuiButton-startIcon': { flexShrink: 0 },
+  };
 
   const clearFieldError = (key: FormKey | 'resumeFiles') => {
     setFieldErrors((prev) => {
@@ -235,6 +307,71 @@ export default function ApplyForJobPage() {
       return next;
     });
   };
+
+  useEffect(() => {
+    let isMounted = true;
+
+    const fetchOpenPositions = async () => {
+      setPositionsLoading(true);
+
+      const { data, error: positionsError } = await supabase
+        .from('job_postings')
+        .select('title, created_at')
+        .eq('is_active', true)
+        .order('created_at', { ascending: false });
+
+      if (!isMounted) return;
+
+      if (positionsError) {
+        console.error(positionsError);
+        setOpenPositions([]);
+        setError('Unable to load open positions. Please refresh the page or try again later.');
+      } else {
+        const titles = Array.from(
+          new Set(
+            (data ?? [])
+              .map((job) => String(job.title ?? '').trim())
+              .filter(Boolean)
+          )
+        );
+
+        setOpenPositions(titles);
+      }
+
+      setPositionsLoading(false);
+    };
+
+    fetchOpenPositions();
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    if (positionsLoading) return;
+
+    if (requestedPosition && openPositions.includes(requestedPosition)) {
+      setFormData((prev) =>
+        prev.position === requestedPosition ? prev : { ...prev, position: requestedPosition }
+      );
+      clearFieldError('position');
+      return;
+    }
+
+    if (requestedPosition && !openPositions.includes(requestedPosition)) {
+      setFormData((prev) => (prev.position ? { ...prev, position: '' } : prev));
+      setFieldErrors((prev) => ({
+        ...prev,
+        position: 'The selected position is no longer available. Please choose from the current open positions.',
+      }));
+      return;
+    }
+
+    setFormData((prev) =>
+      prev.position && !openPositions.includes(prev.position) ? { ...prev, position: '' } : prev
+    );
+  }, [positionsLoading, requestedPosition, openPositions]);
 
   const set = (key: FormKey) => (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     setFormData((prev) => ({ ...prev, [key]: e.target.value }));
@@ -502,31 +639,31 @@ export default function ApplyForJobPage() {
 
     return (
       <>
-        <Grid size={{ xs: 12, md: 3 }}>{renderCountrySelect(prefix)}</Grid>
-        <Grid size={{ xs: 12, md: 3 }}>
+        <Grid size={addressGrid}>{renderCountrySelect(prefix)}</Grid>
+        <Grid size={addressGrid}>
           <TextField fullWidth required={isCurrent} select label="Region" value={region} onChange={(e) => handleAddressRegionChange(prefix, e.target.value)} error={isCurrent && !!fieldErrors.currentRegion} helperText={isCurrent ? fieldErrors.currentRegion : ''} sx={textFieldSx} InputLabelProps={{ shrink: true }} disabled={country !== 'Philippines'}>
             {Object.keys(PH_PROVINCES_BY_REGION).map((item) => <MenuItem key={item} value={item}>{item}</MenuItem>)}
           </TextField>
         </Grid>
-        <Grid size={{ xs: 12, md: 3 }}>
+        <Grid size={addressGrid}>
           <TextField fullWidth required={isCurrent} select label="Province" value={province} onChange={(e) => handleAddressProvinceChange(prefix, e.target.value)} error={isCurrent && !!fieldErrors.currentProvince} helperText={isCurrent ? fieldErrors.currentProvince : ''} sx={textFieldSx} InputLabelProps={{ shrink: true }} disabled={country !== 'Philippines' || !region}>
             {provinceOptions.map((item) => <MenuItem key={item} value={item}>{item}</MenuItem>)}
           </TextField>
         </Grid>
-        <Grid size={{ xs: 12, md: 3 }}>
+        <Grid size={addressGrid}>
           <TextField fullWidth required={isCurrent} select label="City / Municipality" value={city} onChange={(e) => handleAddressCityChange(prefix, e.target.value)} error={isCurrent && !!fieldErrors.currentCity} helperText={isCurrent ? fieldErrors.currentCity : ''} sx={textFieldSx} InputLabelProps={{ shrink: true }} disabled={country !== 'Philippines' || !province}>
             {cityOptions.map((item) => <MenuItem key={item} value={item}>{item}</MenuItem>)}
           </TextField>
         </Grid>
-        <Grid size={{ xs: 12, md: 3 }}>
+        <Grid size={addressGrid}>
           <TextField fullWidth required={isCurrent} select label="Barangay" value={formData[`${prefix}Barangay` as FormKey] as string} onChange={(e) => handleAddressBarangayChange(prefix, e.target.value)} error={isCurrent && !!fieldErrors.currentBarangay} helperText={isCurrent ? fieldErrors.currentBarangay : ''} sx={textFieldSx} InputLabelProps={{ shrink: true }} disabled={country !== 'Philippines' || !city}>
             {barangayOptions.map((item) => <MenuItem key={item} value={item}>{item}</MenuItem>)}
           </TextField>
         </Grid>
-        <Grid size={{ xs: 12, md: 6 }}>
+        <Grid size={halfGrid}>
           <TextField fullWidth required={isCurrent} label="Street / House No. / Purok" value={formData[`${prefix}Street` as FormKey] as string} onChange={set(`${prefix}Street` as FormKey)} error={isCurrent && !!fieldErrors.currentStreet} helperText={isCurrent ? fieldErrors.currentStreet : ''} inputProps={{ maxLength: 120 }} sx={textFieldSx} />
         </Grid>
-        <Grid size={{ xs: 12, md: 3 }}>
+        <Grid size={addressGrid}>
           <TextField fullWidth label="ZIP Code" value={formData[`${prefix}ZipCode` as FormKey] as string} InputProps={{ readOnly: true }} helperText={city ? 'Auto-generated from selected city.' : 'Select city to auto-fill.'} sx={textFieldSx} />
         </Grid>
       </>
@@ -535,24 +672,159 @@ export default function ApplyForJobPage() {
 
   return (
     <AuthBackground>
-      <Box sx={{ background: 'linear-gradient(180deg, #f0fdf4 0%, #dcfce7 100%)', borderRadius: 4, py: { xs: 2, md: 5 }, px: { xs: 1.5, md: 3 } }}>
-        <Container maxWidth="xl">
-          <Stack direction={{ xs: 'column', md: 'row' }} justifyContent="space-between" alignItems={{ xs: 'flex-start', md: 'center' }} spacing={2} sx={{ mb: 3 }}>
-            <Box><Typography variant="h3" fontWeight={900} sx={{ color: '#14532d', lineHeight: 1 }}>Buenaventura Estate</Typography><Typography color="text.secondary" sx={{ mt: 1 }}>Human Resource Information System — Applicant Portal</Typography></Box>
-            <Button variant="contained" onClick={() => navigate('/')} sx={{ ...softButtonSx, px: 4, py: 1.2, background: '#166534', '&:hover': { background: '#14532d' } }}>Back to Careers</Button>
+      <Box sx={{ background: 'linear-gradient(180deg, #f0fdf4 0%, #dcfce7 100%)', borderRadius: { xs: 0, sm: 2 }, py: { xs: 1.5, sm: 2.5, md: 5 }, px: { xs: 1, sm: 1.5, md: 3 }, minHeight: '100dvh' }}>
+        <Container maxWidth="xl" disableGutters sx={{ px: { xs: 0, sm: 2, md: 3 } }}>
+          <Stack direction={{ xs: 'column', md: 'row' }} justifyContent="space-between" alignItems={{ xs: 'stretch', md: 'center' }} spacing={2} sx={{ mb: { xs: 2, md: 3 } }}>
+            <Box>
+              <Typography variant="h3" fontWeight={900} sx={responsiveHeroTitleSx}>Buenaventura Estate</Typography>
+              <Typography color="text.secondary" sx={{ mt: 1, fontSize: { xs: '0.9rem', sm: '1rem' }, overflowWrap: 'anywhere' }}>Human Resource Information System — Applicant Portal</Typography>
+            </Box>
+            <Button variant="contained" onClick={() => navigate('/')} sx={{ ...softButtonSx, px: { xs: 2.5, sm: 4 }, py: 1.2, width: { xs: '100%', md: 'auto' }, background: '#166534', '&:hover': { background: '#14532d' } }}>Back to Careers</Button>
           </Stack>
 
-          <Paper elevation={0} sx={{ borderRadius: 6, overflow: 'hidden', background: '#ffffff', boxShadow: '0 25px 70px rgba(0,0,0,0.14)' }}>
-            <Box sx={{ p: { xs: 2.5, md: 3.5 }, borderBottom: '1px solid rgba(22,101,52,0.08)' }}>
-              <Stack direction={{ xs: 'column', lg: 'row' }} spacing={3} justifyContent="space-between" alignItems={{ xs: 'flex-start', lg: 'center' }}>
-                <Box><Typography variant="h4" fontWeight={900} sx={{ color: '#14532d', mb: 1 }}>Job Application Form</Typography><Typography color="text.secondary">Complete your application details and upload your requirements.</Typography></Box>
-                <Stack direction="row" justifyContent="center" alignItems="flex-start" spacing={{ xs: 1.5, md: 2 }} sx={{ width: { xs: '100%', lg: 'auto' }, flexWrap: 'wrap' }}>
-                  {steps.map((step, index) => <Stack key={step} alignItems="center" spacing={1} onClick={() => handleStepClick(index)} sx={{ cursor: 'pointer', width: 86, flexShrink: 0 }}><Box sx={{ width: 44, height: 44, minWidth: 44, minHeight: 44, borderRadius: '50%', bgcolor: activeStep === index ? '#16a34a' : '#f0fdf4', color: activeStep === index ? '#fff' : '#166534', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 900, fontSize: '1rem', border: '1px solid #bbf7d0' }}>{index + 1}</Box><Typography variant="caption" sx={{ fontWeight: 700, color: '#475569', textAlign: 'center', lineHeight: 1.2 }}>{step}</Typography></Stack>)}
-                </Stack>
+          <Paper elevation={0} sx={{ borderRadius: { xs: 1.5, sm: 2, md: 3 }, overflow: 'hidden', background: '#ffffff', boxShadow: { xs: '0 12px 35px rgba(0,0,0,0.10)', md: '0 25px 70px rgba(0,0,0,0.14)' } }}>
+            <Box sx={{ p: { xs: 2, sm: 2.5, md: 3.5 }, borderBottom: '1px solid rgba(22,101,52,0.08)' }}>
+              <Stack direction={{ xs: 'column', lg: 'row' }} spacing={{ xs: 2, md: 3 }} justifyContent="space-between" alignItems={{ xs: 'stretch', lg: 'center' }}>
+                <Box>
+                  <Typography variant="h4" fontWeight={900} sx={responsiveFormTitleSx}>Job Application Form</Typography>
+                  <Typography color="text.secondary" sx={{ fontSize: { xs: '0.9rem', sm: '1rem' } }}>Complete your application details and upload your requirements.</Typography>
+                </Box>
+                <Box
+                  sx={{
+                    width: { xs: '100%', lg: 720 },
+                    maxWidth: '100%',
+                    pb: { xs: 0.5, sm: 1 },
+                    '@keyframes stepPulse': {
+                      '0%': { boxShadow: '0 0 0 0 rgba(22, 163, 74, 0.35)' },
+                      '70%': { boxShadow: '0 0 0 12px rgba(22, 163, 74, 0)' },
+                      '100%': { boxShadow: '0 0 0 0 rgba(22, 163, 74, 0)' },
+                    },
+                  }}
+                >
+                  <Box sx={{ position: 'relative', width: '100%', px: { xs: 0, sm: 1.5 }, pt: 1 }}>
+                    <Box
+                      sx={{
+                        position: 'absolute',
+                        top: { xs: 23, sm: 27, md: 30 },
+                        left: `${100 / (steps.length * 2)}%`,
+                        right: `${100 / (steps.length * 2)}%`,
+                        height: { xs: 3, sm: 4, md: 5 },
+                        borderRadius: 999,
+                        backgroundColor: '#dcfce7',
+                        zIndex: 0,
+                      }}
+                    />
+                    <Box
+                      sx={{
+                        position: 'absolute',
+                        top: { xs: 23, sm: 27, md: 30 },
+                        left: `${100 / (steps.length * 2)}%`,
+                        right: `${100 / (steps.length * 2)}%`,
+                        height: { xs: 3, sm: 4, md: 5 },
+                        borderRadius: 999,
+                        background: 'linear-gradient(90deg, #16a34a 0%, #22c55e 100%)',
+                        transform: `scaleX(${activeStep / (steps.length - 1)})`,
+                        transformOrigin: 'left center',
+                        transition: 'transform 500ms ease',
+                        zIndex: 1,
+                        boxShadow: activeStep > 0 ? '0 0 18px rgba(22, 163, 74, 0.35)' : 'none',
+                      }}
+                    />
+
+                    <Stack
+                      direction="row"
+                      justifyContent="space-between"
+                      alignItems="flex-start"
+                      sx={{ position: 'relative', zIndex: 2, width: '100%' }}
+                    >
+                      {steps.map((step, index) => {
+                        const isCompleted = index < activeStep;
+                        const isCurrent = index === activeStep;
+                        const isReached = index <= activeStep;
+
+                        return (
+                          <Stack
+                            key={step}
+                            alignItems="center"
+                            spacing={{ xs: 0.5, sm: 1 }}
+                            onClick={() => handleStepClick(index)}
+                            sx={{
+                              cursor: 'pointer',
+                              width: `${100 / steps.length}%`,
+                              minWidth: 0,
+                              px: { xs: 0.25, sm: 0.5 },
+                              transition: 'transform 250ms ease',
+                              '&:hover': { transform: { xs: 'none', sm: 'translateY(-3px)' } },
+                            }}
+                          >
+                            <Box
+                              sx={{
+                                width: { xs: 34, sm: 42, md: 46 },
+                                height: { xs: 34, sm: 42, md: 46 },
+                                minWidth: { xs: 34, sm: 42, md: 46 },
+                                minHeight: { xs: 34, sm: 42, md: 46 },
+                                borderRadius: '50%',
+                                background: isReached
+                                  ? 'linear-gradient(135deg, #16a34a 0%, #22c55e 100%)'
+                                  : '#f0fdf4',
+                                color: isReached ? '#fff' : '#166534',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                fontWeight: 900,
+                                fontSize: { xs: '0.8rem', sm: '0.95rem', md: '1rem' },
+                                border: isReached ? '2px solid #86efac' : '1.5px solid #bbf7d0',
+                                boxShadow: isCurrent
+                                  ? '0 10px 24px rgba(22, 163, 74, 0.30)'
+                                  : isCompleted
+                                    ? '0 8px 18px rgba(22, 163, 74, 0.18)'
+                                    : '0 4px 12px rgba(15, 23, 42, 0.06)',
+                                transform: isCurrent ? { xs: 'scale(1.04)', sm: 'scale(1.08)' } : 'scale(1)',
+                                transition: 'all 300ms ease',
+                                animation: isCurrent ? 'stepPulse 1.8s ease-in-out infinite' : 'none',
+                              }}
+                            >
+                              {index + 1}
+                            </Box>
+                            <Typography
+                              variant="caption"
+                              sx={{
+                                display: { xs: 'none', sm: 'block' },
+                                fontWeight: 800,
+                                color: isReached ? '#14532d' : '#475569',
+                                textAlign: 'center',
+                                lineHeight: 1.2,
+                                transition: 'color 250ms ease',
+                                fontSize: { sm: '0.68rem', md: '0.75rem' },
+                                maxWidth: 110,
+                                overflowWrap: 'anywhere',
+                              }}
+                            >
+                              {step}
+                            </Typography>
+                          </Stack>
+                        );
+                      })}
+                    </Stack>
+                    <Typography
+                      variant="body2"
+                      sx={{
+                        display: { xs: 'block', sm: 'none' },
+                        mt: 1.5,
+                        textAlign: 'center',
+                        fontWeight: 800,
+                        color: '#14532d',
+                        overflowWrap: 'anywhere',
+                      }}
+                    >
+                      Step {activeStep + 1} of {steps.length}: {steps[activeStep]}
+                    </Typography>
+                  </Box>
+                </Box>
               </Stack>
             </Box>
 
-            <Box component="form" onSubmit={handleSubmit} sx={{ p: { xs: 2.5, md: 4.5 } }}>
+            <Box component="form" onSubmit={handleSubmit} sx={{ p: { xs: 1.5, sm: 2.5, md: 4.5 } }}>
               {error && <Alert severity="error" sx={{ mb: 3 }}>{error}</Alert>}
 
               {activeStep === 0 && (
@@ -560,8 +832,45 @@ export default function ApplyForJobPage() {
                   <Typography variant="h6" fontWeight={900} sx={{ mb: 1, color: '#14532d' }}>I. Position Applied For</Typography>
                   <Typography color="text.secondary" sx={{ mb: 3 }}>Select the position you are applying for and how you found this job opening.</Typography>
                   <Grid container spacing={2.5}>
-                    <Grid size={{ xs: 12, md: 6 }}><TextField fullWidth required select label="Position Title" value={formData.position} onChange={set('position')} error={!!fieldErrors.position} helperText={fieldErrors.position} InputLabelProps={{ shrink: true }} sx={textFieldSx}>{POSITIONS.map((position) => <MenuItem key={position} value={position}>{position}</MenuItem>)}</TextField></Grid>
-                    <Grid size={{ xs: 12, md: 6 }}><TextField fullWidth required select label="How did you hear about this job opening?" value={formData.hearAbout} onChange={set('hearAbout')} error={!!fieldErrors.hearAbout} helperText={fieldErrors.hearAbout} InputLabelProps={{ shrink: true }} sx={textFieldSx}>{HEAR_ABOUT_OPTIONS.map((option) => <MenuItem key={option} value={option}>{option}</MenuItem>)}</TextField></Grid>
+                    <Grid size={halfGrid}>
+                      <TextField
+                        fullWidth
+                        required
+                        select
+                        label="Position Title"
+                        value={formData.position}
+                        onChange={set('position')}
+                        disabled={positionsLoading || openPositions.length === 0}
+                        error={!!fieldErrors.position}
+                        helperText={
+                          fieldErrors.position ||
+                          (positionsLoading
+                            ? 'Loading current open positions...'
+                            : openPositions.length === 0
+                              ? 'No open positions are currently available.'
+                              : 'Only active job postings from the Landing Page are shown here.')
+                        }
+                        InputLabelProps={{ shrink: true }}
+                        sx={textFieldSx}
+                      >
+                        {positionsLoading && (
+                          <MenuItem value="" disabled>
+                            Loading open positions...
+                          </MenuItem>
+                        )}
+                        {!positionsLoading && openPositions.length === 0 && (
+                          <MenuItem value="" disabled>
+                            No open positions available
+                          </MenuItem>
+                        )}
+                        {openPositions.map((position) => (
+                          <MenuItem key={position} value={position}>
+                            {position}
+                          </MenuItem>
+                        ))}
+                      </TextField>
+                    </Grid>
+                    <Grid size={halfGrid}><TextField fullWidth required select label="How did you hear about this job opening?" value={formData.hearAbout} onChange={set('hearAbout')} error={!!fieldErrors.hearAbout} helperText={fieldErrors.hearAbout} InputLabelProps={{ shrink: true }} sx={textFieldSx}>{HEAR_ABOUT_OPTIONS.map((option) => <MenuItem key={option} value={option}>{option}</MenuItem>)}</TextField></Grid>
                     {formData.hearAbout === 'Other' && <Grid size={{ xs: 12 }}><TextField fullWidth required label="Please specify" value={formData.hearAboutOther} onChange={set('hearAboutOther')} error={!!fieldErrors.hearAboutOther} helperText={fieldErrors.hearAboutOther} inputProps={{ maxLength: 120 }} sx={textFieldSx} /></Grid>}
                   </Grid>
                 </Paper>
@@ -572,10 +881,10 @@ export default function ApplyForJobPage() {
                   <Typography variant="h6" fontWeight={900} sx={{ mb: 1, color: '#14532d' }}>II. Personal Details</Typography>
                   <Typography color="text.secondary" sx={{ mb: 3 }}>Enter your personal details and complete address information accurately.</Typography>
                   <Grid container spacing={2.5}>
-                    <Grid size={{ xs: 12, md: 3 }}><TextField fullWidth required label="First Name" value={formData.firstName} onChange={setUpperText('firstName')} error={!!fieldErrors.firstName} helperText={fieldErrors.firstName} inputProps={{ maxLength: 50 }} sx={textFieldSx} /></Grid>
-                    <Grid size={{ xs: 12, md: 3 }}><TextField fullWidth label="Middle Name" value={formData.middleName} onChange={setUpperText('middleName')} inputProps={{ maxLength: 50 }} sx={textFieldSx} /></Grid>
-                    <Grid size={{ xs: 12, md: 3 }}><TextField fullWidth required label="Last Name" value={formData.lastName} onChange={setUpperText('lastName')} error={!!fieldErrors.lastName} helperText={fieldErrors.lastName} inputProps={{ maxLength: 50 }} sx={textFieldSx} /></Grid>
-                    <Grid size={{ xs: 12, md: 3 }}><TextField fullWidth select label="Suffix" value={formData.suffix} onChange={set('suffix')} InputLabelProps={{ shrink: true }} sx={textFieldSx}>{SUFFIXES.map((suffix) => <MenuItem key={suffix || 'none'} value={suffix}>{suffix || 'None'}</MenuItem>)}</TextField></Grid>
+                    <Grid size={nameGrid}><TextField fullWidth required label="First Name" value={formData.firstName} onChange={setUpperText('firstName')} error={!!fieldErrors.firstName} helperText={fieldErrors.firstName} inputProps={{ maxLength: 50 }} sx={textFieldSx} /></Grid>
+                    <Grid size={nameGrid}><TextField fullWidth label="Middle Name" value={formData.middleName} onChange={setUpperText('middleName')} inputProps={{ maxLength: 50 }} sx={textFieldSx} /></Grid>
+                    <Grid size={nameGrid}><TextField fullWidth required label="Last Name" value={formData.lastName} onChange={setUpperText('lastName')} error={!!fieldErrors.lastName} helperText={fieldErrors.lastName} inputProps={{ maxLength: 50 }} sx={textFieldSx} /></Grid>
+                    <Grid size={nameGrid}><TextField fullWidth select label="Suffix" value={formData.suffix} onChange={set('suffix')} InputLabelProps={{ shrink: true }} sx={textFieldSx}>{SUFFIXES.map((suffix) => <MenuItem key={suffix || 'none'} value={suffix}>{suffix || 'None'}</MenuItem>)}</TextField></Grid>
                     <Grid size={fieldGrid}><TextField fullWidth required type="date" label="Date of Birth" value={formData.birthdate} onChange={setBirthdate} error={!!fieldErrors.birthdate} helperText={fieldErrors.birthdate} InputLabelProps={{ shrink: true }} sx={textFieldSx} /></Grid>
                     <Grid size={fieldGrid}><TextField fullWidth required label="Age" value={formData.age} onChange={setNumeric('age', 3)} error={!!fieldErrors.age} helperText={fieldErrors.age || 'Auto-computed from birthdate but editable.'} inputProps={{ inputMode: 'numeric', pattern: '[0-9]*', maxLength: 3 }} sx={textFieldSx} /></Grid>
                     <Grid size={fieldGrid}><TextField fullWidth required select label="Gender" value={formData.gender} onChange={set('gender')} error={!!fieldErrors.gender} helperText={fieldErrors.gender} InputLabelProps={{ shrink: true }} sx={textFieldSx}>{GENDER.map((gender) => <MenuItem key={gender} value={gender}>{gender}</MenuItem>)}</TextField></Grid>
@@ -585,7 +894,7 @@ export default function ApplyForJobPage() {
                     <Grid size={fieldGrid}><TextField fullWidth required type="email" label="Email Address" value={formData.email} onChange={setEmail} error={!!fieldErrors.email} helperText={fieldErrors.email} inputProps={{ maxLength: 80 }} sx={textFieldSx} /></Grid>
                     <Grid size={{ xs: 12 }}><Typography fontWeight={900} sx={{ mt: 1, mb: 1, color: '#14532d' }}>Current Address</Typography></Grid>
                     {renderPhilippineAddressFields('current')}
-                    <Grid size={{ xs: 12 }}><Stack direction={{ xs: 'column', sm: 'row' }} alignItems={{ xs: 'stretch', sm: 'center' }} justifyContent="space-between" spacing={2} sx={{ mt: 2, mb: 1 }}><Typography fontWeight={900} sx={{ color: '#14532d' }}>Permanent Address</Typography><Button type="button" variant="outlined" onClick={copyCurrentToPermanent} sx={{ ...softButtonSx, borderColor: '#166534', color: '#166534', background: '#ffffff', minHeight: 44 }}>Same as Current Address</Button></Stack></Grid>
+                    <Grid size={{ xs: 12 }}><Stack direction={{ xs: 'column', sm: 'row' }} alignItems={{ xs: 'stretch', sm: 'center' }} justifyContent="space-between" spacing={2} sx={{ mt: 2, mb: 1 }}><Typography fontWeight={900} sx={{ color: '#14532d' }}>Permanent Address</Typography><Button type="button" variant="outlined" onClick={copyCurrentToPermanent} sx={{ ...softButtonSx, borderColor: '#166534', color: '#166534', background: '#ffffff', minHeight: { xs: 44, sm: 46 } }}>Same as Current Address</Button></Stack></Grid>
                     {renderPhilippineAddressFields('permanent')}
                   </Grid>
                 </Paper>
@@ -596,28 +905,28 @@ export default function ApplyForJobPage() {
                   <Typography variant="h6" fontWeight={900} sx={{ mb: 1, color: '#14532d' }}>III. Educational Background and IV. Work Experience</Typography>
                   <Typography color="text.secondary" sx={{ mb: 3 }}>Provide your educational background and previous work experience, if applicable.</Typography>
                   <Stack spacing={3}>
-                    <Paper elevation={0} sx={{ p: 2.5, borderRadius: 4, border: '1px solid rgba(22,101,52,0.10)', background: '#fbfefb' }}>
+                    <Paper elevation={0} sx={nestedPaperSx}>
                       <Typography fontWeight={900} sx={{ color: '#14532d', mb: 2 }}>Educational Background</Typography>
                       <Grid container spacing={2.5}>
                         <Grid size={fieldGrid}><TextField fullWidth required select label="Educational Level" value={formData.education} onChange={set('education')} error={!!fieldErrors.education} helperText={fieldErrors.education} InputLabelProps={{ shrink: true }} sx={textFieldSx}>{EDUCATIONAL_ATTAINMENT.map((level) => <MenuItem key={level} value={level}>{level}</MenuItem>)}</TextField></Grid>
                         <Grid size={fieldGrid}><TextField fullWidth required label="Name of School" value={formData.schoolName} onChange={set('schoolName')} error={!!fieldErrors.schoolName} helperText={fieldErrors.schoolName} inputProps={{ maxLength: 120 }} sx={textFieldSx} /></Grid>
                         <Grid size={fieldGrid}><TextField fullWidth label="Course / Program" value={formData.courseProgram} onChange={set('courseProgram')} inputProps={{ maxLength: 120 }} sx={textFieldSx} /></Grid>
                         <Grid size={fieldGrid}><TextField fullWidth label="Year Graduated" value={formData.yearGraduated} onChange={setNumeric('yearGraduated', 4)} error={!!fieldErrors.yearGraduated} helperText={fieldErrors.yearGraduated} inputProps={{ inputMode: 'numeric', pattern: '[0-9]*', maxLength: 4 }} sx={textFieldSx} /></Grid>
-                        <Grid size={{ xs: 12, md: 8 }}><TextField fullWidth label="Honors / Awards" value={formData.honorsAwards} onChange={set('honorsAwards')} inputProps={{ maxLength: 160 }} sx={textFieldSx} /></Grid>
+                        <Grid size={fullOnMobileGrid}><TextField fullWidth label="Honors / Awards" value={formData.honorsAwards} onChange={set('honorsAwards')} inputProps={{ maxLength: 160 }} sx={textFieldSx} /></Grid>
                       </Grid>
                     </Paper>
-                    <Paper elevation={0} sx={{ p: 2.5, borderRadius: 4, border: '1px solid rgba(22,101,52,0.10)', background: '#fbfefb' }}>
+                    <Paper elevation={0} sx={nestedPaperSx}>
                       <Typography fontWeight={900} sx={{ color: '#14532d', mb: 2 }}>Work Experience</Typography>
                       <Grid container spacing={2.5}>
                         <Grid size={fieldGrid}><TextField fullWidth label="Company / Organization" value={formData.companyOrganization} onChange={set('companyOrganization')} inputProps={{ maxLength: 120 }} sx={textFieldSx} /></Grid>
                         <Grid size={fieldGrid}><TextField fullWidth label="Position Held" value={formData.positionHeld} onChange={set('positionHeld')} inputProps={{ maxLength: 120 }} sx={textFieldSx} /></Grid>
                         <Grid size={fieldGrid}><TextField fullWidth label="Total Years of Work Experience" value={formData.totalYearsExperience} onChange={setNumeric('totalYearsExperience', 2)} error={!!fieldErrors.totalYearsExperience} helperText={fieldErrors.totalYearsExperience} inputProps={{ inputMode: 'numeric', pattern: '[0-9]*', maxLength: 2 }} sx={textFieldSx} /></Grid>
-                        <Grid size={{ xs: 12, md: 6 }}><TextField fullWidth type="date" label="Employment Start Date" value={formData.employmentStartDate} onChange={set('employmentStartDate')} InputLabelProps={{ shrink: true }} sx={textFieldSx} /></Grid>
-                        <Grid size={{ xs: 12, md: 6 }}><TextField fullWidth type="date" label="Employment End Date" value={formData.employmentEndDate} onChange={set('employmentEndDate')} error={!!fieldErrors.employmentEndDate} helperText={fieldErrors.employmentEndDate} InputLabelProps={{ shrink: true }} sx={textFieldSx} /></Grid>
-                        <Grid size={{ xs: 12, md: 6 }}><TextField fullWidth multiline minRows={3} label="Duties / Responsibilities" value={formData.dutiesResponsibilities} onChange={set('dutiesResponsibilities')} inputProps={{ maxLength: 500 }} sx={textFieldSx} /></Grid>
-                        <Grid size={{ xs: 12, md: 6 }}><TextField fullWidth multiline minRows={3} label="Reason for Leaving" value={formData.reasonForLeaving} onChange={set('reasonForLeaving')} inputProps={{ maxLength: 500 }} sx={textFieldSx} /></Grid>
-                        <Grid size={{ xs: 12, md: 6 }}><TextField fullWidth label="Previous Supervisor / Manager" value={formData.previousSupervisor} onChange={setUpperText('previousSupervisor')} inputProps={{ maxLength: 120 }} sx={textFieldSx} /></Grid>
-                        <Grid size={{ xs: 12, md: 6 }}><TextField fullWidth label="Supervisor Contact Number / Email" value={formData.supervisorContact} onChange={set('supervisorContact')} inputProps={{ maxLength: 120 }} sx={textFieldSx} /></Grid>
+                        <Grid size={halfGrid}><TextField fullWidth type="date" label="Employment Start Date" value={formData.employmentStartDate} onChange={set('employmentStartDate')} InputLabelProps={{ shrink: true }} sx={textFieldSx} /></Grid>
+                        <Grid size={halfGrid}><TextField fullWidth type="date" label="Employment End Date" value={formData.employmentEndDate} onChange={set('employmentEndDate')} error={!!fieldErrors.employmentEndDate} helperText={fieldErrors.employmentEndDate} InputLabelProps={{ shrink: true }} sx={textFieldSx} /></Grid>
+                        <Grid size={halfGrid}><TextField fullWidth multiline minRows={3} label="Duties / Responsibilities" value={formData.dutiesResponsibilities} onChange={set('dutiesResponsibilities')} inputProps={{ maxLength: 500 }} sx={textFieldSx} /></Grid>
+                        <Grid size={halfGrid}><TextField fullWidth multiline minRows={3} label="Reason for Leaving" value={formData.reasonForLeaving} onChange={set('reasonForLeaving')} inputProps={{ maxLength: 500 }} sx={textFieldSx} /></Grid>
+                        <Grid size={halfGrid}><TextField fullWidth label="Previous Supervisor / Manager" value={formData.previousSupervisor} onChange={setUpperText('previousSupervisor')} inputProps={{ maxLength: 120 }} sx={textFieldSx} /></Grid>
+                        <Grid size={halfGrid}><TextField fullWidth label="Supervisor Contact Number / Email" value={formData.supervisorContact} onChange={set('supervisorContact')} inputProps={{ maxLength: 120 }} sx={textFieldSx} /></Grid>
                       </Grid>
                     </Paper>
                   </Stack>
@@ -629,7 +938,7 @@ export default function ApplyForJobPage() {
                   <Typography variant="h6" fontWeight={900} sx={{ mb: 1, color: '#14532d' }}>V. Skills and Qualifications</Typography>
                   <Typography color="text.secondary" sx={{ mb: 2 }}>Select the skills that apply to you. You may also add other skills and trainings.</Typography>
                   {fieldErrors.skills && <Alert severity="warning" sx={{ mb: 2 }}>{fieldErrors.skills}</Alert>}
-                  <FormGroup row>{SKILLS.map((skill) => <FormControlLabel key={skill} control={<Checkbox checked={formData.skills.includes(skill)} onChange={() => toggleListItem('skills', skill)} />} label={skill} sx={{ width: { xs: '100%', md: '32%' }, mr: 0 }} />)}</FormGroup>
+                  <FormGroup row>{SKILLS.map((skill) => <FormControlLabel key={skill} control={<Checkbox checked={formData.skills.includes(skill)} onChange={() => toggleListItem('skills', skill)} />} label={skill} sx={compactChoiceSx} />)}</FormGroup>
                   <Grid container spacing={2.5} sx={{ mt: 1 }}>
                     <Grid size={{ xs: 12 }}><TextField fullWidth label="Other Skills" value={formData.otherSkills} onChange={set('otherSkills')} inputProps={{ maxLength: 200 }} sx={textFieldSx} /></Grid>
                     <Grid size={fieldGrid}><TextField fullWidth label="Certification / Training 1" value={formData.certification1} onChange={set('certification1')} inputProps={{ maxLength: 160 }} sx={textFieldSx} /></Grid>
@@ -643,12 +952,12 @@ export default function ApplyForJobPage() {
                 <Paper elevation={0} sx={stepPaperSx}>
                   <Stack direction={{ xs: 'column', sm: 'row' }} justifyContent="space-between" alignItems={{ xs: 'stretch', sm: 'center' }} spacing={2} sx={{ mb: 1 }}>
                     <Box><Typography variant="h6" fontWeight={900} sx={{ color: '#14532d' }}>VI. Character References and Emergency Contact</Typography><Typography color="text.secondary">Add character references and emergency contact information.</Typography></Box>
-                    <Button type="button" variant="outlined" startIcon={<Add />} onClick={addCharacterReference} sx={{ ...softButtonSx, borderColor: '#166534', color: '#166534', background: '#ffffff', minHeight: 44 }}>Add Character Reference</Button>
+                    <Button type="button" variant="outlined" startIcon={<Add />} onClick={addCharacterReference} sx={{ ...softButtonSx, borderColor: '#166534', color: '#166534', background: '#ffffff', minHeight: { xs: 44, sm: 46 } }}>Add Character Reference</Button>
                   </Stack>
                   {fieldErrors.referenceName && <Alert severity="warning" sx={{ mb: 2 }}>{fieldErrors.referenceName}</Alert>}
                   {fieldErrors.referencePosition && <Alert severity="warning" sx={{ mb: 2 }}>{fieldErrors.referencePosition}</Alert>}
                   {fieldErrors.referenceContact && <Alert severity="warning" sx={{ mb: 2 }}>{fieldErrors.referenceContact}</Alert>}
-                  <Stack spacing={2.5}>{characterReferences.map((reference, index) => <Paper key={`reference-${index}`} elevation={0} sx={{ p: 2.5, borderRadius: 4, border: '1px solid rgba(22,101,52,0.10)', background: '#fbfefb' }}><Stack direction={{ xs: 'column', sm: 'row' }} justifyContent="space-between" alignItems={{ xs: 'stretch', sm: 'center' }} spacing={2} sx={{ mb: 2 }}><Typography fontWeight={900} sx={{ color: '#14532d' }}>Character Reference {index + 1}</Typography>{characterReferences.length > 1 && <Button type="button" color="error" variant="outlined" startIcon={<Delete />} onClick={() => removeCharacterReference(index)} sx={{ ...softButtonSx, minHeight: 40 }}>Remove</Button>}</Stack><Grid container spacing={2.5}><Grid size={fieldGrid}><TextField fullWidth label="Reference Name" value={reference.name} onChange={(e) => updateCharacterReferenceName(index, e.target.value)} inputProps={{ maxLength: 80 }} sx={textFieldSx} /></Grid><Grid size={fieldGrid}><TextField fullWidth label="Position / Relationship" value={reference.position} onChange={(e) => updateCharacterReference(index, 'position', e.target.value)} inputProps={{ maxLength: 80 }} sx={textFieldSx} /></Grid><Grid size={fieldGrid}><TextField fullWidth label="Company / Organization" value={reference.company} onChange={(e) => updateCharacterReference(index, 'company', e.target.value)} inputProps={{ maxLength: 120 }} sx={textFieldSx} /></Grid><Grid size={fieldGrid}><TextField fullWidth label="Reference Contact Number" value={reference.contact} onChange={(e) => updateCharacterReferenceContact(index, e.target.value)} helperText="11-digit contact number only." inputProps={{ inputMode: 'numeric', pattern: '[0-9]*', maxLength: 11 }} sx={textFieldSx} /></Grid></Grid></Paper>)}</Stack>
+                  <Stack spacing={2.5}>{characterReferences.map((reference, index) => <Paper key={`reference-${index}`} elevation={0} sx={nestedPaperSx}><Stack direction={{ xs: 'column', sm: 'row' }} justifyContent="space-between" alignItems={{ xs: 'stretch', sm: 'center' }} spacing={2} sx={{ mb: 2 }}><Typography fontWeight={900} sx={{ color: '#14532d' }}>Character Reference {index + 1}</Typography>{characterReferences.length > 1 && <Button type="button" color="error" variant="outlined" startIcon={<Delete />} onClick={() => removeCharacterReference(index)} sx={{ ...softButtonSx, minHeight: 40 }}>Remove</Button>}</Stack><Grid container spacing={2.5}><Grid size={fieldGrid}><TextField fullWidth label="Reference Name" value={reference.name} onChange={(e) => updateCharacterReferenceName(index, e.target.value)} inputProps={{ maxLength: 80 }} sx={textFieldSx} /></Grid><Grid size={fieldGrid}><TextField fullWidth label="Position / Relationship" value={reference.position} onChange={(e) => updateCharacterReference(index, 'position', e.target.value)} inputProps={{ maxLength: 80 }} sx={textFieldSx} /></Grid><Grid size={fieldGrid}><TextField fullWidth label="Company / Organization" value={reference.company} onChange={(e) => updateCharacterReference(index, 'company', e.target.value)} inputProps={{ maxLength: 120 }} sx={textFieldSx} /></Grid><Grid size={fieldGrid}><TextField fullWidth label="Reference Contact Number" value={reference.contact} onChange={(e) => updateCharacterReferenceContact(index, e.target.value)} helperText="11-digit contact number only." inputProps={{ inputMode: 'numeric', pattern: '[0-9]*', maxLength: 11 }} sx={textFieldSx} /></Grid></Grid></Paper>)}</Stack>
                   <Typography variant="h6" fontWeight={900} sx={{ mt: 4, mb: 2, color: '#14532d' }}>Emergency Contact</Typography>
                   <Grid container spacing={2.5}>
                     <Grid size={fieldGrid}><TextField fullWidth required label="Emergency Contact Person" value={formData.emergencyContactName} onChange={setUpperText('emergencyContactName')} error={!!fieldErrors.emergencyContactName} helperText={fieldErrors.emergencyContactName} inputProps={{ maxLength: 80 }} sx={textFieldSx} /></Grid>
@@ -664,22 +973,22 @@ export default function ApplyForJobPage() {
                 <Paper elevation={0} sx={stepPaperSx}>
                   <Typography variant="h6" fontWeight={900} sx={{ mb: 1, color: '#14532d' }}>VII. Required Documents and VIII. Applicant Declaration</Typography>
                   <Typography color="text.secondary" sx={{ mb: 2 }}>Upload your resume and confirm the accuracy of your submitted information.</Typography>
-                  <FormGroup row>{REQUIRED_DOCUMENTS.map((documentName) => <FormControlLabel key={documentName} control={<Checkbox checked={formData.submittedDocuments.includes(documentName)} onChange={() => toggleListItem('submittedDocuments', documentName)} />} label={documentName} sx={{ width: { xs: '100%', md: '32%' }, mr: 0 }} />)}</FormGroup>
+                  <FormGroup row>{REQUIRED_DOCUMENTS.map((documentName) => <FormControlLabel key={documentName} control={<Checkbox checked={formData.submittedDocuments.includes(documentName)} onChange={() => toggleListItem('submittedDocuments', documentName)} />} label={documentName} sx={compactChoiceSx} />)}</FormGroup>
                   <Grid container spacing={2.5} sx={{ mt: 1 }}>
                     <Grid size={{ xs: 12 }}><TextField fullWidth label="Other Document" value={formData.otherDocument} onChange={set('otherDocument')} inputProps={{ maxLength: 120 }} sx={textFieldSx} /></Grid>
-                    <Grid size={{ xs: 12, md: 6 }}><Button fullWidth component="label" variant="outlined" startIcon={<UploadFile />} sx={{ ...softButtonSx, borderColor: '#166534', color: '#166534', background: '#ffffff', minHeight: 90 }}><input hidden type="file" accept="*/*" onChange={(e) => { const files = Array.from(e.target.files ?? []); setResumeFiles(files.slice(0, 1)); clearFieldError('resumeFiles'); }} />{resumeFiles[0] ? `Resume: ${resumeFiles[0].name}` : 'Select Resume / Biodata'}</Button>{fieldErrors.resumeFiles && <Typography color="error" variant="caption" sx={{ mt: 1, display: 'block' }}>{fieldErrors.resumeFiles}</Typography>}</Grid>
-                    <Grid size={{ xs: 12, md: 6 }}><Button fullWidth component="label" variant="outlined" startIcon={<UploadFile />} sx={{ ...softButtonSx, borderColor: '#166534', color: '#166534', background: '#ffffff', minHeight: 90 }}><input hidden multiple type="file" accept="*/*" onChange={(e) => setSupportingFiles(Array.from(e.target.files ?? []))} />{supportingFiles.length > 0 ? `${supportingFiles.length} supporting file(s) selected` : 'Select Supporting Documents'}</Button></Grid>
-                    <Grid size={{ xs: 12 }}>{supportingFiles.length > 0 && <Typography variant="body2" color="text.secondary">{supportingFiles.map((file) => file.name).join(', ')}</Typography>}</Grid>
+                    <Grid size={halfGrid}><Button fullWidth component="label" variant="outlined" startIcon={<UploadFile />} sx={uploadButtonSx}><input hidden type="file" accept="*/*" onChange={(e) => { const files = Array.from(e.target.files ?? []); setResumeFiles(files.slice(0, 1)); clearFieldError('resumeFiles'); }} />{resumeFiles[0] ? `Resume: ${resumeFiles[0].name}` : 'Select Resume / Biodata'}</Button>{fieldErrors.resumeFiles && <Typography color="error" variant="caption" sx={{ mt: 1, display: 'block' }}>{fieldErrors.resumeFiles}</Typography>}</Grid>
+                    <Grid size={halfGrid}><Button fullWidth component="label" variant="outlined" startIcon={<UploadFile />} sx={uploadButtonSx}><input hidden multiple type="file" accept="*/*" onChange={(e) => setSupportingFiles(Array.from(e.target.files ?? []))} />{supportingFiles.length > 0 ? `${supportingFiles.length} supporting file(s) selected` : 'Select Supporting Documents'}</Button></Grid>
+                    <Grid size={{ xs: 12 }}>{supportingFiles.length > 0 && <Typography variant="body2" color="text.secondary" sx={{ overflowWrap: 'anywhere' }}>{supportingFiles.map((file) => file.name).join(', ')}</Typography>}</Grid>
                     <Grid size={{ xs: 12 }}><Alert severity="info">I hereby certify that all information provided in this application form is true, complete, and correct to the best of my knowledge. I understand that any false information or omission may result in the rejection of my application or termination of employment if hired.</Alert></Grid>
-                    <Grid size={{ xs: 12, md: 6 }}><TextField fullWidth required label="Applicant's Signature / Full Name" value={formData.applicantSignature} onChange={setUpperText('applicantSignature')} error={!!fieldErrors.applicantSignature} helperText={fieldErrors.applicantSignature} inputProps={{ maxLength: 120 }} sx={textFieldSx} /></Grid>
-                    <Grid size={{ xs: 12, md: 6 }}><TextField fullWidth required type="date" label="Date" value={formData.declarationDate} onChange={set('declarationDate')} error={!!fieldErrors.declarationDate} helperText={fieldErrors.declarationDate} InputLabelProps={{ shrink: true }} sx={textFieldSx} /></Grid>
+                    <Grid size={halfGrid}><TextField fullWidth required label="Applicant's Signature / Full Name" value={formData.applicantSignature} onChange={setUpperText('applicantSignature')} error={!!fieldErrors.applicantSignature} helperText={fieldErrors.applicantSignature} inputProps={{ maxLength: 120 }} sx={textFieldSx} /></Grid>
+                    <Grid size={halfGrid}><TextField fullWidth required type="date" label="Date" value={formData.declarationDate} onChange={set('declarationDate')} error={!!fieldErrors.declarationDate} helperText={fieldErrors.declarationDate} InputLabelProps={{ shrink: true }} sx={textFieldSx} /></Grid>
                   </Grid>
                 </Paper>
               )}
 
               <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} justifyContent="space-between" alignItems="center" sx={{ mt: 3, pt: 2 }}>
-                <Button type="button" variant="outlined" onClick={activeStep === 0 ? () => navigate('/') : handleBack} sx={{ ...softButtonSx, px: 5, py: 1.5, borderColor: '#166534', color: '#166534', minWidth: 160, width: { xs: '100%', sm: 'auto' }, background: '#ffffff' }}>{activeStep === 0 ? 'Cancel' : 'Back'}</Button>
-                {activeStep < steps.length - 1 ? <Button type="button" variant="contained" onClick={handleNext} sx={{ ...softButtonSx, px: 6, py: 1.5, minWidth: 180, width: { xs: '100%', sm: 'auto' }, background: 'linear-gradient(135deg, #166534 0%, #22c55e 100%)', boxShadow: '0 12px 25px rgba(22,101,52,0.25)' }}>Next Step</Button> : <Button type="submit" variant="contained" startIcon={submitting ? <CircularProgress size={18} color="inherit" /> : <Send />} disabled={submitting} sx={{ ...softButtonSx, px: 6, py: 1.5, minWidth: 220, width: { xs: '100%', sm: 'auto' }, background: 'linear-gradient(135deg, #166534 0%, #22c55e 100%)', boxShadow: '0 12px 25px rgba(22,101,52,0.25)' }}>{submitting ? 'Submitting...' : 'Submit Application'}</Button>}
+                <Button type="button" variant="outlined" onClick={activeStep === 0 ? () => navigate('/') : handleBack} sx={{ ...softButtonSx, px: { xs: 2.5, sm: 5 }, py: 1.5, borderColor: '#166534', color: '#166534', minWidth: 160, width: { xs: '100%', sm: 'auto' }, background: '#ffffff' }}>{activeStep === 0 ? 'Cancel' : 'Back'}</Button>
+                {activeStep < steps.length - 1 ? <Button type="button" variant="contained" onClick={handleNext} sx={{ ...softButtonSx, px: { xs: 2.5, sm: 6 }, py: 1.5, minWidth: 180, width: { xs: '100%', sm: 'auto' }, background: 'linear-gradient(135deg, #166534 0%, #22c55e 100%)', boxShadow: '0 12px 25px rgba(22,101,52,0.25)' }}>Next Step</Button> : <Button type="submit" variant="contained" startIcon={submitting ? <CircularProgress size={18} color="inherit" /> : <Send />} disabled={submitting} sx={{ ...softButtonSx, px: { xs: 2.5, sm: 6 }, py: 1.5, minWidth: 220, width: { xs: '100%', sm: 'auto' }, background: 'linear-gradient(135deg, #166534 0%, #22c55e 100%)', boxShadow: '0 12px 25px rgba(22,101,52,0.25)' }}>{submitting ? 'Submitting...' : 'Submit Application'}</Button>}
               </Stack>
             </Box>
           </Paper>
@@ -687,8 +996,8 @@ export default function ApplyForJobPage() {
       </Box>
 
       <Dialog open={successDialog} onClose={handleCloseDialog} maxWidth="sm" fullWidth>
-        <DialogContent sx={{ textAlign: 'center', p: 4 }}><TaskAlt color="success" sx={{ fontSize: 70, mb: 2 }} /><Typography variant="h5" fontWeight={900} gutterBottom>Application Submitted Successfully</Typography><Typography color="text.secondary" sx={{ mb: 3 }}>Please save your Applicant ID. You will use this to track your application status.</Typography><Paper elevation={0} sx={{ p: 2, borderRadius: 3, bgcolor: 'rgba(31,122,71,0.08)', border: '1px solid rgba(31,122,71,0.18)', mb: 2 }}><Typography variant="h6" fontWeight={900} color="primary">{applicantId}</Typography></Paper>{copied && <Alert severity="success" sx={{ mb: 2 }}>Applicant ID copied!</Alert>}{copyFailed && <Alert severity="error" sx={{ mb: 2 }}>Unable to copy Applicant ID.</Alert>}</DialogContent>
-        <DialogActions sx={{ p: 3, justifyContent: 'center', gap: 1, flexWrap: 'wrap' }}><Button variant="outlined" startIcon={<ContentCopy />} onClick={handleCopyId} sx={{ ...softButtonSx, borderColor: '#166534', color: '#166534', background: '#ffffff' }}>Copy Applicant ID</Button><Button variant="contained" onClick={() => navigate('/track')} sx={{ ...softButtonSx, background: 'linear-gradient(135deg, #1F7A47 0%, #3FA46A 100%)' }}>Track Application</Button><Button onClick={handleCloseDialog} sx={softButtonSx}>Close</Button></DialogActions>
+        <DialogContent sx={{ textAlign: 'center', p: { xs: 2.5, sm: 4 } }}><TaskAlt color="success" sx={{ fontSize: { xs: 56, sm: 70 }, mb: 2 }} /><Typography variant="h5" fontWeight={900} gutterBottom>Application Submitted Successfully</Typography><Typography color="text.secondary" sx={{ mb: 3 }}>Please save your Applicant ID. You will use this to track your application status.</Typography><Paper elevation={0} sx={{ p: 2, borderRadius: 3, bgcolor: 'rgba(31,122,71,0.08)', border: '1px solid rgba(31,122,71,0.18)', mb: 2 }}><Typography variant="h6" fontWeight={900} color="primary" sx={{ overflowWrap: 'anywhere' }}>{applicantId}</Typography></Paper>{copied && <Alert severity="success" sx={{ mb: 2 }}>Applicant ID copied!</Alert>}{copyFailed && <Alert severity="error" sx={{ mb: 2 }}>Unable to copy Applicant ID.</Alert>}</DialogContent>
+        <DialogActions sx={{ p: { xs: 2, sm: 3 }, justifyContent: 'center', gap: 1, flexWrap: 'wrap' }}><Button variant="outlined" startIcon={<ContentCopy />} onClick={handleCopyId} sx={{ ...softButtonSx, borderColor: '#166534', color: '#166534', background: '#ffffff', width: { xs: '100%', sm: 'auto' } }}>Copy Applicant ID</Button><Button variant="contained" onClick={() => navigate('/track')} sx={{ ...softButtonSx, background: 'linear-gradient(135deg, #1F7A47 0%, #3FA46A 100%)', width: { xs: '100%', sm: 'auto' } }}>Track Application</Button><Button onClick={handleCloseDialog} sx={{ ...softButtonSx, width: { xs: '100%', sm: 'auto' } }}>Close</Button></DialogActions>
       </Dialog>
     </AuthBackground>
   );
