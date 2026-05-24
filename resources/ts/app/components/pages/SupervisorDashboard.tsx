@@ -20,7 +20,6 @@ import {
 } from '@mui/material';
 import {
   CalendarMonth,
-  Assignment,
   QueryStats,
   PeopleAlt,
   TaskAlt,
@@ -561,12 +560,6 @@ export default function SupervisorDashboard() {
     [loading, stats],
   );
 
-  const shortcuts = [
-    { title: 'Schedule Management', caption: 'Create, publish, and monitor employee schedules.', icon: <CalendarMonth />, path: '/dashboard/schedule', bg: GREEN_UI.greenSoft, color: GREEN_UI.greenDark },
-    { title: 'Request Inbox', caption: 'Review leave, overtime, and undertime requests.', icon: <Assignment />, path: '/dashboard/requests', bg: GREEN_UI.amberSoft, color: GREEN_UI.amberDark },
-    { title: 'Evaluate Employees', caption: 'Submit performance evaluations and check progress.', icon: <QueryStats />, path: '/dashboard/evaluation', bg: GREEN_UI.tealSoft, color: GREEN_UI.tealDark },
-    { title: 'Employee Directory', caption: 'View employee profiles assigned to your area.', icon: <PeopleAlt />, path: '/dashboard/employees', bg: '#f2e9fb', color: '#6e3f9a' },
-  ];
 
   const lastUpdatedLabel = lastUpdatedAt
     ? `Last updated ${lastUpdatedAt.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}`
@@ -658,21 +651,6 @@ export default function SupervisorDashboard() {
           </Box>
 
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap' }}>
-            <Chip
-              icon={(loading || refreshing) ? <CircularProgress size={14} sx={{ color: `${GREEN_UI.greenDark} !important` }} /> : <TaskAlt sx={{ fontSize: '1rem !important' }} />}
-              label={loading ? 'Loading live stats…' : refreshing ? 'Refreshing live stats…' : lastUpdatedLabel}
-              size="small"
-              sx={{
-                maxWidth: { xs: '100%', sm: 260 },
-                borderRadius: 999,
-                bgcolor: '#f8fcf5',
-                color: GREEN_UI.muted,
-                fontWeight: 800,
-                border: `1px solid ${GREEN_UI.border}`,
-                '& .MuiChip-label': { overflow: 'hidden', textOverflow: 'ellipsis' },
-                '& .MuiChip-icon': { color: GREEN_UI.greenDark },
-              }}
-            />
             <Button
               variant="contained"
               startIcon={(loading || refreshing) ? <CircularProgress size={16} color="inherit" /> : <Refresh />}
@@ -742,66 +720,6 @@ export default function SupervisorDashboard() {
           </Grid>
         ))}
       </Grid>
-
-      <Paper elevation={0} sx={{ ...softCardSx, p: { xs: 2, sm: 2.4 }, mb: 2.5 }}>
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', gap: 2, flexWrap: 'wrap', alignItems: 'center', mb: 1.5 }}>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.25 }}>
-            <Box sx={{ ...iconTileSx, width: 40, height: 40, bgcolor: GREEN_UI.greenSoft, color: GREEN_UI.greenDark }}>
-              <Assignment />
-            </Box>
-            <Box>
-              <Typography variant="h6" fontWeight={900} sx={{ color: GREEN_UI.text, letterSpacing: '-0.02em' }}>
-                Quick Actions
-              </Typography>
-              <Typography variant="caption" sx={{ color: GREEN_UI.muted, fontWeight: 600 }}>
-                Jump directly to the supervisor tools you use most.
-              </Typography>
-            </Box>
-          </Box>
-        </Box>
-        <Divider sx={{ borderColor: GREEN_UI.border, mb: 2 }} />
-        <Grid container spacing={1.5}>
-          {shortcuts.map((shortcut) => (
-            <Grid key={shortcut.title} size={{ xs: 12, sm: 6, md: 3 }}>
-              <Button
-                fullWidth
-                variant="outlined"
-                onClick={() => navigate(shortcut.path)}
-                sx={{
-                  ...innerCardSx,
-                  minHeight: 104,
-                  p: 1.75,
-                  justifyContent: 'flex-start',
-                  textAlign: 'left',
-                  color: GREEN_UI.text,
-                  textTransform: 'none',
-                  transition: 'transform 180ms ease, box-shadow 180ms ease, border-color 180ms ease',
-                  '&:hover': {
-                    transform: 'translateY(-2px)',
-                    borderColor: shortcut.color,
-                    bgcolor: '#ffffff',
-                    boxShadow: '0 18px 36px rgba(43, 91, 55, 0.12)',
-                  },
-                }}
-              >
-                <Box sx={{ display: 'flex', gap: 1.25, alignItems: 'flex-start', width: '100%' }}>
-                  <Box sx={{ ...iconTileSx, width: 38, height: 38, bgcolor: shortcut.bg, color: shortcut.color }}>
-                    {shortcut.icon}
-                  </Box>
-                  <Box sx={{ minWidth: 0 }}>
-                    <Typography variant="body2" fontWeight={900} sx={{ color: GREEN_UI.text, lineHeight: 1.2 }}>
-                      {shortcut.title}
-                    </Typography>
-                    <Typography variant="caption" sx={{ color: GREEN_UI.muted, display: 'block', mt: 0.5, lineHeight: 1.45 }}>
-                      {shortcut.caption}
-                    </Typography>
-                  </Box>
-                </Box>
-              </Button>
-            </Grid>
-          ))}
-        </Grid>
-      </Paper>
 
       <Grid container spacing={2.5} alignItems="stretch">
         <Grid size={{ xs: 12, lg: 8 }}>

@@ -7,7 +7,6 @@ import {
   Card,
   CardContent,
   CircularProgress,
-  Divider,
   Grid,
   LinearProgress,
   Paper,
@@ -16,12 +15,8 @@ import {
 } from "@mui/material";
 import {
   AccountBalance,
-  CloudUpload,
   EmojiEvents,
   EventAvailable,
-  GroupAdd,
-  ManageAccounts,
-  Payments,
   PendingActions,
   PeopleAlt,
   PersonAddAlt1,
@@ -555,44 +550,6 @@ export default function HRDashboard() {
     [loading, stats],
   );
 
-  const shortcuts = [
-    {
-      title: "Manage Employees",
-      icon: <ManageAccounts />,
-      path: "/dashboard/employees",
-      color: "#2F9E5E",
-    },
-    {
-      title: "Review Applications",
-      icon: <PersonAddAlt1 />,
-      path: "/dashboard/recruitment",
-      color: "#ED8A1F",
-    },
-    {
-      title: "Import Attendance",
-      icon: <CloudUpload />,
-      path: "/dashboard/attendance",
-      color: "#2B9C95",
-    },
-    {
-      title: "Generate Payroll",
-      icon: <Payments />,
-      path: "/dashboard/payroll",
-      color: "#2E7BCF",
-    },
-    {
-      title: "View DSS Results",
-      icon: <QueryStats />,
-      path: "/dashboard/evaluation",
-      color: "#8B5AD8",
-    },
-    {
-      title: "User Accounts",
-      icon: <GroupAdd />,
-      path: "/dashboard/users",
-      color: "#B98913",
-    },
-  ];
 
   const lastUpdatedLabel = lastUpdatedAt
     ? `Last updated ${lastUpdatedAt.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" })}`
@@ -775,14 +732,6 @@ export default function HRDashboard() {
                       ? "Refreshing live stats…"
                       : "Live data synced"}
                 </Typography>
-                <Typography
-                  noWrap
-                  sx={{ color: GREEN_UI.muted, fontSize: "0.78rem" }}
-                >
-                  {loading || refreshing
-                    ? "Please wait a moment"
-                    : lastUpdatedLabel}
-                </Typography>
               </Box>
             </Stack>
           </Paper>
@@ -932,131 +881,7 @@ export default function HRDashboard() {
       </Grid>
 
       <Grid container spacing={{ xs: 2, md: 2.5 }}>
-        <Grid size={{ xs: 12, lg: 8 }}>
-          <Paper
-            elevation={0}
-            sx={{
-              height: "100%",
-              p: { xs: 2, sm: 2.5, md: 3 },
-              ...softCardSx,
-            }}
-          >
-            <Stack
-              direction={{ xs: "column", sm: "row" }}
-              spacing={1.5}
-              alignItems={{ xs: "flex-start", sm: "center" }}
-              justifyContent="space-between"
-              sx={{ mb: 2.25 }}
-            >
-              <Box>
-                <Typography
-                  sx={{
-                    color: GREEN_UI.text,
-                    fontSize: "1.25rem",
-                    fontWeight: 900,
-                    letterSpacing: "-0.02em",
-                  }}
-                >
-                  Quick Actions
-                </Typography>
-                <Typography
-                  sx={{ color: GREEN_UI.muted, fontSize: "0.88rem", mt: 0.35 }}
-                >
-                  Open the HR modules you use most often.
-                </Typography>
-              </Box>
-              <Box
-                sx={{
-                  px: 1.25,
-                  py: 0.6,
-                  borderRadius: 999,
-                  color: "#247C47",
-                  bgcolor: "#E9F8EC",
-                  fontSize: "0.78rem",
-                  fontWeight: 800,
-                  border: "1px solid rgba(47, 158, 94, 0.16)",
-                }}
-              >
-                {shortcuts.length} modules
-              </Box>
-            </Stack>
-
-            <Divider
-              sx={{ mb: 2.25, borderColor: "rgba(143, 183, 141, 0.18)" }}
-            />
-
-            <Grid container spacing={1.5}>
-              {shortcuts.map((shortcut) => (
-                <Grid key={shortcut.title} size={{ xs: 12, sm: 6, md: 4 }}>
-                  <Button
-                    fullWidth
-                    size="large"
-                    onClick={() => navigate(shortcut.path)}
-                    sx={{
-                      minHeight: 76,
-                      justifyContent: "flex-start",
-                      gap: 1.35,
-                      px: 1.5,
-                      py: 1.35,
-                      borderRadius: 3.5,
-                      color: GREEN_UI.text,
-                      bgcolor: "#F8FCF6",
-                      border: "1px solid rgba(143, 183, 141, 0.20)",
-                      textTransform: "none",
-                      fontWeight: 900,
-                      boxShadow: "none",
-                      transition:
-                        "transform 180ms ease, background 180ms ease, border-color 180ms ease, box-shadow 180ms ease",
-                      "&:hover": {
-                        transform: "translateY(-2px)",
-                        bgcolor: "#FFFFFF",
-                        borderColor: `${shortcut.color}55`,
-                        boxShadow: `0 14px 32px ${shortcut.color}1F`,
-                      },
-                    }}
-                  >
-                    <Box
-                      sx={{
-                        width: 42,
-                        height: 42,
-                        borderRadius: "16px",
-                        display: "grid",
-                        placeItems: "center",
-                        color: shortcut.color,
-                        bgcolor: `${shortcut.color}18`,
-                        flexShrink: 0,
-                        "& svg": { fontSize: 23 },
-                      }}
-                    >
-                      {shortcut.icon}
-                    </Box>
-                    <Box sx={{ minWidth: 0, textAlign: "left" }}>
-                      <Typography
-                        noWrap
-                        sx={{ fontSize: "0.92rem", fontWeight: 900 }}
-                      >
-                        {shortcut.title}
-                      </Typography>
-                      <Typography
-                        noWrap
-                        sx={{
-                          color: GREEN_UI.muted,
-                          fontSize: "0.76rem",
-                          fontWeight: 600,
-                          mt: 0.25,
-                        }}
-                      >
-                        Go to module
-                      </Typography>
-                    </Box>
-                  </Button>
-                </Grid>
-              ))}
-            </Grid>
-          </Paper>
-        </Grid>
-
-        <Grid size={{ xs: 12, lg: 4 }}>
+        <Grid size={{ xs: 12 }}>
           <Stack spacing={2} sx={{ height: "100%" }}>
             <Paper
               elevation={0}

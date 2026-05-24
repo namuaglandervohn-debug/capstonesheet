@@ -11,21 +11,17 @@ import {
   Chip,
   CircularProgress,
   LinearProgress,
-  Divider,
 } from '@mui/material';
 import {
   CalendarMonth,
   Assignment,
   Payments,
-  QueryStats,
-  ManageAccounts,
   Fingerprint,
   DashboardRounded,
   ArrowForwardRounded,
   EventAvailableRounded,
   AccessTimeRounded,
   WalletRounded,
-  PendingActionsRounded,
   FactCheckRounded,
 } from '@mui/icons-material';
 import { useAuth } from '../../context/AuthContext';
@@ -186,14 +182,6 @@ export default function EmployeeDashboard() {
     },
   ];
 
-  const shortcuts = [
-    { title: 'My Schedule',       icon: <CalendarMonth />, path: '/dashboard/schedule',   color: GREEN_UI.greenDark, helper: 'View assigned work schedule' },
-    { title: 'Daily Time Record', icon: <Fingerprint />,   path: '/dashboard/time',       color: '#2F8F8B', helper: 'Check your recent attendance' },
-    { title: 'My Requests',       icon: <Assignment />,    path: '/dashboard/requests',   color: '#9b6b00', helper: 'File leave, OT, or undertime' },
-    { title: 'My Payslips',       icon: <Payments />,      path: '/dashboard/payslips',   color: '#6c3a8f', helper: 'View payroll and payslips' },
-    { title: 'My Evaluation',     icon: <QueryStats />,    path: '/dashboard/evaluation', color: '#9c2f2f', helper: 'Review performance results' },
-    { title: 'My Profile',        icon: <ManageAccounts />,path: '/dashboard/profile',    color: '#24658f', helper: 'Update personal information' },
-  ];
 
   return (
     <Box
@@ -285,18 +273,6 @@ export default function EmployeeDashboard() {
               justifyContent: { xs: 'flex-start', md: 'flex-end' },
             }}
           >
-            <Chip
-              icon={<EventAvailableRounded />}
-              label="Buenaventura Estate"
-              variant="outlined"
-              sx={softChipSx}
-            />
-            <Chip
-              icon={loading ? <CircularProgress size={14} color="inherit" /> : <FactCheckRounded />}
-              label={loading ? 'Syncing data' : 'Dashboard ready'}
-              variant="outlined"
-              sx={softChipSx}
-            />
           </Box>
         </Box>
 
@@ -388,79 +364,6 @@ export default function EmployeeDashboard() {
           </Grid>
         ))}
       </Grid>
-
-      <Paper elevation={0} sx={{ ...softCardSx, p: { xs: 2, sm: 2.75, md: 3 }, mb: 3 }}>
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: { xs: 'flex-start', sm: 'center' }, gap: 1.5, flexWrap: 'wrap', mb: 2 }}>
-          <Box>
-            <Chip icon={<PendingActionsRounded />} label="Shortcuts" variant="outlined" sx={{ ...softChipSx, mb: 1 }} />
-            <Typography variant="h5" fontWeight={900} sx={{ color: GREEN_UI.text, letterSpacing: '-0.03em', fontSize: { xs: '1.25rem', sm: '1.45rem' } }}>
-              Quick Actions
-            </Typography>
-            <Typography variant="body2" sx={{ color: GREEN_UI.muted }}>
-              Access the employee tools you use most often.
-            </Typography>
-          </Box>
-        </Box>
-
-        <Divider sx={{ borderColor: GREEN_UI.border, mb: 2 }} />
-
-        <Grid container spacing={1.5}>
-          {shortcuts.map((shortcut, index) => (
-            <Grid key={index} size={{ xs: 12, sm: 6, md: 4 }}>
-              <Button
-                fullWidth
-                variant="outlined"
-                onClick={() => navigate(shortcut.path)}
-                sx={{
-                  ...innerCardSx,
-                  p: 1.6,
-                  minHeight: 92,
-                  justifyContent: 'space-between',
-                  textAlign: 'left',
-                  textTransform: 'none',
-                  color: GREEN_UI.text,
-                  borderColor: GREEN_UI.border,
-                  transition: 'transform 180ms ease, box-shadow 180ms ease, border-color 180ms ease',
-                  '&:hover': {
-                    borderColor: shortcut.color,
-                    bgcolor: '#fbfef9',
-                    transform: 'translateY(-2px)',
-                    boxShadow: '0 18px 36px rgba(43, 91, 55, 0.12)',
-                  },
-                }}
-              >
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.25, minWidth: 0 }}>
-                  <Box
-                    sx={{
-                      width: 42,
-                      height: 42,
-                      borderRadius: '16px',
-                      bgcolor: '#ffffff',
-                      color: shortcut.color,
-                      display: 'grid',
-                      placeItems: 'center',
-                      boxShadow: '0 10px 24px rgba(43, 91, 55, 0.08)',
-                      flexShrink: 0,
-                      '& svg': { fontSize: 23 },
-                    }}
-                  >
-                    {shortcut.icon}
-                  </Box>
-                  <Box sx={{ minWidth: 0 }}>
-                    <Typography fontWeight={900} sx={{ fontSize: '0.95rem', lineHeight: 1.2 }}>
-                      {shortcut.title}
-                    </Typography>
-                    <Typography variant="caption" sx={{ color: GREEN_UI.muted, display: 'block', mt: 0.25 }}>
-                      {shortcut.helper}
-                    </Typography>
-                  </Box>
-                </Box>
-                <ArrowForwardRounded sx={{ color: shortcut.color, ml: 1, flexShrink: 0 }} />
-              </Button>
-            </Grid>
-          ))}
-        </Grid>
-      </Paper>
 
       <Grid container spacing={{ xs: 2, md: 2.5 }}>
         {myAttendance.length > 0 && (

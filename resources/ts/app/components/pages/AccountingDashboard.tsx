@@ -8,7 +8,6 @@ import {
   CardContent,
   Chip,
   CircularProgress,
-  Divider,
   Grid,
   Paper,
   Table,
@@ -21,7 +20,6 @@ import {
 } from '@mui/material';
 import {
   Payments,
-  Analytics,
   TaskAlt,
   Timelapse,
   AccountBalanceWallet,
@@ -381,10 +379,6 @@ export default function AccountingDashboard() {
     },
   ], [loading, stats.payrollForReview, stats.payrollReleased, stats.totalNetPayable]);
 
-  const shortcuts = [
-    { title: 'Payroll Dashboard', icon: <Payments />, path: '/dashboard/payroll', color: GREEN_UI.greenDark, description: 'Review and release forwarded payroll records' },
-    { title: 'Reports', icon: <Analytics />, path: '/dashboard/reports', color: GREEN_UI.teal, description: 'Open payroll and accounting reports' },
-  ];
 
   return (
     <Box
@@ -483,21 +477,6 @@ export default function AccountingDashboard() {
                   border: `1px solid ${GREEN_UI.border}`,
                   fontWeight: 800,
                   justifyContent: 'center',
-                }}
-              />
-            )}
-            {!loading && lastUpdated && (
-              <Chip
-                icon={<TaskAlt sx={{ fontSize: 17 }} />}
-                label={`Updated ${lastUpdated.toLocaleTimeString()}`}
-                sx={{
-                  borderRadius: 999,
-                  bgcolor: 'rgba(255,255,255,0.72)',
-                  color: GREEN_UI.muted,
-                  border: `1px solid ${GREEN_UI.border}`,
-                  fontWeight: 700,
-                  justifyContent: 'center',
-                  '& .MuiChip-icon': { color: GREEN_UI.green },
                 }}
               />
             )}
@@ -612,115 +591,6 @@ export default function AccountingDashboard() {
           </Grid>
         ))}
       </Grid>
-
-      <Paper elevation={0} sx={{ ...softCardSx, p: { xs: 2, sm: 2.5, md: 3 }, mb: 3 }}>
-        <Box
-          sx={{
-            display: 'flex',
-            alignItems: { xs: 'flex-start', sm: 'center' },
-            justifyContent: 'space-between',
-            flexDirection: { xs: 'column', sm: 'row' },
-            gap: 1.5,
-            mb: 2,
-          }}
-        >
-          <Box>
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-              <Box
-                sx={{
-                  width: 38,
-                  height: 38,
-                  borderRadius: '16px',
-                  display: 'grid',
-                  placeItems: 'center',
-                  bgcolor: GREEN_UI.greenSoft,
-                  color: GREEN_UI.greenDark,
-                  border: `1px solid ${GREEN_UI.borderStrong}`,
-                }}
-              >
-                <Analytics fontSize="small" />
-              </Box>
-              <Box>
-                <Typography variant="h6" fontWeight={900} sx={{ color: GREEN_UI.text, lineHeight: 1.2 }}>
-                  Quick Actions
-                </Typography>
-                <Typography variant="body2" sx={{ color: GREEN_UI.muted }}>
-                  Open the main Accounting & Finance work areas.
-                </Typography>
-              </Box>
-            </Box>
-          </Box>
-        </Box>
-        <Divider sx={{ borderColor: GREEN_UI.border, mb: 2.25 }} />
-
-        <Grid container spacing={2}>
-          {shortcuts.map((shortcut, index) => (
-            <Grid key={index} size={{ xs: 12, sm: 6 }}>
-              <Button
-                fullWidth
-                variant="outlined"
-                startIcon={
-                  <Box
-                    sx={{
-                      width: 40,
-                      height: 40,
-                      borderRadius: '16px',
-                      display: 'grid',
-                      placeItems: 'center',
-                      bgcolor: 'rgba(58, 168, 101, 0.10)',
-                      color: shortcut.color,
-                      border: `1px solid ${GREEN_UI.border}`,
-                      '& svg': { fontSize: 22 },
-                    }}
-                  >
-                    {shortcut.icon}
-                  </Box>
-                }
-                onClick={() => navigate(shortcut.path)}
-                sx={{
-                  minHeight: 86,
-                  borderRadius: '20px',
-                  justifyContent: 'flex-start',
-                  alignItems: 'center',
-                  px: 1.5,
-                  py: 1.25,
-                  textTransform: 'none',
-                  color: GREEN_UI.text,
-                  borderColor: GREEN_UI.border,
-                  background: 'rgba(245, 252, 241, 0.72)',
-                  '& .MuiButton-startIcon': { mr: 1.4 },
-                  '&:hover': {
-                    borderColor: shortcut.color,
-                    bgcolor: `${shortcut.color}12`,
-                    transform: 'translateY(-2px)',
-                    boxShadow: GREEN_UI.shadowSoft,
-                  },
-                  transition: 'all 0.22s ease',
-                }}
-              >
-                <Box sx={{ minWidth: 0, textAlign: 'left' }}>
-                  <Typography component="span" sx={{ display: 'block', fontWeight: 900, fontSize: '0.98rem' }}>
-                    {shortcut.title}
-                  </Typography>
-                  <Typography
-                    component="span"
-                    sx={{
-                      display: 'block',
-                      color: GREEN_UI.muted,
-                      fontWeight: 600,
-                      fontSize: '0.78rem',
-                      whiteSpace: 'normal',
-                      lineHeight: 1.25,
-                    }}
-                  >
-                    {shortcut.description}
-                  </Typography>
-                </Box>
-              </Button>
-            </Grid>
-          ))}
-        </Grid>
-      </Paper>
 
       <Paper elevation={0} sx={{ ...softCardSx, p: { xs: 2, sm: 2.5, md: 3 } }}>
         <Box

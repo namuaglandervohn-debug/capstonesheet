@@ -14,9 +14,7 @@ import {
 } from '@mui/material';
 import {
   PersonAddAlt1,
-  QueryStats,
   PeopleAlt,
-  Analytics,
   EmojiEvents,
   Timelapse,
   TrendingUp,
@@ -25,7 +23,6 @@ import {
   CalendarMonth,
   ArrowForwardRounded,
   WorkspacePremium,
-  ManageAccounts,
   Insights,
   FactCheck,
 } from '@mui/icons-material';
@@ -159,36 +156,6 @@ export default function GMDashboard() {
     },
   ];
 
-  const shortcuts = [
-    {
-      title: 'Recruitment & Hiring',
-      caption: 'Review applicants and interview schedules',
-      icon: <PersonAddAlt1 />,
-      path: '/dashboard/recruitment',
-      color: GREEN_UI.greenDark,
-    },
-    {
-      title: 'DSS Performance Review',
-      caption: 'Review rankings and performance outputs',
-      icon: <QueryStats />,
-      path: '/dashboard/evaluation',
-      color: '#d9a441',
-    },
-    {
-      title: 'Employee Directory',
-      caption: 'Open employee profiles and records',
-      icon: <PeopleAlt />,
-      path: '/dashboard/employees',
-      color: '#2f8f8b',
-    },
-    {
-      title: 'Reports & Analytics',
-      caption: 'View system-wide HR summaries',
-      icon: <Analytics />,
-      path: '/dashboard/reports',
-      color: '#8d5adf',
-    },
-  ];
 
   return (
     <Box
@@ -273,30 +240,6 @@ export default function GMDashboard() {
               and workforce activity from one soft dashboard view.
             </Typography>
           </Box>
-
-          <Paper
-            elevation={0}
-            sx={{
-              ...innerCardSx,
-              p: 2,
-              minWidth: { xs: '100%', sm: 260 },
-              background: 'rgba(255,255,255,0.70)',
-            }}
-          >
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-              <Box sx={{ ...softIconBoxSx, width: 50, height: 50, borderRadius: '18px' }}>
-                <Apartment />
-              </Box>
-              <Box>
-                <Typography variant="caption" sx={{ color: GREEN_UI.muted, fontWeight: 800, textTransform: 'uppercase' }}>
-                  Estate Overview
-                </Typography>
-                <Typography fontWeight={900} sx={{ color: GREEN_UI.text, lineHeight: 1.2 }}>
-                  Buenaventura Estate
-                </Typography>
-              </Box>
-            </Box>
-          </Paper>
         </Box>
       </Paper>
 
@@ -406,87 +349,8 @@ export default function GMDashboard() {
       </Grid>
 
       <Grid container spacing={{ xs: 1.5, md: 2.5 }}>
-        {/* Quick Actions */}
-        <Grid size={{ xs: 12, lg: 7 }}>
-          <Paper elevation={0} sx={{ ...softCardSx, p: { xs: 2, sm: 2.5 }, height: '100%' }}>
-            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 1.5, mb: 1.5 }}>
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.25 }}>
-                <Box sx={{ ...softIconBoxSx }}>
-                  <ManageAccounts />
-                </Box>
-                <Box>
-                  <Typography variant="h6" fontWeight={900} sx={{ color: GREEN_UI.text, letterSpacing: '-0.025em' }}>
-                    Quick Actions
-                  </Typography>
-                  <Typography variant="caption" sx={{ color: GREEN_UI.muted, fontWeight: 700 }}>
-                    Go directly to key General Manager modules
-                  </Typography>
-                </Box>
-              </Box>
-            </Box>
-
-            <Divider sx={{ borderColor: GREEN_UI.border, mb: 2 }} />
-
-            <Grid container spacing={1.5}>
-              {shortcuts.map((shortcut, index) => (
-                <Grid key={index} size={{ xs: 12, sm: 6 }}>
-                  <Button
-                    fullWidth
-                    variant="outlined"
-                    onClick={() => navigate(shortcut.path)}
-                    sx={{
-                      ...pillButtonSx,
-                      justifyContent: 'space-between',
-                      textAlign: 'left',
-                      p: 1.5,
-                      minHeight: 86,
-                      borderRadius: '20px',
-                      borderColor: GREEN_UI.border,
-                      color: GREEN_UI.text,
-                      bgcolor: 'rgba(255,255,255,0.64)',
-                      '&:hover': {
-                        borderColor: GREEN_UI.borderStrong,
-                        bgcolor: GREEN_UI.cardBgSoft,
-                        transform: 'translateY(-2px)',
-                        boxShadow: GREEN_UI.shadowSoft,
-                      },
-                      transition: 'all 180ms ease',
-                    }}
-                  >
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.25, minWidth: 0 }}>
-                      <Box
-                        sx={{
-                          width: 42,
-                          height: 42,
-                          borderRadius: '16px',
-                          display: 'grid',
-                          placeItems: 'center',
-                          bgcolor: `${shortcut.color}18`,
-                          color: shortcut.color,
-                          flexShrink: 0,
-                        }}
-                      >
-                        {shortcut.icon}
-                      </Box>
-                      <Box sx={{ minWidth: 0 }}>
-                        <Typography fontWeight={900} sx={{ fontSize: '0.92rem', color: GREEN_UI.text, lineHeight: 1.15 }}>
-                          {shortcut.title}
-                        </Typography>
-                        <Typography variant="caption" sx={{ color: GREEN_UI.muted, display: 'block', mt: 0.35, lineHeight: 1.25 }}>
-                          {shortcut.caption}
-                        </Typography>
-                      </Box>
-                    </Box>
-                    <ArrowForwardRounded sx={{ color: shortcut.color, ml: 1, flexShrink: 0 }} />
-                  </Button>
-                </Grid>
-              ))}
-            </Grid>
-          </Paper>
-        </Grid>
-
         {/* Applicants For Interview */}
-        <Grid size={{ xs: 12, lg: 5 }}>
+        <Grid size={{ xs: 12 }}>
           <Paper elevation={0} sx={{ ...softCardSx, p: { xs: 2, sm: 2.5 }, height: '100%' }}>
             <Box
               sx={{
