@@ -140,7 +140,7 @@ function normalizeForm(form: JobForm) {
     department: form.department.trim(),
     location: form.location.trim(),
     employment_type: form.employment_type.trim(),
-    salary_range: form.salary_range.trim() || null,
+    salary_range: normalizeSalaryValue(form.salary_range) || null,
     description: form.description.trim(),
     qualifications: form.qualifications.trim() || null,
     responsibilities: form.responsibilities.trim() || null,
@@ -151,9 +151,34 @@ function getMissingRequiredFields(form: JobForm) {
   return REQUIRED_FIELDS.filter((field) => !form[field].trim());
 }
 
+function formatSalaryInput(value: string) {
+  const cleanedValue = value.replace(/,/g, "");
+
+  return cleanedValue.replace(/\d+(?:\.\d*)?/g, (numberPart) => {
+    const [wholeNumber, decimalPart] = numberPart.split(".");
+    const formattedWholeNumber = wholeNumber.replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+
+    return decimalPart !== undefined
+      ? `${formattedWholeNumber}.${decimalPart}`
+      : formattedWholeNumber;
+  });
+}
+
+function getSalaryLabel(salary?: string | null) {
+  if (!salary?.trim()) return "Salary Negotiable";
+
+  const formattedSalary = formatSalaryInput(salary.trim());
+  return formattedSalary.includes("₱") ? formattedSalary : `₱ ${formattedSalary}`;
+}
+
+function normalizeSalaryValue(value: string) {
+  return value.replace(/,/g, "").trim();
+}
+
 function formatSalary(salary?: string | null) {
   if (!salary?.trim()) return "Salary not set";
-  return salary.includes("₱") ? salary : `₱ ${salary}`;
+  const formattedSalary = formatSalaryInput(salary.trim());
+  return formattedSalary.includes("₱") ? formattedSalary : `₱ ${formattedSalary}`;
 }
 
 function formatDate(date?: string | null) {
@@ -424,7 +449,7 @@ export default function JobPostingManagement() {
       department: job.department ?? "",
       location: job.location ?? "",
       employment_type: job.employment_type ?? "Full-Time",
-      salary_range: job.salary_range ?? "",
+      salary_range: formatSalaryInput(job.salary_range ?? ""),
       description: job.description ?? "",
       qualifications: job.qualifications ?? "",
       responsibilities: job.responsibilities ?? "",
@@ -434,7 +459,8 @@ export default function JobPostingManagement() {
   };
 
   const updateFormField = (field: keyof JobForm, value: string) => {
-    setForm((prev) => ({ ...prev, [field]: value }));
+    const nextValue = field === "salary_range" ? formatSalaryInput(value) : value;
+    setForm((prev) => ({ ...prev, [field]: nextValue }));
   };
 
   const hasFieldError = (field: keyof JobForm) =>
@@ -963,6 +989,18 @@ export default function JobPostingManagement() {
                     </Stack>
 
                     <Stack direction="row" flexWrap="wrap" gap={1} sx={{ mb: 2 }}>
+                      <Typography
+                        sx={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 1,
+                        color: "#166534",
+                        fontWeight: 850,
+                        wordBreak: "break-word",
+                        }}
+                        >
+                        <strong>Salary:</strong>
+                        </Typography>
                       <Chip
                         label={formatSalary(job.salary_range)}
                         size="small"

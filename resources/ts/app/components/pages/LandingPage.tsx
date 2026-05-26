@@ -122,6 +122,30 @@ const cultureHighlights = [
   "Workplace with purpose",
 ];
 
+function formatSalaryInput(value: string) {
+  const cleanedValue = value.replace(/,/g, "");
+
+  return cleanedValue.replace(/\d+(?:\.\d*)?/g, (numberPart) => {
+    const [wholeNumber, decimalPart] = numberPart.split(".");
+    const formattedWholeNumber = wholeNumber.replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+
+    return decimalPart !== undefined
+      ? `${formattedWholeNumber}.${decimalPart}`
+      : formattedWholeNumber;
+  });
+}
+
+function normalizeSalaryValue(value: string) {
+  return value.replace(/,/g, "").trim();
+}
+
+function getSalaryLabel(salary?: string | null) {
+  if (!salary?.trim()) return "Salary Negotiable";
+
+  const formattedSalary = formatSalaryInput(salary.trim());
+  return formattedSalary.includes("₱") ? formattedSalary : `₱ ${formattedSalary}`;
+}
+
 export default function LandingPage() {
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -193,7 +217,7 @@ export default function LandingPage() {
       department: job.department,
       location: job.location,
       employment_type: job.employment_type,
-      salary_range: job.salary_range,
+      salary_range: formatSalaryInput(job.salary_range ?? ""),
       description: job.description,
       qualifications: job.qualifications,
       responsibilities: job.responsibilities,
@@ -205,17 +229,22 @@ export default function LandingPage() {
     try {
       setSaving(true);
 
+      const payload = {
+        ...form,
+        salary_range: normalizeSalaryValue(form.salary_range),
+      };
+
       if (editingJob) {
         const { error } = await supabase
           .from("job_postings")
-          .update({ ...form })
+          .update(payload)
           .eq("id", editingJob.id);
 
         if (error) throw error;
       } else {
         const { error } = await supabase
           .from("job_postings")
-          .insert({ ...form, is_active: true });
+          .insert({ ...payload, is_active: true });
 
         if (error) throw error;
       }
@@ -973,7 +1002,7 @@ export default function LandingPage() {
                           }}
                         >
                           <Shield fontSize="small" />
-                          <strong>Salary:</strong> {job.salary_range ? `₱ ${job.salary_range}` : "Salary Negotiable"}
+                          <strong>Salary:</strong> {getSalaryLabel(job.salary_range)}
                         </Typography>
                       </Stack>
 
@@ -1346,7 +1375,7 @@ export default function LandingPage() {
               <TextField fullWidth label="Employment Type" value={form.employment_type} onChange={(e) => setForm({ ...form, employment_type: e.target.value })} />
             </Grid>
             <Grid size={{ xs: 12 }}>
-              <TextField fullWidth label="Salary Range" value={form.salary_range} onChange={(e) => setForm({ ...form, salary_range: e.target.value })} />
+              <TextField fullWidth label="Salary Range" value={form.salary_range} onChange={(e) => setForm({ ...form, salary_range: formatSalaryInput(e.target.value) })} />
             </Grid>
             <Grid size={{ xs: 12 }}>
               <TextField fullWidth multiline minRows={4} label="Job Description" value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} />

@@ -19,6 +19,7 @@ import {
   FormControlLabel,
   Checkbox,
   Chip,
+  InputAdornment,
 } from '@mui/material';
 
 import {
@@ -161,6 +162,46 @@ const REQUIRED_DOCUMENTS = ['Resume/Biodata', 'Application Letter', 'Valid ID', 
 const steps = ['Position', 'Personal', 'Education & Work', 'Skills', 'References', 'Documents'];
 
 type CharacterReference = { name: string; position: string; company: string; contact: string };
+type WorkExperience = {
+  companyOrganization: string;
+  positionHeld: string;
+  totalYearsExperience: string;
+  employmentStartDate: string;
+  employmentEndDate: string;
+  dutiesResponsibilities: string;
+  reasonForLeaving: string;
+  previousSupervisor: string;
+  supervisorContact: string;
+};
+type EmergencyContact = {
+  name: string;
+  relation: string;
+  relationOther: string;
+  phone: string;
+  address: string;
+};
+
+const PHONE_COUNTRY_CODE = '+63';
+const PHONE_LOCAL_LENGTH = 10;
+const EMPTY_CHARACTER_REFERENCE: CharacterReference = { name: '', position: '', company: '', contact: '' };
+const EMPTY_WORK_EXPERIENCE: WorkExperience = {
+  companyOrganization: '',
+  positionHeld: '',
+  totalYearsExperience: '',
+  employmentStartDate: '',
+  employmentEndDate: '',
+  dutiesResponsibilities: '',
+  reasonForLeaving: '',
+  previousSupervisor: '',
+  supervisorContact: '',
+};
+const EMPTY_EMERGENCY_CONTACT: EmergencyContact = {
+  name: '',
+  relation: '',
+  relationOther: '',
+  phone: '',
+  address: '',
+};
 
 const EMPTY = {
   position: '', hearAbout: '', hearAboutOther: '',
@@ -198,6 +239,17 @@ function calculateAge(birthdate: string) {
   const monthDiff = today.getMonth() - birth.getMonth();
   if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birth.getDate())) age -= 1;
   return age >= 0 ? String(age) : '';
+}
+
+function sanitizePhoneNumber(value: string) {
+  let digits = value.replace(/\D/g, '');
+  if (digits.startsWith('63')) digits = digits.slice(2);
+  if (digits.startsWith('0')) digits = digits.slice(1);
+  return digits.slice(0, PHONE_LOCAL_LENGTH);
+}
+
+function formatPhoneWithCountryCode(value: string) {
+  return value ? `${PHONE_COUNTRY_CODE}${value}` : '';
 }
 
 const fallbackBarangays = ['Poblacion', 'Barangay 1', 'Barangay 2', 'Barangay 3', 'Other / Not listed'];
@@ -264,11 +316,15 @@ export default function ApplyForJobPage() {
   const [copied, setCopied] = useState(false);
   const [copyFailed, setCopyFailed] = useState(false);
   const [activeStep, setActiveStep] = useState(0);
-  const [characterReferences, setCharacterReferences] = useState<CharacterReference[]>([{ name: '', position: '', company: '', contact: '' }]);
+  const [characterReferences, setCharacterReferences] = useState<CharacterReference[]>([EMPTY_CHARACTER_REFERENCE]);
+  const [workExperiences, setWorkExperiences] = useState<WorkExperience[]>([EMPTY_WORK_EXPERIENCE]);
+  const [emergencyContacts, setEmergencyContacts] = useState<EmergencyContact[]>([EMPTY_EMERGENCY_CONTACT]);
 
   const textFieldSx = {
-    '& .MuiInputLabel-root': { color: '#64748b', fontWeight: 800, letterSpacing: '-0.01em' },
-    '& .MuiInputLabel-root.Mui-focused': { color: '#166534' },
+    '& .MuiInputLabel-root': { color: '#000000', fontWeight: 400, letterSpacing: '-0.01em' },
+    '& .MuiInputLabel-root.Mui-focused': { color: '#000000', fontWeight: 400 },
+    '& .MuiInputLabel-root.Mui-disabled': { color: '#000000', fontWeight: 400, opacity: 0.72 },
+    '& .MuiInputLabel-asterisk': { color: '#000000' },
     '& .MuiOutlinedInput-root': {
       borderRadius: '16px',
       backgroundColor: '#fbfefc',
@@ -283,6 +339,7 @@ export default function ApplyForJobPage() {
       '&.Mui-focused fieldset': { borderColor: '#22c55e', borderWidth: '1.5px' },
     },
     '& .MuiSelect-select': { fontSize: { xs: '0.9rem', sm: '0.95rem' }, fontWeight: 700, color: '#1f2937' },
+    '& .MuiSelect-icon': { color: '#000000' },
     '& .MuiFormHelperText-root': {
       mx: { xs: 0.5, sm: 1.75 },
       overflowWrap: 'anywhere',
@@ -478,11 +535,18 @@ export default function ApplyForJobPage() {
     clearFieldError('age');
   };
 
-  const setPhone = (key: 'contactNumber' | 'emergencyContactPhone') => (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    const value = e.target.value.replace(/\D/g, '').slice(0, 11);
+  const setPhone = (key: 'contactNumber') => (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const value = sanitizePhoneNumber(e.target.value);
     setFormData((prev) => ({ ...prev, [key]: value }));
     clearFieldError(key);
   };
+
+  const phoneInputFieldProps = { inputMode: 'numeric' as const, pattern: '[0-9]*', maxLength: PHONE_LOCAL_LENGTH };
+  const phoneAdornment = (
+    <InputAdornment position="start" sx={{ color: '#0f172a', fontWeight: 700 }}>
+      {PHONE_COUNTRY_CODE}
+    </InputAdornment>
+  );
 
   const buildAddress = (country: string, region: string, province: string, city: string, barangay: string, street: string, zipCode: string) =>
     [street, barangay, city, province, region, country, zipCode].map((part) => part.trim()).filter(Boolean).join(', ');
@@ -567,9 +631,47 @@ export default function ApplyForJobPage() {
     setCharacterReferences((prev) => prev.map((reference, currentIndex) => currentIndex === index ? { ...reference, [key]: value } : reference));
   };
   const updateCharacterReferenceName = (index: number, value: string) => updateCharacterReference(index, 'name', value.replace(/[^a-zA-ZÀ-žñÑ .'-]/g, ''));
-  const updateCharacterReferenceContact = (index: number, value: string) => updateCharacterReference(index, 'contact', value.replace(/\D/g, '').slice(0, 11));
-  const addCharacterReference = () => setCharacterReferences((prev) => [...prev, { name: '', position: '', company: '', contact: '' }]);
+  const updateCharacterReferenceContact = (index: number, value: string) => updateCharacterReference(index, 'contact', sanitizePhoneNumber(value));
+  const addCharacterReference = () => setCharacterReferences((prev) => [...prev, { ...EMPTY_CHARACTER_REFERENCE }]);
   const removeCharacterReference = (index: number) => setCharacterReferences((prev) => prev.length === 1 ? prev : prev.filter((_, currentIndex) => currentIndex !== index));
+
+  const updateWorkExperience = (index: number, key: keyof WorkExperience, value: string) => {
+    setWorkExperiences((prev) => prev.map((workExperience, currentIndex) => currentIndex === index ? { ...workExperience, [key]: value } : workExperience));
+    if (key === 'employmentEndDate' || key === 'employmentStartDate') clearFieldError('employmentEndDate');
+    if (key === 'totalYearsExperience') clearFieldError('totalYearsExperience');
+    if (key === 'supervisorContact') clearFieldError('supervisorContact');
+  };
+  const updateWorkExperienceText = (index: number, key: Exclude<keyof WorkExperience, 'totalYearsExperience' | 'previousSupervisor' | 'supervisorContact'>, value: string) =>
+    updateWorkExperience(index, key, value);
+  const updateWorkExperienceUpperText = (index: number, key: 'previousSupervisor', value: string) =>
+    updateWorkExperience(index, key, value.replace(/[^a-zA-Z .'-]/g, ''));
+  const updateWorkExperienceNumeric = (index: number, key: 'totalYearsExperience', value: string) =>
+    updateWorkExperience(index, key, value.replace(/\D/g, '').slice(0, 2));
+  const updateWorkExperienceSupervisorContact = (index: number, value: string) =>
+    updateWorkExperience(index, 'supervisorContact', sanitizePhoneNumber(value));
+  const addWorkExperience = () => setWorkExperiences((prev) => [...prev, { ...EMPTY_WORK_EXPERIENCE }]);
+  const removeWorkExperience = (index: number) => setWorkExperiences((prev) => prev.length === 1 ? prev : prev.filter((_, currentIndex) => currentIndex !== index));
+
+  const updateEmergencyContact = (index: number, key: keyof EmergencyContact, value: string) => {
+    setEmergencyContacts((prev) => prev.map((contact, currentIndex) => currentIndex === index ? { ...contact, [key]: value } : contact));
+    if (key === 'name') clearFieldError('emergencyContactName');
+    if (key === 'relation') {
+      clearFieldError('emergencyContactRelation');
+      clearFieldError('emergencyContactRelationOther');
+    }
+    if (key === 'relationOther') clearFieldError('emergencyContactRelationOther');
+    if (key === 'phone') clearFieldError('emergencyContactPhone');
+  };
+  const updateEmergencyContactName = (index: number, value: string) => updateEmergencyContact(index, 'name', value.replace(/[^a-zA-Z .'-]/g, ''));
+  const updateEmergencyContactRelation = (index: number, value: string) => {
+    updateEmergencyContact(index, 'relation', value);
+    if (value !== 'Other') updateEmergencyContact(index, 'relationOther', '');
+  };
+  const updateEmergencyContactRelationOther = (index: number, value: string) => updateEmergencyContact(index, 'relationOther', value.replace(/[^a-zA-Z .'-]/g, ''));
+  const updateEmergencyContactPhone = (index: number, value: string) => updateEmergencyContact(index, 'phone', sanitizePhoneNumber(value));
+  const addEmergencyContact = () => setEmergencyContacts((prev) => [...prev, { ...EMPTY_EMERGENCY_CONTACT }]);
+  const removeEmergencyContact = (index: number) => setEmergencyContacts((prev) => prev.length === 1 ? prev : prev.filter((_, currentIndex) => currentIndex !== index));
+
   const validateEmail = (value: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value.trim());
 
   const validateStep = (stepIndex: number) => {
@@ -585,11 +687,12 @@ export default function ApplyForJobPage() {
       if (!formData.birthdate) errors.birthdate = 'Date of birth is required.';
       if (formData.birthdate && new Date(formData.birthdate) > new Date()) errors.birthdate = 'Date of birth cannot be in the future.';
       if (!formData.age) errors.age = 'Age is required.';
+      if (formData.age && Number(formData.age) < 15) errors.age = 'Age not qualified. Applicant must be at least 15 years old.';
       if (!formData.gender) errors.gender = 'Gender is required.';
       if (!formData.civilStatus) errors.civilStatus = 'Civil status is required.';
       if (!formData.nationality) errors.nationality = 'Nationality is required.';
       if (!formData.contactNumber) errors.contactNumber = 'Contact number is required.';
-      if (formData.contactNumber && formData.contactNumber.length !== 11) errors.contactNumber = 'Contact number must be exactly 11 digits.';
+      if (formData.contactNumber && formData.contactNumber.length !== PHONE_LOCAL_LENGTH) errors.contactNumber = `Contact number must be exactly ${PHONE_LOCAL_LENGTH} digits after +63.`;
       if (!formData.email.trim()) errors.email = 'Email address is required.';
       if (formData.email && !validateEmail(formData.email)) errors.email = 'Please enter a valid email address.';
       if (!formData.currentCountry) errors.currentCountry = 'Current country is required.';
@@ -605,8 +708,30 @@ export default function ApplyForJobPage() {
       if (!formData.education) errors.education = 'Educational level is required.';
       if (!formData.schoolName.trim()) errors.schoolName = 'School name is required.';
       if (formData.yearGraduated && formData.yearGraduated.length !== 4) errors.yearGraduated = 'Year graduated must be 4 digits.';
-      if (formData.employmentStartDate && formData.employmentEndDate && formData.employmentEndDate < formData.employmentStartDate) errors.employmentEndDate = 'End date cannot be earlier than start date.';
-      if (formData.totalYearsExperience && Number(formData.totalYearsExperience) > 80) errors.totalYearsExperience = 'Please enter a valid total years of experience.';
+      workExperiences.forEach((workExperience, index) => {
+        const hasAnyValue =
+          workExperience.companyOrganization.trim() ||
+          workExperience.positionHeld.trim() ||
+          workExperience.totalYearsExperience.trim() ||
+          workExperience.employmentStartDate ||
+          workExperience.employmentEndDate ||
+          workExperience.dutiesResponsibilities.trim() ||
+          workExperience.reasonForLeaving.trim() ||
+          workExperience.previousSupervisor.trim() ||
+          workExperience.supervisorContact.trim();
+
+        if (!hasAnyValue) return;
+
+        if (workExperience.employmentStartDate && workExperience.employmentEndDate && workExperience.employmentEndDate < workExperience.employmentStartDate) {
+          errors.employmentEndDate = `Work experience ${index + 1}: End date cannot be earlier than start date.`;
+        }
+        if (workExperience.totalYearsExperience && Number(workExperience.totalYearsExperience) > 80) {
+          errors.totalYearsExperience = `Work experience ${index + 1}: Please enter a valid total years of experience.`;
+        }
+        if (workExperience.supervisorContact && workExperience.supervisorContact.length !== PHONE_LOCAL_LENGTH) {
+          errors.supervisorContact = `Work experience ${index + 1}: supervisor contact number must be exactly ${PHONE_LOCAL_LENGTH} digits after +63.`;
+        }
+      });
     }
     if (stepIndex === 3 && formData.skills.length === 0 && !formData.otherSkills.trim()) errors.skills = 'Please select at least one skill or enter other skills.';
     if (stepIndex === 4) {
@@ -616,14 +741,28 @@ export default function ApplyForJobPage() {
           if (!reference.name.trim()) errors.referenceName = `Reference ${index + 1}: name is required.`;
           if (!reference.position.trim()) errors.referencePosition = `Reference ${index + 1}: position/relationship is required.`;
           if (!reference.contact.trim()) errors.referenceContact = `Reference ${index + 1}: contact number is required.`;
-          if (reference.contact && reference.contact.length !== 11) errors.referenceContact = `Reference ${index + 1}: contact number must be exactly 11 digits.`;
+          if (reference.contact && reference.contact.length !== PHONE_LOCAL_LENGTH) errors.referenceContact = `Reference ${index + 1}: contact number must be exactly ${PHONE_LOCAL_LENGTH} digits after +63.`;
         }
       });
-      if (!formData.emergencyContactName.trim()) errors.emergencyContactName = 'Emergency contact person is required.';
-      if (!formData.emergencyContactRelation.trim()) errors.emergencyContactRelation = 'Relationship is required.';
-      if (formData.emergencyContactRelation === 'Other' && !formData.emergencyContactRelationOther.trim()) errors.emergencyContactRelationOther = 'Please specify the relationship.';
-      if (!formData.emergencyContactPhone) errors.emergencyContactPhone = 'Emergency contact number is required.';
-      if (formData.emergencyContactPhone && formData.emergencyContactPhone.length !== 11) errors.emergencyContactPhone = 'Emergency contact number must be exactly 11 digits.';
+      emergencyContacts.forEach((emergencyContact, index) => {
+        const hasAnyValue =
+          emergencyContact.name.trim() ||
+          emergencyContact.relation.trim() ||
+          emergencyContact.relationOther.trim() ||
+          emergencyContact.phone.trim() ||
+          emergencyContact.address.trim();
+        if (index === 0 || hasAnyValue) {
+          if (!emergencyContact.name.trim()) errors.emergencyContactName = `Emergency contact ${index + 1}: contact person is required.`;
+          if (!emergencyContact.relation.trim()) errors.emergencyContactRelation = `Emergency contact ${index + 1}: relationship is required.`;
+          if (emergencyContact.relation === 'Other' && !emergencyContact.relationOther.trim()) {
+            errors.emergencyContactRelationOther = `Emergency contact ${index + 1}: please specify the relationship.`;
+          }
+          if (!emergencyContact.phone.trim()) errors.emergencyContactPhone = `Emergency contact ${index + 1}: contact number is required.`;
+          if (emergencyContact.phone && emergencyContact.phone.length !== PHONE_LOCAL_LENGTH) {
+            errors.emergencyContactPhone = `Emergency contact ${index + 1}: number must be exactly ${PHONE_LOCAL_LENGTH} digits after +63.`;
+          }
+        }
+      });
     }
     if (stepIndex === 5) {
       if (resumeFiles.length === 0) errors.resumeFiles = 'Resume/Biodata file is required.';
@@ -657,25 +796,55 @@ export default function ApplyForJobPage() {
       const supportingDocumentFiles = await Promise.all(supportingFiles.map(async (file) => ({ name: file.name, type: file.type, data: await fileToBase64(file) })));
       const currentAddress = buildAddress(formData.currentCountry, formData.currentRegion, formData.currentProvince, formData.currentCity, formData.currentBarangay, formData.currentStreet, formData.currentZipCode);
       const permanentAddress = buildAddress(formData.permanentCountry, formData.permanentRegion, formData.permanentProvince, formData.permanentCity, formData.permanentBarangay, formData.permanentStreet, formData.permanentZipCode);
-      const employmentPeriod = [formData.employmentStartDate, formData.employmentEndDate].filter(Boolean).join(' to ');
+      const normalizedWorkExperiences = workExperiences
+        .filter((workExperience) =>
+          workExperience.companyOrganization.trim() ||
+          workExperience.positionHeld.trim() ||
+          workExperience.totalYearsExperience.trim() ||
+          workExperience.employmentStartDate ||
+          workExperience.employmentEndDate ||
+          workExperience.dutiesResponsibilities.trim() ||
+          workExperience.reasonForLeaving.trim() ||
+          workExperience.previousSupervisor.trim() ||
+          workExperience.supervisorContact.trim()
+        )
+        .map((workExperience) => ({
+          ...workExperience,
+          supervisorContact: formatPhoneWithCountryCode(workExperience.supervisorContact),
+          employmentPeriod: [workExperience.employmentStartDate, workExperience.employmentEndDate].filter(Boolean).join(' to '),
+        }));
+      const normalizedCharacterReferences = characterReferences
+        .filter((reference) => reference.name.trim() || reference.position.trim() || reference.company.trim() || reference.contact.trim())
+        .map((reference) => ({ ...reference, contact: formatPhoneWithCountryCode(reference.contact) }));
+      const normalizedEmergencyContacts = emergencyContacts
+        .filter((contact) => contact.name.trim() || contact.relation.trim() || contact.relationOther.trim() || contact.phone.trim() || contact.address.trim())
+        .map((contact) => ({
+          ...contact,
+          relation: contact.relation === 'Other' ? contact.relationOther : contact.relation,
+          phone: formatPhoneWithCountryCode(contact.phone),
+        }));
+      const primaryEmergencyContact = normalizedEmergencyContacts[0] ?? null;
+      const applicantExperience = normalizedWorkExperiences[0]?.totalYearsExperience ?? '';
       const coverLetterData = {
         hearAbout: formData.hearAbout, hearAboutOther: formData.hearAboutOther, age: formData.age, nationality: formData.nationality, currentAddress, permanentAddress,
         currentAddressParts: { country: formData.currentCountry, region: formData.currentRegion, province: formData.currentProvince, city: formData.currentCity, barangay: formData.currentBarangay, street: formData.currentStreet, zipCode: formData.currentZipCode },
         permanentAddressParts: { country: formData.permanentCountry, region: formData.permanentRegion, province: formData.permanentProvince, city: formData.permanentCity, barangay: formData.permanentBarangay, street: formData.permanentStreet, zipCode: formData.permanentZipCode },
         educationBackground: { level: formData.education, schoolName: formData.schoolName, courseProgram: formData.courseProgram, yearGraduated: formData.yearGraduated, honorsAwards: formData.honorsAwards },
-        workExperience: { companyOrganization: formData.companyOrganization, positionHeld: formData.positionHeld, employmentPeriod, employmentStartDate: formData.employmentStartDate, employmentEndDate: formData.employmentEndDate, dutiesResponsibilities: formData.dutiesResponsibilities, reasonForLeaving: formData.reasonForLeaving, totalYearsExperience: formData.totalYearsExperience, previousSupervisor: formData.previousSupervisor, supervisorContact: formData.supervisorContact },
+        workExperience: normalizedWorkExperiences[0] ?? null,
+        workExperiences: normalizedWorkExperiences,
         skills: formData.skills, otherSkills: formData.otherSkills, certifications: [formData.certification1, formData.certification2, formData.certification3].filter(Boolean),
-        characterReferences: characterReferences.filter((reference) => reference.name.trim() || reference.position.trim() || reference.company.trim() || reference.contact.trim()),
-        emergencyContact: { name: formData.emergencyContactName, relation: formData.emergencyContactRelation === 'Other' ? formData.emergencyContactRelationOther : formData.emergencyContactRelation, phone: formData.emergencyContactPhone, address: formData.emergencyContactAddress },
+        characterReferences: normalizedCharacterReferences,
+        emergencyContact: primaryEmergencyContact,
+        emergencyContacts: normalizedEmergencyContacts,
         submittedDocuments: formData.submittedDocuments, otherDocument: formData.otherDocument, applicantSignature: formData.applicantSignature, declarationDate: formData.declarationDate,
       };
       const fullName = `${formData.firstName} ${formData.middleName} ${formData.lastName} ${formData.suffix}`.replace(/\s+/g, ' ').trim();
       const { error: insertError } = await supabase.from('applicants').insert({
         applicant_id: applicantIdGenerated, name: fullName, first_name: formData.firstName.trim(), middle_name: formData.middleName.trim(), last_name: formData.lastName.trim(), suffix: formData.suffix,
         gender: formData.gender, civil_status: formData.civilStatus, birthdate: formData.birthdate || null, birthplace: formData.birthplace, height: formData.height, weight: formData.weight,
-        email: formData.email.trim().toLowerCase(), phone_number: formData.contactNumber, address: currentAddress, position_applied: formData.position, education: formData.education, experience: formData.totalYearsExperience, cover_letter: JSON.stringify(coverLetterData),
+        email: formData.email.trim().toLowerCase(), phone_number: formatPhoneWithCountryCode(formData.contactNumber), address: currentAddress, position_applied: formData.position, education: formData.education, experience: applicantExperience, cover_letter: JSON.stringify(coverLetterData),
         tin: formData.tin, sss: formData.sss, philhealth: formData.philhealth, pagibig: formData.pagibig,
-        emergency_contact: `${formData.emergencyContactName} - ${formData.emergencyContactRelation === 'Other' ? formData.emergencyContactRelationOther : formData.emergencyContactRelation} - ${formData.emergencyContactPhone}`,
+        emergency_contact: primaryEmergencyContact ? `${primaryEmergencyContact.name} - ${primaryEmergencyContact.relation} - ${primaryEmergencyContact.phone}` : null,
         resume_file_name: resumeFiles[0]?.name ?? null, resume_file_data: resumeFileData, supporting_documents: supportingFiles.map((file) => file.name), supporting_document_files: supportingDocumentFiles, status: 'Submitted',
       });
       if (insertError) throw insertError;
@@ -692,7 +861,18 @@ export default function ApplyForJobPage() {
   };
 
   const handleCopyId = async () => { setCopyFailed(false); const ok = await copyToClipboard(applicantId); if (ok) { setCopied(true); setTimeout(() => setCopied(false), 2500); } else setCopyFailed(true); };
-  const handleCloseDialog = () => { setSuccessDialog(false); setFormData(EMPTY); setFieldErrors({}); setResumeFiles([]); setSupportingFiles([]); setCharacterReferences([{ name: '', position: '', company: '', contact: '' }]); setActiveStep(0); setError(''); };
+  const handleCloseDialog = () => {
+    setSuccessDialog(false);
+    setFormData(EMPTY);
+    setFieldErrors({});
+    setResumeFiles([]);
+    setSupportingFiles([]);
+    setCharacterReferences([{ ...EMPTY_CHARACTER_REFERENCE }]);
+    setWorkExperiences([{ ...EMPTY_WORK_EXPERIENCE }]);
+    setEmergencyContacts([{ ...EMPTY_EMERGENCY_CONTACT }]);
+    setActiveStep(0);
+    setError('');
+  };
 
   const renderCountrySelect = (prefix: 'current' | 'permanent', label = 'Country') => {
     const value = formData[`${prefix}Country` as FormKey] as string;
@@ -989,11 +1169,11 @@ export default function ApplyForJobPage() {
                     <Grid size={nameGrid}><TextField fullWidth required label="Last Name" value={formData.lastName} onChange={setUpperText('lastName')} error={!!fieldErrors.lastName} helperText={fieldErrors.lastName} inputProps={{ maxLength: 50 }} sx={textFieldSx} /></Grid>
                     <Grid size={nameGrid}><TextField fullWidth select label="Suffix" value={formData.suffix} onChange={set('suffix')} InputLabelProps={{ shrink: true }} sx={textFieldSx}>{SUFFIXES.map((suffix) => <MenuItem key={suffix || 'none'} value={suffix}>{suffix || 'None'}</MenuItem>)}</TextField></Grid>
                     <Grid size={fieldGrid}><TextField fullWidth required type="date" label="Date of Birth" value={formData.birthdate} onChange={setBirthdate} error={!!fieldErrors.birthdate} helperText={fieldErrors.birthdate} InputLabelProps={{ shrink: true }} sx={textFieldSx} /></Grid>
-                    <Grid size={fieldGrid}><TextField fullWidth required label="Age" value={formData.age} onChange={setNumeric('age', 3)} error={!!fieldErrors.age} helperText={fieldErrors.age || 'Auto-computed from birthdate but editable.'} inputProps={{ inputMode: 'numeric', pattern: '[0-9]*', maxLength: 3 }} sx={textFieldSx} /></Grid>
+                    <Grid size={fieldGrid}><TextField fullWidth required label="Age" value={formData.age} onChange={setNumeric('age', 3)} error={!!fieldErrors.age || (!!formData.age && Number(formData.age) < 15)} helperText={fieldErrors.age || (formData.age && Number(formData.age) < 15 ? 'Age not qualified. Applicant must be at least 15 years old.' : 'Auto-computed from birthdate but editable.')} inputProps={{ inputMode: 'numeric', pattern: '[0-9]*', maxLength: 3 }} sx={textFieldSx} /></Grid>
                     <Grid size={fieldGrid}><TextField fullWidth required select label="Gender" value={formData.gender} onChange={set('gender')} error={!!fieldErrors.gender} helperText={fieldErrors.gender} InputLabelProps={{ shrink: true }} sx={textFieldSx}>{GENDER.map((gender) => <MenuItem key={gender} value={gender}>{gender}</MenuItem>)}</TextField></Grid>
                     <Grid size={fieldGrid}><TextField fullWidth required select label="Civil Status" value={formData.civilStatus} onChange={set('civilStatus')} error={!!fieldErrors.civilStatus} helperText={fieldErrors.civilStatus} InputLabelProps={{ shrink: true }} sx={textFieldSx}>{CIVIL_STATUS.map((status) => <MenuItem key={status} value={status}>{status}</MenuItem>)}</TextField></Grid>
                     <Grid size={fieldGrid}><TextField fullWidth required select label="Nationality" value={formData.nationality} onChange={set('nationality')} error={!!fieldErrors.nationality} helperText={fieldErrors.nationality} InputLabelProps={{ shrink: true }} sx={textFieldSx}>{NATIONALITIES.map((nationality) => <MenuItem key={nationality} value={nationality}>{nationality}</MenuItem>)}</TextField></Grid>
-                    <Grid size={fieldGrid}><TextField fullWidth required label="Contact Number" value={formData.contactNumber} onChange={setPhone('contactNumber')} error={!!fieldErrors.contactNumber} helperText={fieldErrors.contactNumber || '11-digit mobile number only.'} inputProps={{ inputMode: 'numeric', pattern: '[0-9]*', maxLength: 11 }} sx={textFieldSx} /></Grid>
+                    <Grid size={fieldGrid}><TextField fullWidth required label="Contact Number" value={formData.contactNumber} onChange={setPhone('contactNumber')} error={!!fieldErrors.contactNumber} helperText={fieldErrors.contactNumber || 'Enter 10 digits after +63.'} inputProps={phoneInputFieldProps} InputProps={{ startAdornment: phoneAdornment }} sx={textFieldSx} /></Grid>
                     <Grid size={fieldGrid}><TextField fullWidth required type="email" label="Email Address" value={formData.email} onChange={setEmail} error={!!fieldErrors.email} helperText={fieldErrors.email} inputProps={{ maxLength: 80 }} sx={textFieldSx} /></Grid>
                     <Grid size={{ xs: 12 }}><Stack direction="row" spacing={1} alignItems="center" sx={{ mt: 1, mb: 1 }}><LocationOnOutlined sx={{ color: '#166534' }} /><Typography fontWeight={900} sx={{ color: '#14532d' }}>Current Address</Typography></Stack></Grid>
                     {renderPhilippineAddressFields('current')}
@@ -1018,18 +1198,31 @@ export default function ApplyForJobPage() {
                       </Grid>
                     </Paper>
                     <Paper elevation={0} sx={nestedPaperSx}>
-                      <Stack direction="row" spacing={1} alignItems="center" sx={{ mb: 2 }}><WorkOutline sx={{ color: '#166534' }} /><Typography fontWeight={900} sx={{ color: '#14532d' }}>Work Experience</Typography></Stack>
-                      <Grid container spacing={2.5}>
-                        <Grid size={fieldGrid}><TextField fullWidth label="Company / Organization" value={formData.companyOrganization} onChange={set('companyOrganization')} inputProps={{ maxLength: 120 }} sx={textFieldSx} /></Grid>
-                        <Grid size={fieldGrid}><TextField fullWidth label="Position Held" value={formData.positionHeld} onChange={set('positionHeld')} inputProps={{ maxLength: 120 }} sx={textFieldSx} /></Grid>
-                        <Grid size={fieldGrid}><TextField fullWidth label="Total Years of Work Experience" value={formData.totalYearsExperience} onChange={setNumeric('totalYearsExperience', 2)} error={!!fieldErrors.totalYearsExperience} helperText={fieldErrors.totalYearsExperience} inputProps={{ inputMode: 'numeric', pattern: '[0-9]*', maxLength: 2 }} sx={textFieldSx} /></Grid>
-                        <Grid size={halfGrid}><TextField fullWidth type="date" label="Employment Start Date" value={formData.employmentStartDate} onChange={set('employmentStartDate')} InputLabelProps={{ shrink: true }} sx={textFieldSx} /></Grid>
-                        <Grid size={halfGrid}><TextField fullWidth type="date" label="Employment End Date" value={formData.employmentEndDate} onChange={set('employmentEndDate')} error={!!fieldErrors.employmentEndDate} helperText={fieldErrors.employmentEndDate} InputLabelProps={{ shrink: true }} sx={textFieldSx} /></Grid>
-                        <Grid size={halfGrid}><TextField fullWidth multiline minRows={3} label="Duties / Responsibilities" value={formData.dutiesResponsibilities} onChange={set('dutiesResponsibilities')} inputProps={{ maxLength: 500 }} sx={textFieldSx} /></Grid>
-                        <Grid size={halfGrid}><TextField fullWidth multiline minRows={3} label="Reason for Leaving" value={formData.reasonForLeaving} onChange={set('reasonForLeaving')} inputProps={{ maxLength: 500 }} sx={textFieldSx} /></Grid>
-                        <Grid size={halfGrid}><TextField fullWidth label="Previous Supervisor / Manager" value={formData.previousSupervisor} onChange={setUpperText('previousSupervisor')} inputProps={{ maxLength: 120 }} sx={textFieldSx} /></Grid>
-                        <Grid size={halfGrid}><TextField fullWidth label="Supervisor Contact Number / Email" value={formData.supervisorContact} onChange={set('supervisorContact')} inputProps={{ maxLength: 120 }} sx={textFieldSx} /></Grid>
-                      </Grid>
+                      <Stack direction={{ xs: 'column', sm: 'row' }} justifyContent="space-between" alignItems={{ xs: 'stretch', sm: 'center' }} spacing={2} sx={{ mb: 2 }}>
+                        <Stack direction="row" spacing={1} alignItems="center"><WorkOutline sx={{ color: '#166534' }} /><Typography fontWeight={900} sx={{ color: '#14532d' }}>Work Experience</Typography></Stack>
+                        <Button type="button" variant="outlined" startIcon={<Add />} onClick={addWorkExperience} sx={{ ...softButtonSx, borderColor: '#166534', color: '#166534', background: '#ffffff', minHeight: { xs: 44, sm: 46 } }}>Add Work Experience</Button>
+                      </Stack>
+                      <Stack spacing={2.5}>
+                        {workExperiences.map((workExperience, index) => (
+                          <Paper key={`work-experience-${index}`} elevation={0} sx={nestedPaperSx}>
+                            <Stack direction={{ xs: 'column', sm: 'row' }} justifyContent="space-between" alignItems={{ xs: 'stretch', sm: 'center' }} spacing={2} sx={{ mb: 2 }}>
+                              <Stack direction="row" spacing={1} alignItems="center"><WorkOutline sx={{ color: '#166534' }} /><Typography fontWeight={900} sx={{ color: '#14532d' }}>Work Experience {index + 1}</Typography></Stack>
+                              {workExperiences.length > 1 && <Button type="button" color="error" variant="outlined" startIcon={<Delete />} onClick={() => removeWorkExperience(index)} sx={{ ...softButtonSx, minHeight: 40 }}>Remove</Button>}
+                            </Stack>
+                            <Grid container spacing={2.5}>
+                              <Grid size={fieldGrid}><TextField fullWidth label="Company / Organization" value={workExperience.companyOrganization} onChange={(e) => updateWorkExperienceText(index, 'companyOrganization', e.target.value)} inputProps={{ maxLength: 120 }} sx={textFieldSx} /></Grid>
+                              <Grid size={fieldGrid}><TextField fullWidth label="Position Held" value={workExperience.positionHeld} onChange={(e) => updateWorkExperienceText(index, 'positionHeld', e.target.value)} inputProps={{ maxLength: 120 }} sx={textFieldSx} /></Grid>
+                              <Grid size={fieldGrid}><TextField fullWidth label="Total Years of Work Experience" value={workExperience.totalYearsExperience} onChange={(e) => updateWorkExperienceNumeric(index, 'totalYearsExperience', e.target.value)} error={!!fieldErrors.totalYearsExperience} helperText={fieldErrors.totalYearsExperience} inputProps={{ inputMode: 'numeric', pattern: '[0-9]*', maxLength: 2 }} sx={textFieldSx} /></Grid>
+                              <Grid size={halfGrid}><TextField fullWidth type="date" label="Employment Start Date" value={workExperience.employmentStartDate} onChange={(e) => updateWorkExperienceText(index, 'employmentStartDate', e.target.value)} InputLabelProps={{ shrink: true }} sx={textFieldSx} /></Grid>
+                              <Grid size={halfGrid}><TextField fullWidth type="date" label="Employment End Date" value={workExperience.employmentEndDate} onChange={(e) => updateWorkExperienceText(index, 'employmentEndDate', e.target.value)} error={!!fieldErrors.employmentEndDate} helperText={fieldErrors.employmentEndDate} InputLabelProps={{ shrink: true }} sx={textFieldSx} /></Grid>
+                              <Grid size={halfGrid}><TextField fullWidth multiline minRows={3} label="Duties / Responsibilities" value={workExperience.dutiesResponsibilities} onChange={(e) => updateWorkExperienceText(index, 'dutiesResponsibilities', e.target.value)} inputProps={{ maxLength: 500 }} sx={textFieldSx} /></Grid>
+                              <Grid size={halfGrid}><TextField fullWidth multiline minRows={3} label="Reason for Leaving" value={workExperience.reasonForLeaving} onChange={(e) => updateWorkExperienceText(index, 'reasonForLeaving', e.target.value)} inputProps={{ maxLength: 500 }} sx={textFieldSx} /></Grid>
+                              <Grid size={halfGrid}><TextField fullWidth label="Previous Supervisor / Manager" value={workExperience.previousSupervisor} onChange={(e) => updateWorkExperienceUpperText(index, 'previousSupervisor', e.target.value)} inputProps={{ maxLength: 120 }} sx={textFieldSx} /></Grid>
+                              <Grid size={halfGrid}><TextField fullWidth label="Supervisor Contact Number" value={workExperience.supervisorContact} onChange={(e) => updateWorkExperienceSupervisorContact(index, e.target.value)} error={fieldErrors.supervisorContact?.includes(`Work experience ${index + 1}:`) ?? false} helperText={(fieldErrors.supervisorContact?.includes(`Work experience ${index + 1}:`) ? fieldErrors.supervisorContact : '') || `Enter ${PHONE_LOCAL_LENGTH} digits after +63.`} inputProps={phoneInputFieldProps} InputProps={{ startAdornment: phoneAdornment }} sx={textFieldSx} /></Grid>
+                            </Grid>
+                          </Paper>
+                        ))}
+                      </Stack>
                     </Paper>
                   </Stack>
                 </Paper>
@@ -1058,15 +1251,47 @@ export default function ApplyForJobPage() {
                   {fieldErrors.referenceName && <Alert severity="warning" sx={{ mb: 2 }}>{fieldErrors.referenceName}</Alert>}
                   {fieldErrors.referencePosition && <Alert severity="warning" sx={{ mb: 2 }}>{fieldErrors.referencePosition}</Alert>}
                   {fieldErrors.referenceContact && <Alert severity="warning" sx={{ mb: 2 }}>{fieldErrors.referenceContact}</Alert>}
-                  <Stack spacing={2.5}>{characterReferences.map((reference, index) => <Paper key={`reference-${index}`} elevation={0} sx={nestedPaperSx}><Stack direction={{ xs: 'column', sm: 'row' }} justifyContent="space-between" alignItems={{ xs: 'stretch', sm: 'center' }} spacing={2} sx={{ mb: 2 }}><Stack direction="row" spacing={1} alignItems="center"><Groups2Outlined sx={{ color: '#166534' }} /><Typography fontWeight={900} sx={{ color: '#14532d' }}>Character Reference {index + 1}</Typography></Stack>{characterReferences.length > 1 && <Button type="button" color="error" variant="outlined" startIcon={<Delete />} onClick={() => removeCharacterReference(index)} sx={{ ...softButtonSx, minHeight: 40 }}>Remove</Button>}</Stack><Grid container spacing={2.5}><Grid size={fieldGrid}><TextField fullWidth label="Reference Name" value={reference.name} onChange={(e) => updateCharacterReferenceName(index, e.target.value)} inputProps={{ maxLength: 80 }} sx={textFieldSx} /></Grid><Grid size={fieldGrid}><TextField fullWidth label="Position" value={reference.position} onChange={(e) => updateCharacterReference(index, 'position', e.target.value)} inputProps={{ maxLength: 80 }} sx={textFieldSx} /></Grid><Grid size={fieldGrid}><TextField fullWidth label="Company / Organization" value={reference.company} onChange={(e) => updateCharacterReference(index, 'company', e.target.value)} inputProps={{ maxLength: 120 }} sx={textFieldSx} /></Grid><Grid size={fieldGrid}><TextField fullWidth label="Reference Contact Number" value={reference.contact} onChange={(e) => updateCharacterReferenceContact(index, e.target.value)} helperText="11-digit contact number only." inputProps={{ inputMode: 'numeric', pattern: '[0-9]*', maxLength: 11 }} sx={textFieldSx} /></Grid></Grid></Paper>)}</Stack>
-                  <Stack direction="row" spacing={1} alignItems="center" sx={{ mt: 4, mb: 2 }}><FavoriteBorderRounded sx={{ color: '#166534' }} /><Typography variant="h6" fontWeight={900} sx={{ color: '#14532d' }}>Emergency Contact</Typography></Stack>
-                  <Grid container spacing={2.5}>
-                    <Grid size={fieldGrid}><TextField fullWidth required label="Emergency Contact Person" value={formData.emergencyContactName} onChange={setUpperText('emergencyContactName')} error={!!fieldErrors.emergencyContactName} helperText={fieldErrors.emergencyContactName} inputProps={{ maxLength: 80 }} sx={textFieldSx} /></Grid>
-                    <Grid size={fieldGrid}><TextField fullWidth required select label="Relationship" value={formData.emergencyContactRelation} onChange={set('emergencyContactRelation')} error={!!fieldErrors.emergencyContactRelation} helperText={fieldErrors.emergencyContactRelation} InputLabelProps={{ shrink: true }} sx={textFieldSx}>{RELATIONSHIPS.map((relationship) => <MenuItem key={relationship} value={relationship}>{relationship}</MenuItem>)}</TextField></Grid>
-                    {formData.emergencyContactRelation === 'Other' && <Grid size={fieldGrid}><TextField fullWidth required label="Please specify relationship" value={formData.emergencyContactRelationOther} onChange={setUpperText('emergencyContactRelationOther')} error={!!fieldErrors.emergencyContactRelationOther} helperText={fieldErrors.emergencyContactRelationOther} inputProps={{ maxLength: 80 }} sx={textFieldSx} /></Grid>}
-                    <Grid size={fieldGrid}><TextField fullWidth required label="Emergency Contact Number" value={formData.emergencyContactPhone} onChange={setPhone('emergencyContactPhone')} error={!!fieldErrors.emergencyContactPhone} helperText={fieldErrors.emergencyContactPhone || '11-digit contact number only.'} inputProps={{ inputMode: 'numeric', pattern: '[0-9]*', maxLength: 11 }} sx={textFieldSx} /></Grid>
-                    <Grid size={{ xs: 12, md: formData.emergencyContactRelation === 'Other' ? 12 : 8 }}><TextField fullWidth label="Emergency Contact Address" value={formData.emergencyContactAddress} onChange={set('emergencyContactAddress')} inputProps={{ maxLength: 160 }} sx={textFieldSx} /></Grid>
-                  </Grid>
+                  <Stack spacing={2.5}>
+                    {characterReferences.map((reference, index) => (
+                      <Paper key={`reference-${index}`} elevation={0} sx={nestedPaperSx}>
+                        <Stack direction={{ xs: 'column', sm: 'row' }} justifyContent="space-between" alignItems={{ xs: 'stretch', sm: 'center' }} spacing={2} sx={{ mb: 2 }}>
+                          <Stack direction="row" spacing={1} alignItems="center"><Groups2Outlined sx={{ color: '#166534' }} /><Typography fontWeight={900} sx={{ color: '#14532d' }}>Character Reference {index + 1}</Typography></Stack>
+                          {characterReferences.length > 1 && <Button type="button" color="error" variant="outlined" startIcon={<Delete />} onClick={() => removeCharacterReference(index)} sx={{ ...softButtonSx, minHeight: 40 }}>Remove</Button>}
+                        </Stack>
+                        <Grid container spacing={2.5}>
+                          <Grid size={fieldGrid}><TextField fullWidth label="Reference Name" value={reference.name} onChange={(e) => updateCharacterReferenceName(index, e.target.value)} inputProps={{ maxLength: 80 }} sx={textFieldSx} /></Grid>
+                          <Grid size={fieldGrid}><TextField fullWidth label="Position" value={reference.position} onChange={(e) => updateCharacterReference(index, 'position', e.target.value)} inputProps={{ maxLength: 80 }} sx={textFieldSx} /></Grid>
+                          <Grid size={fieldGrid}><TextField fullWidth label="Company / Organization" value={reference.company} onChange={(e) => updateCharacterReference(index, 'company', e.target.value)} inputProps={{ maxLength: 120 }} sx={textFieldSx} /></Grid>
+                          <Grid size={fieldGrid}><TextField fullWidth label="Reference Contact Number" value={reference.contact} onChange={(e) => updateCharacterReferenceContact(index, e.target.value)} helperText={`Enter ${PHONE_LOCAL_LENGTH} digits after +63.`} inputProps={phoneInputFieldProps} InputProps={{ startAdornment: phoneAdornment }} sx={textFieldSx} /></Grid>
+                        </Grid>
+                      </Paper>
+                    ))}
+                  </Stack>
+                  {fieldErrors.emergencyContactName && <Alert severity="warning" sx={{ mt: 2, mb: 2 }}>{fieldErrors.emergencyContactName}</Alert>}
+                  {fieldErrors.emergencyContactRelation && <Alert severity="warning" sx={{ mb: 2 }}>{fieldErrors.emergencyContactRelation}</Alert>}
+                  {fieldErrors.emergencyContactRelationOther && <Alert severity="warning" sx={{ mb: 2 }}>{fieldErrors.emergencyContactRelationOther}</Alert>}
+                  {fieldErrors.emergencyContactPhone && <Alert severity="warning" sx={{ mb: 2 }}>{fieldErrors.emergencyContactPhone}</Alert>}
+                  <Stack direction={{ xs: 'column', sm: 'row' }} alignItems={{ xs: 'stretch', sm: 'center' }} justifyContent="space-between" spacing={2} sx={{ mt: 4, mb: 2 }}>
+                    <Stack direction="row" spacing={1} alignItems="center"><FavoriteBorderRounded sx={{ color: '#166534' }} /><Typography variant="h6" fontWeight={900} sx={{ color: '#14532d' }}>Emergency Contact</Typography></Stack>
+                    <Button type="button" variant="outlined" startIcon={<Add />} onClick={addEmergencyContact} sx={{ ...softButtonSx, borderColor: '#166534', color: '#166534', background: '#ffffff', minHeight: { xs: 44, sm: 46 } }}>Add Emergency Contact</Button>
+                  </Stack>
+                  <Stack spacing={2.5}>
+                    {emergencyContacts.map((emergencyContact, index) => (
+                      <Paper key={`emergency-contact-${index}`} elevation={0} sx={nestedPaperSx}>
+                        <Stack direction={{ xs: 'column', sm: 'row' }} justifyContent="space-between" alignItems={{ xs: 'stretch', sm: 'center' }} spacing={2} sx={{ mb: 2 }}>
+                          <Stack direction="row" spacing={1} alignItems="center"><FavoriteBorderRounded sx={{ color: '#166534' }} /><Typography fontWeight={900} sx={{ color: '#14532d' }}>Emergency Contact {index + 1}</Typography></Stack>
+                          {emergencyContacts.length > 1 && <Button type="button" color="error" variant="outlined" startIcon={<Delete />} onClick={() => removeEmergencyContact(index)} sx={{ ...softButtonSx, minHeight: 40 }}>Remove</Button>}
+                        </Stack>
+                        <Grid container spacing={2.5}>
+                          <Grid size={fieldGrid}><TextField fullWidth required label="Emergency Contact Person" value={emergencyContact.name} onChange={(e) => updateEmergencyContactName(index, e.target.value)} inputProps={{ maxLength: 80 }} sx={textFieldSx} /></Grid>
+                          <Grid size={fieldGrid}><TextField fullWidth required select label="Relationship" value={emergencyContact.relation} onChange={(e) => updateEmergencyContactRelation(index, e.target.value)} InputLabelProps={{ shrink: true }} sx={textFieldSx}>{RELATIONSHIPS.map((relationship) => <MenuItem key={relationship} value={relationship}>{relationship}</MenuItem>)}</TextField></Grid>
+                          {emergencyContact.relation === 'Other' && <Grid size={fieldGrid}><TextField fullWidth required label="Please specify relationship" value={emergencyContact.relationOther} onChange={(e) => updateEmergencyContactRelationOther(index, e.target.value)} inputProps={{ maxLength: 80 }} sx={textFieldSx} /></Grid>}
+                          <Grid size={fieldGrid}><TextField fullWidth required label="Emergency Contact Number" value={emergencyContact.phone} onChange={(e) => updateEmergencyContactPhone(index, e.target.value)} helperText={`Enter ${PHONE_LOCAL_LENGTH} digits after +63.`} inputProps={phoneInputFieldProps} InputProps={{ startAdornment: phoneAdornment }} sx={textFieldSx} /></Grid>
+                          <Grid size={{ xs: 12, md: emergencyContact.relation === 'Other' ? 12 : 8 }}><TextField fullWidth label="Emergency Contact Address" value={emergencyContact.address} onChange={(e) => updateEmergencyContact(index, 'address', e.target.value)} inputProps={{ maxLength: 160 }} sx={textFieldSx} /></Grid>
+                        </Grid>
+                      </Paper>
+                    ))}
+                  </Stack>
                 </Paper>
               )}
 
