@@ -169,9 +169,6 @@ type WorkExperience = {
   employmentStartDate: string;
   employmentEndDate: string;
   dutiesResponsibilities: string;
-  reasonForLeaving: string;
-  previousSupervisor: string;
-  supervisorContact: string;
 };
 type EmergencyContact = {
   name: string;
@@ -191,9 +188,6 @@ const EMPTY_WORK_EXPERIENCE: WorkExperience = {
   employmentStartDate: '',
   employmentEndDate: '',
   dutiesResponsibilities: '',
-  reasonForLeaving: '',
-  previousSupervisor: '',
-  supervisorContact: '',
 };
 const EMPTY_EMERGENCY_CONTACT: EmergencyContact = {
   name: '',
@@ -210,7 +204,7 @@ const EMPTY = {
   permanentCountry: 'Philippines', permanentRegion: '', permanentProvince: '', permanentCity: '', permanentBarangay: '', permanentStreet: '', permanentZipCode: '', permanentAddress: '',
   emergencyContactName: '', emergencyContactRelation: '', emergencyContactRelationOther: '', emergencyContactPhone: '', emergencyContactAddress: '',
   education: '', schoolName: '', courseProgram: '', yearGraduated: '', honorsAwards: '',
-  companyOrganization: '', positionHeld: '', employmentStartDate: '', employmentEndDate: '', employmentPeriod: '', dutiesResponsibilities: '', reasonForLeaving: '', totalYearsExperience: '', previousSupervisor: '', supervisorContact: '',
+  companyOrganization: '', positionHeld: '', employmentStartDate: '', employmentEndDate: '', employmentPeriod: '', dutiesResponsibilities: '', totalYearsExperience: '',
   skills: [] as string[], otherSkills: '', certification1: '', certification2: '', certification3: '',
   referenceName: '', referencePosition: '', referenceCompany: '', referenceContact: '',
   submittedDocuments: [] as string[], otherDocument: '', applicantSignature: '', declarationDate: '',
@@ -330,15 +324,15 @@ export default function ApplyForJobPage() {
       backgroundColor: '#fbfefc',
       transition: 'all 0.25s ease',
       boxShadow: '0 6px 16px rgba(15, 23, 42, 0.025)',
-      '& input': { padding: { xs: '14px 14px', sm: '16px 15px' }, fontSize: { xs: '0.9rem', sm: '0.95rem' }, fontWeight: 700, color: '#1f2937' },
-      '& textarea': { padding: { xs: '14px 14px', sm: '16px 15px' }, fontSize: { xs: '0.9rem', sm: '0.95rem' }, fontWeight: 700, color: '#1f2937' },
+      '& input': { padding: { xs: '14px 14px', sm: '16px 15px' }, fontSize: { xs: '0.9rem', sm: '0.95rem' }, fontWeight: 400, color: '#1f2937' },
+      '& textarea': { padding: { xs: '14px 14px', sm: '16px 15px' }, fontSize: { xs: '0.9rem', sm: '0.95rem' }, fontWeight: 400, color: '#1f2937' },
       '& fieldset': { borderColor: 'rgba(22, 101, 52, 0.14)', borderWidth: '1px' },
       '&:hover': { backgroundColor: '#ffffff', boxShadow: '0 10px 24px rgba(15, 23, 42, 0.05)' },
       '&:hover fieldset': { borderColor: 'rgba(34, 197, 94, 0.46)' },
       '&.Mui-focused': { backgroundColor: '#ffffff', boxShadow: '0 0 0 5px rgba(34,197,94,0.10), 0 12px 28px rgba(15,23,42,0.06)' },
       '&.Mui-focused fieldset': { borderColor: '#22c55e', borderWidth: '1.5px' },
     },
-    '& .MuiSelect-select': { fontSize: { xs: '0.9rem', sm: '0.95rem' }, fontWeight: 700, color: '#1f2937' },
+    '& .MuiSelect-select': { fontSize: { xs: '0.9rem', sm: '0.95rem' }, fontWeight: 400, color: '#1f2937' },
     '& .MuiSelect-icon': { color: '#000000' },
     '& .MuiFormHelperText-root': {
       mx: { xs: 0.5, sm: 1.75 },
@@ -543,7 +537,7 @@ export default function ApplyForJobPage() {
 
   const phoneInputFieldProps = { inputMode: 'numeric' as const, pattern: '[0-9]*', maxLength: PHONE_LOCAL_LENGTH };
   const phoneAdornment = (
-    <InputAdornment position="start" sx={{ color: '#0f172a', fontWeight: 700 }}>
+    <InputAdornment position="start" sx={{ color: '#0f172a', fontWeight: 400 }}>
       {PHONE_COUNTRY_CODE}
     </InputAdornment>
   );
@@ -639,16 +633,11 @@ export default function ApplyForJobPage() {
     setWorkExperiences((prev) => prev.map((workExperience, currentIndex) => currentIndex === index ? { ...workExperience, [key]: value } : workExperience));
     if (key === 'employmentEndDate' || key === 'employmentStartDate') clearFieldError('employmentEndDate');
     if (key === 'totalYearsExperience') clearFieldError('totalYearsExperience');
-    if (key === 'supervisorContact') clearFieldError('supervisorContact');
   };
-  const updateWorkExperienceText = (index: number, key: Exclude<keyof WorkExperience, 'totalYearsExperience' | 'previousSupervisor' | 'supervisorContact'>, value: string) =>
+  const updateWorkExperienceText = (index: number, key: Exclude<keyof WorkExperience, 'totalYearsExperience'>, value: string) =>
     updateWorkExperience(index, key, value);
-  const updateWorkExperienceUpperText = (index: number, key: 'previousSupervisor', value: string) =>
-    updateWorkExperience(index, key, value.replace(/[^a-zA-Z .'-]/g, ''));
   const updateWorkExperienceNumeric = (index: number, key: 'totalYearsExperience', value: string) =>
     updateWorkExperience(index, key, value.replace(/\D/g, '').slice(0, 2));
-  const updateWorkExperienceSupervisorContact = (index: number, value: string) =>
-    updateWorkExperience(index, 'supervisorContact', sanitizePhoneNumber(value));
   const addWorkExperience = () => setWorkExperiences((prev) => [...prev, { ...EMPTY_WORK_EXPERIENCE }]);
   const removeWorkExperience = (index: number) => setWorkExperiences((prev) => prev.length === 1 ? prev : prev.filter((_, currentIndex) => currentIndex !== index));
 
@@ -715,10 +704,7 @@ export default function ApplyForJobPage() {
           workExperience.totalYearsExperience.trim() ||
           workExperience.employmentStartDate ||
           workExperience.employmentEndDate ||
-          workExperience.dutiesResponsibilities.trim() ||
-          workExperience.reasonForLeaving.trim() ||
-          workExperience.previousSupervisor.trim() ||
-          workExperience.supervisorContact.trim();
+          workExperience.dutiesResponsibilities.trim();
 
         if (!hasAnyValue) return;
 
@@ -727,9 +713,6 @@ export default function ApplyForJobPage() {
         }
         if (workExperience.totalYearsExperience && Number(workExperience.totalYearsExperience) > 80) {
           errors.totalYearsExperience = `Work experience ${index + 1}: Please enter a valid total years of experience.`;
-        }
-        if (workExperience.supervisorContact && workExperience.supervisorContact.length !== PHONE_LOCAL_LENGTH) {
-          errors.supervisorContact = `Work experience ${index + 1}: supervisor contact number must be exactly ${PHONE_LOCAL_LENGTH} digits after +63.`;
         }
       });
     }
@@ -803,14 +786,10 @@ export default function ApplyForJobPage() {
           workExperience.totalYearsExperience.trim() ||
           workExperience.employmentStartDate ||
           workExperience.employmentEndDate ||
-          workExperience.dutiesResponsibilities.trim() ||
-          workExperience.reasonForLeaving.trim() ||
-          workExperience.previousSupervisor.trim() ||
-          workExperience.supervisorContact.trim()
+          workExperience.dutiesResponsibilities.trim()
         )
         .map((workExperience) => ({
           ...workExperience,
-          supervisorContact: formatPhoneWithCountryCode(workExperience.supervisorContact),
           employmentPeriod: [workExperience.employmentStartDate, workExperience.employmentEndDate].filter(Boolean).join(' to '),
         }));
       const normalizedCharacterReferences = characterReferences
@@ -1216,9 +1195,6 @@ export default function ApplyForJobPage() {
                               <Grid size={halfGrid}><TextField fullWidth type="date" label="Employment Start Date" value={workExperience.employmentStartDate} onChange={(e) => updateWorkExperienceText(index, 'employmentStartDate', e.target.value)} InputLabelProps={{ shrink: true }} sx={textFieldSx} /></Grid>
                               <Grid size={halfGrid}><TextField fullWidth type="date" label="Employment End Date" value={workExperience.employmentEndDate} onChange={(e) => updateWorkExperienceText(index, 'employmentEndDate', e.target.value)} error={!!fieldErrors.employmentEndDate} helperText={fieldErrors.employmentEndDate} InputLabelProps={{ shrink: true }} sx={textFieldSx} /></Grid>
                               <Grid size={halfGrid}><TextField fullWidth multiline minRows={3} label="Duties / Responsibilities" value={workExperience.dutiesResponsibilities} onChange={(e) => updateWorkExperienceText(index, 'dutiesResponsibilities', e.target.value)} inputProps={{ maxLength: 500 }} sx={textFieldSx} /></Grid>
-                              <Grid size={halfGrid}><TextField fullWidth multiline minRows={3} label="Reason for Leaving" value={workExperience.reasonForLeaving} onChange={(e) => updateWorkExperienceText(index, 'reasonForLeaving', e.target.value)} inputProps={{ maxLength: 500 }} sx={textFieldSx} /></Grid>
-                              <Grid size={halfGrid}><TextField fullWidth label="Previous Supervisor / Manager" value={workExperience.previousSupervisor} onChange={(e) => updateWorkExperienceUpperText(index, 'previousSupervisor', e.target.value)} inputProps={{ maxLength: 120 }} sx={textFieldSx} /></Grid>
-                              <Grid size={halfGrid}><TextField fullWidth label="Supervisor Contact Number" value={workExperience.supervisorContact} onChange={(e) => updateWorkExperienceSupervisorContact(index, e.target.value)} error={fieldErrors.supervisorContact?.includes(`Work experience ${index + 1}:`) ?? false} helperText={(fieldErrors.supervisorContact?.includes(`Work experience ${index + 1}:`) ? fieldErrors.supervisorContact : '') || `Enter ${PHONE_LOCAL_LENGTH} digits after +63.`} inputProps={phoneInputFieldProps} InputProps={{ startAdornment: phoneAdornment }} sx={textFieldSx} /></Grid>
                             </Grid>
                           </Paper>
                         ))}

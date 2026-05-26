@@ -42,7 +42,6 @@ import {
   CheckCircle,
   MenuBook,
   Spa,
-  Shield,
 } from "@mui/icons-material";
 import { supabase } from "../../lib/supabaseClient";
 import { useAuth } from "../../context/AuthContext";
@@ -1001,7 +1000,6 @@ export default function LandingPage() {
                             wordBreak: "break-word",
                           }}
                         >
-                          <Shield fontSize="small" />
                           <strong>Salary:</strong> {getSalaryLabel(job.salary_range)}
                         </Typography>
                       </Stack>
