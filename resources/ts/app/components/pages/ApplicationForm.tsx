@@ -141,7 +141,7 @@ export default function ApplicationForm() {
       </Button>
 
       <Paper sx={{ p: { xs: 2, sm: 4 } }}>
-        <Typography variant="h5" gutterBottom fontWeight="bold">Job Application Form</Typography>
+        <Typography variant="h5" gutterBottom fontWeight={700}>Job Application Form</Typography>
         <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
           Please fill out all required fields — record will be saved to Supabase
         </Typography>
@@ -232,13 +232,13 @@ export default function ApplicationForm() {
           <Box sx={{ width: 72, height: 72, borderRadius: '50%', bgcolor: 'success.light', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto', mb: 3 }}>
             <TaskAlt sx={{ fontSize: 44, color: 'success.main' }} />
           </Box>
-          <Typography variant="h5" fontWeight="bold" color="success.main" gutterBottom>Application Submitted!</Typography>
+          <Typography variant="h5" fontWeight={700} color="success.main" gutterBottom>Application Submitted!</Typography>
           <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
             The application has been saved to Supabase and assigned the following ID:
           </Typography>
           <Paper sx={{ p: 3, bgcolor: 'primary.light', borderRadius: 2, mb: 2 }}>
             <Typography variant="body2" sx={{ color: 'white' }}>Applicant ID</Typography>
-            <Typography variant="h4" fontWeight="bold" sx={{ my: 1, color: 'white', letterSpacing: 2 }}>{newAppId}</Typography>
+            <Typography variant="h4" fontWeight={700} sx={{ my: 1, color: 'white', letterSpacing: 2 }}>{newAppId}</Typography>
             <Button size="small" variant="outlined" startIcon={<ContentCopy />} onClick={handleCopy}
               sx={{ color: 'white', borderColor: 'rgba(255,255,255,0.7)' }}>
               {copied ? 'Copied!' : 'Copy ID'}

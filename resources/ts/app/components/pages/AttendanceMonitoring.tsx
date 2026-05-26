@@ -142,7 +142,7 @@ const iconTileSx = {
 
 const pillButtonSx = {
   textTransform: "none",
-  fontWeight: 800,
+  fontWeight: 600,
   px: 2,
 };
 
@@ -172,7 +172,7 @@ const statusChipSx = (status: Attendance["status"]) => {
     bgcolor: selected.bg,
     color: selected.color,
     borderColor: selected.border,
-    fontWeight: 800,
+    fontWeight: 600,
     "& .MuiChip-label": { px: 1.25 },
   };
 };
@@ -1695,12 +1695,12 @@ export default function AttendanceMonitoring() {
                 mb: 1.2,
                 bgcolor: GREEN_UI.greenSoft,
                 color: GREEN_UI.greenDark,
-                fontWeight: 900,
+                fontWeight: 700,
               }}
             />
             <Typography
               variant="h4"
-              fontWeight={900}
+              fontWeight={700}
               sx={{
                 fontSize: { xs: "1.55rem", sm: "2rem", md: "2.35rem" },
                 color: GREEN_UI.text,
@@ -1833,10 +1833,10 @@ export default function AttendanceMonitoring() {
             >
               <Box sx={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 1.5 }}>
                 <Box>
-                  <Typography variant="body2" sx={{ color: GREEN_UI.muted, fontWeight: 800 }}>
+                  <Typography variant="body2" sx={{ color: GREEN_UI.muted, fontWeight: 600 }}>
                     {stat.label}
                   </Typography>
-                  <Typography variant="h4" fontWeight={900} sx={{ color: GREEN_UI.text, mt: 0.5, letterSpacing: "-0.04em" }}>
+                  <Typography variant="h4" fontWeight={700} sx={{ color: GREEN_UI.text, mt: 0.5, letterSpacing: "-0.04em" }}>
                     {stat.value}
                   </Typography>
                 </Box>
@@ -1870,7 +1870,7 @@ export default function AttendanceMonitoring() {
             <TuneRounded fontSize="small" />
           </Box>
           <Box>
-            <Typography fontWeight={900} sx={{ color: GREEN_UI.text, lineHeight: 1.2 }}>
+            <Typography fontWeight={700} sx={{ color: GREEN_UI.text, lineHeight: 1.2 }}>
               Attendance Filters
             </Typography>
             <Typography variant="caption" sx={{ color: GREEN_UI.muted }}>
@@ -1974,7 +1974,7 @@ export default function AttendanceMonitoring() {
                     }}
                   >
                     <Box sx={{ minWidth: 0 }}>
-                      <Typography fontWeight={900} noWrap sx={{ color: GREEN_UI.text }}>
+                      <Typography fontWeight={700} noWrap sx={{ color: GREEN_UI.text }}>
                         {att.employee}
                       </Typography>
                       <Typography variant="caption" sx={{ color: GREEN_UI.muted }}>
@@ -2002,7 +2002,7 @@ export default function AttendanceMonitoring() {
                         <Typography variant="caption" sx={{ color: GREEN_UI.muted, fontWeight: 700 }}>
                           {label}
                         </Typography>
-                        <Typography variant="body2" fontWeight={800} sx={{ color: GREEN_UI.text }}>
+                        <Typography variant="body2" fontWeight={600} sx={{ color: GREEN_UI.text }}>
                           {value}
                         </Typography>
                       </Grid>
@@ -2054,7 +2054,7 @@ export default function AttendanceMonitoring() {
                   background: "linear-gradient(90deg, #eff8eb 0%, #f8fcf5 100%)",
                   "& th": {
                     color: GREEN_UI.greenDark,
-                    fontWeight: 900,
+                    fontWeight: 700,
                     fontSize: "0.78rem",
                     letterSpacing: "0.02em",
                     textTransform: "uppercase",
@@ -2106,7 +2106,7 @@ export default function AttendanceMonitoring() {
                         size="small"
                         variant="outlined"
                         sx={{
-                          fontWeight: 800,
+                          fontWeight: 600,
                           color: GREEN_UI.greenDark,
                           borderColor: GREEN_UI.borderStrong,
                           bgcolor: GREEN_UI.greenSoft,
@@ -2118,7 +2118,7 @@ export default function AttendanceMonitoring() {
                         <Box sx={{ ...iconTileSx, width: 34, height: 34}}>
                           <PersonRounded fontSize="small" />
                         </Box>
-                        <Typography fontWeight={850} sx={{ color: GREEN_UI.text, whiteSpace: "nowrap" }}>{att.employee}</Typography>
+                        <Typography fontWeight={600} sx={{ color: GREEN_UI.text, whiteSpace: "nowrap" }}>{att.employee}</Typography>
                       </Box>
                     </TableCell>
                     <TableCell sx={{ whiteSpace: "nowrap" }}>
@@ -2139,7 +2139,7 @@ export default function AttendanceMonitoring() {
                         <Typography variant="body2" fontWeight={700}>{att.timeOut || "—"}</Typography>
                       </Box>
                     </TableCell>
-                    <TableCell sx={{ fontWeight: 800, color: GREEN_UI.text }}>{att.totalHours}</TableCell>
+                    <TableCell sx={{ fontWeight: 600, color: GREEN_UI.text }}>{att.totalHours}</TableCell>
                     <TableCell
                       sx={{
                         color:
@@ -2235,7 +2235,7 @@ export default function AttendanceMonitoring() {
               flexWrap: "wrap",
             }}
           >
-            <Typography variant="body2" sx={{ color: GREEN_UI.muted, fontWeight: 800 }}>
+            <Typography variant="body2" sx={{ color: GREEN_UI.muted, fontWeight: 600 }}>
               Rows per page:
             </Typography>
             <TextField
@@ -2266,7 +2266,7 @@ export default function AttendanceMonitoring() {
           >
             <Typography
               variant="body2"
-              sx={{ minWidth: 135, color: GREEN_UI.muted, fontWeight: 800 }}
+              sx={{ minWidth: 135, color: GREEN_UI.muted, fontWeight: 600 }}
             >
               {pageStart}-{pageEnd} of {filtered.length}
             </Typography>
@@ -2286,7 +2286,7 @@ export default function AttendanceMonitoring() {
               </Tooltip>
               <Typography
                 variant="body2"
-                sx={{ px: 1, minWidth: 84, textAlign: "center", color: GREEN_UI.text, fontWeight: 800 }}
+                sx={{ px: 1, minWidth: 84, textAlign: "center", color: GREEN_UI.text, fontWeight: 600 }}
               >
                 Page {page + 1} / {totalPages}
               </Typography>
@@ -2315,7 +2315,7 @@ export default function AttendanceMonitoring() {
               <FactCheckRounded fontSize="small" />
             </Box>
             <Box>
-              <Typography variant="h6" fontWeight={900} sx={{ color: GREEN_UI.text, lineHeight: 1.2 }}>
+              <Typography variant="h6" fontWeight={700} sx={{ color: GREEN_UI.text, lineHeight: 1.2 }}>
             Summary {filterDate ? `for ${filterDate}` : "(All Records)"}
               </Typography>
               <Typography variant="caption" sx={{ color: GREEN_UI.muted }}>A compact count of the filtered attendance records.</Typography>
@@ -2329,10 +2329,10 @@ export default function AttendanceMonitoring() {
               ["On Leave", summary.onLeave, "info"],
             ].map(([label, val]) => (
               <Grid key={String(label)} size={{ xs: 6, md: 3 }}>
-                <Typography variant="body2" sx={{ color: GREEN_UI.muted, fontWeight: 800 }}>
+                <Typography variant="body2" sx={{ color: GREEN_UI.muted, fontWeight: 600 }}>
                   {label}
                 </Typography>
-                <Typography variant="h5" fontWeight={900} sx={{ color: GREEN_UI.text }}>{val}</Typography>
+                <Typography variant="h5" fontWeight={700} sx={{ color: GREEN_UI.text }}>{val}</Typography>
               </Grid>
             ))}
           </Grid>
@@ -2363,7 +2363,7 @@ export default function AttendanceMonitoring() {
           },
         }}
       >
-        <DialogTitle fontWeight={900} sx={{ px: 3, pt: 2.5 }}>
+        <DialogTitle fontWeight={700} sx={{ px: 3, pt: 2.5 }}>
           <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
             <Box sx={{ ...iconTileSx, width: 38, height: 38}}>
               <AddCircleOutline fontSize="small" />
@@ -2541,7 +2541,7 @@ export default function AttendanceMonitoring() {
           },
         }}
       >
-        <DialogTitle fontWeight={900} sx={{ px: 3, pt: 2.5 }}>
+        <DialogTitle fontWeight={700} sx={{ px: 3, pt: 2.5 }}>
           <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
             <Box sx={{ ...iconTileSx, width: 38, height: 38}}>
               <UploadFileRounded fontSize="small" />

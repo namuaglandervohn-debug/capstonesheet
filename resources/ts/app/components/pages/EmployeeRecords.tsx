@@ -184,7 +184,7 @@ const employeeStatusChipSx = (status: Employee['status']) => {
     bgcolor: selected.bg,
     color: selected.color,
     borderColor: selected.border,
-    fontWeight: 800,
+    fontWeight: 600,
     '& .MuiChip-label': { px: 1.25 },
   };
 };
@@ -468,12 +468,12 @@ export default function EmployeeRecords() {
                 mb: 1.2,
                 bgcolor: GREEN_UI.greenSoft,
                 color: GREEN_UI.greenDark,
-                fontWeight: 900,
+                fontWeight: 700,
               }}
             />
             <Typography
               variant="h4"
-              fontWeight={900}
+              fontWeight={700}
               sx={{
                 fontSize: { xs: '1.55rem', sm: '2rem', md: '2.35rem' },
                 color: GREEN_UI.text,
@@ -574,10 +574,10 @@ export default function EmployeeRecords() {
             >
               <Box sx={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 1.5 }}>
                 <Box>
-                  <Typography variant="body2" sx={{ color: GREEN_UI.muted, fontWeight: 800 }}>
+                  <Typography variant="body2" sx={{ color: GREEN_UI.muted, fontWeight: 600 }}>
                     {stat.label}
                   </Typography>
-                  <Typography variant="h4" fontWeight={900} sx={{ color: GREEN_UI.text, mt: 0.5, letterSpacing: '-0.04em' }}>
+                  <Typography variant="h4" fontWeight={700} sx={{ color: GREEN_UI.text, mt: 0.5, letterSpacing: '-0.04em' }}>
                     {stat.value}
                   </Typography>
                 </Box>
@@ -613,7 +613,7 @@ export default function EmployeeRecords() {
             <ManageSearch fontSize="small" />
           </Box>
           <Box>
-            <Typography fontWeight={900} sx={{ color: GREEN_UI.text, lineHeight: 1.2 }}>
+            <Typography fontWeight={700} sx={{ color: GREEN_UI.text, lineHeight: 1.2 }}>
               Employee Directory
             </Typography>
             <Typography variant="caption" sx={{ color: GREEN_UI.muted }}>
@@ -661,7 +661,7 @@ export default function EmployeeRecords() {
                   background: 'linear-gradient(90deg, #eff8eb 0%, #f8fcf5 100%)',
                   '& th': {
                     color: GREEN_UI.greenDark,
-                    fontWeight: 900,
+                    fontWeight: 700,
                     fontSize: '0.78rem',
                     letterSpacing: '0.02em',
                     textTransform: 'uppercase',
@@ -698,7 +698,7 @@ export default function EmployeeRecords() {
                       >
                         <ManageSearch />
                       </Box>
-                      <Typography fontWeight={900} sx={{ color: GREEN_UI.text }}>
+                      <Typography fontWeight={700} sx={{ color: GREEN_UI.text }}>
                         {employees.length === 0 ? 'No employees yet' : 'No employee records found'}
                       </Typography>
                       <Typography variant="body2" sx={{ color: GREEN_UI.muted, mt: 0.5 }}>
@@ -726,7 +726,7 @@ export default function EmployeeRecords() {
                         label={emp.id}
                         size="small"
                         variant="outlined"
-                        sx={{ fontWeight: 800, bgcolor: '#f8fcf5', borderColor: GREEN_UI.border }}
+                        sx={{ fontWeight: 600, bgcolor: '#f8fcf5', borderColor: GREEN_UI.border }}
                       />
                     </TableCell>
                     <TableCell sx={{ whiteSpace: 'nowrap' }}>
@@ -743,7 +743,7 @@ export default function EmployeeRecords() {
                           <AccountCircleRounded fontSize="small" />
                         </Box>
                         <Box>
-                          <Typography fontWeight={800} sx={{ color: GREEN_UI.text }}>
+                          <Typography fontWeight={600} sx={{ color: GREEN_UI.text }}>
                             {emp.name}
                           </Typography>
                           {emp.email && (
@@ -793,7 +793,7 @@ export default function EmployeeRecords() {
                           sx={{
                             minWidth: 116,
                             justifyContent: 'center',
-                            fontWeight: 800,
+                            fontWeight: 600,
                             borderColor: GREEN_UI.borderStrong,
                             color: GREEN_UI.greenDark,
                             bgcolor: '#ffffff',
@@ -811,7 +811,7 @@ export default function EmployeeRecords() {
                             sx={{
                               minWidth: 86,
                               justifyContent: 'center',
-                              fontWeight: 800,
+                              fontWeight: 600,
                               borderColor: '#efb8b8',
                               color: '#9c2f2f',
                               bgcolor: '#fffafa',
@@ -850,7 +850,7 @@ export default function EmployeeRecords() {
         }}
       >
         <DialogTitle
-          fontWeight={900}
+          fontWeight={700}
           sx={{
             px: { xs: 2, sm: 3 },
             py: 2.25,
@@ -863,7 +863,7 @@ export default function EmployeeRecords() {
               <PersonAddAlt1Rounded fontSize="small" />
             </Box>
             <Box>
-              <Typography fontWeight={900} sx={{ color: GREEN_UI.text, lineHeight: 1.2 }}>
+              <Typography fontWeight={700} sx={{ color: GREEN_UI.text, lineHeight: 1.2 }}>
                 Add New Employee
               </Typography>
               <Typography variant="caption" sx={{ color: GREEN_UI.muted }}>
@@ -888,7 +888,7 @@ export default function EmployeeRecords() {
               <Box sx={{ ...iconTileSx, width: 34, height: 34, borderRadius: '13px' }}>
                 <BadgeRounded fontSize="small" />
               </Box>
-              <Typography variant="subtitle2" fontWeight={900} sx={{ color: GREEN_UI.greenDark }}>
+              <Typography variant="subtitle2" fontWeight={700} sx={{ color: GREEN_UI.greenDark }}>
                 Basic Information
               </Typography>
             </Box>
@@ -1039,7 +1039,7 @@ export default function EmployeeRecords() {
               <Box sx={{ ...iconTileSx, width: 34, height: 34, borderRadius: '13px' }}>
                 <LocalPhoneRounded fontSize="small" />
               </Box>
-              <Typography variant="subtitle2" fontWeight={900} sx={{ color: GREEN_UI.greenDark }}>
+              <Typography variant="subtitle2" fontWeight={700} sx={{ color: GREEN_UI.greenDark }}>
                 Contact & Hiring Details
               </Typography>
             </Box>
@@ -1115,7 +1115,7 @@ export default function EmployeeRecords() {
               <Box sx={{ ...iconTileSx, width: 34, height: 34, borderRadius: '13px' }}>
                 <ScheduleRounded fontSize="small" />
               </Box>
-              <Typography variant="subtitle2" fontWeight={900} sx={{ color: GREEN_UI.greenDark }}>
+              <Typography variant="subtitle2" fontWeight={700} sx={{ color: GREEN_UI.greenDark }}>
                 Schedule Assignment
               </Typography>
             </Box>

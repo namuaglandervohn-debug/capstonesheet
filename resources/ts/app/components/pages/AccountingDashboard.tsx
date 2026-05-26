@@ -128,7 +128,7 @@ const accountingStatusChipSx = (status: PayrollPreview['status']) => {
     bgcolor: isProcessed ? '#e5f8e9' : '#fff7e0',
     color: isProcessed ? '#217a43' : '#9b6b00',
     borderColor: isProcessed ? '#a9dfb6' : '#f5d786',
-    fontWeight: 800,
+    fontWeight: 600,
   };
 };
 
@@ -425,17 +425,17 @@ export default function AccountingDashboard() {
                 mb: 1.5,
                 bgcolor: GREEN_UI.greenSoft,
                 color: GREEN_UI.greenDark,
-                fontWeight: 800,
+                fontWeight: 600,
                 border: `1px solid ${GREEN_UI.borderStrong}`,
                 '& .MuiChip-icon': { color: GREEN_UI.greenDark },
               }}
             />
             <Typography
               variant="h4"
-              fontWeight={900}
+              fontWeight={700}
               sx={{
                 color: GREEN_UI.text,
-                fontSize: { xs: '1.55rem', sm: '1.95rem', md: '2.35rem' },
+                fontSize: { xs: '1.55rem', sm: '2rem', md: '2.35rem' },
                 letterSpacing: '-0.04em',
                 lineHeight: 1.05,
               }}
@@ -472,7 +472,7 @@ export default function AccountingDashboard() {
                   bgcolor: 'rgba(255,255,255,0.72)',
                   color: GREEN_UI.greenDark,
                   border: `1px solid ${GREEN_UI.border}`,
-                  fontWeight: 800,
+                  fontWeight: 600,
                   justifyContent: 'center',
                 }}
               />
@@ -556,7 +556,7 @@ export default function AccountingDashboard() {
                 </Box>
 
                 <Typography
-                  fontWeight={900}
+                  fontWeight={700}
                   sx={{
                     mt: 2,
                     color: GREEN_UI.text,
@@ -615,7 +615,7 @@ export default function AccountingDashboard() {
               >
                 <Timelapse fontSize="small" />
               </Box>
-              <Typography variant="h6" fontWeight={900} sx={{ color: GREEN_UI.text, lineHeight: 1.2 }}>
+              <Typography variant="h6" fontWeight={700} sx={{ color: GREEN_UI.text, lineHeight: 1.2 }}>
                 Payroll Awaiting Release
               </Typography>
             </Box>
@@ -682,7 +682,7 @@ export default function AccountingDashboard() {
             >
               <TaskAlt sx={{ fontSize: 34 }} />
             </Box>
-            <Typography fontWeight={900} sx={{ color: GREEN_UI.text }}>
+            <Typography fontWeight={700} sx={{ color: GREEN_UI.text }}>
               No payroll records awaiting release
             </Typography>
             <Typography variant="body2" sx={{ color: GREEN_UI.muted, mt: 0.5 }}>
@@ -705,7 +705,7 @@ export default function AccountingDashboard() {
                     '& .MuiTableCell-root': {
                       bgcolor: 'rgba(230, 248, 233, 0.72)',
                       color: GREEN_UI.greenDark,
-                      fontWeight: 900,
+                      fontWeight: 700,
                       fontSize: '0.78rem',
                       borderBottom: `1px solid ${GREEN_UI.border}`,
                       whiteSpace: 'nowrap',
@@ -750,13 +750,13 @@ export default function AccountingDashboard() {
                             bgcolor: GREEN_UI.greenSoft,
                             color: GREEN_UI.greenDark,
                             border: `1px solid ${GREEN_UI.borderStrong}`,
-                            fontWeight: 900,
+                            fontWeight: 700,
                             '& .MuiChip-icon': { color: GREEN_UI.greenDark },
                           }}
                         />
                       </TableCell>
                       <TableCell>
-                        <Typography variant="body2" fontWeight={900} sx={{ color: GREEN_UI.text }}>
+                        <Typography variant="body2" fontWeight={700} sx={{ color: GREEN_UI.text }}>
                           {payroll.employee}
                         </Typography>
                         <Typography variant="caption" sx={{ color: GREEN_UI.muted, fontWeight: 700 }}>
@@ -774,7 +774,7 @@ export default function AccountingDashboard() {
                         </Typography>
                       </TableCell>
                       <TableCell align="right">
-                        <Typography variant="body2" fontWeight={900} sx={{ color: GREEN_UI.greenDark }}>
+                        <Typography variant="body2" fontWeight={700} sx={{ color: GREEN_UI.greenDark }}>
                           {formatCurrency(payroll.netPay)}
                         </Typography>
                       </TableCell>

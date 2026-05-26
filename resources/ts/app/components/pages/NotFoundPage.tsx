@@ -26,7 +26,7 @@ export default function NotFoundPage() {
           border: '1px solid rgba(139, 184, 144, 0.24)',
         }}
       >
-        <Typography variant="h3" fontWeight={900} sx={{ color: '#1e2d24', mb: 1 }}>
+        <Typography variant="h3" fontWeight={700} sx={{ color: '#1e2d24', mb: 1 }}>
           404
         </Typography>
         <Typography variant="h6" fontWeight={700} sx={{ color: '#1f7a46', mb: 1 }}>

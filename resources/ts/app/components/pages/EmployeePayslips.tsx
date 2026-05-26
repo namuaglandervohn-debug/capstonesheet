@@ -224,7 +224,7 @@ const releasedChipSx = {
   bgcolor: '#e5f8e9',
   color: '#217a43',
   borderColor: '#a9dfb6',
-  fontWeight: 800,
+  fontWeight: 600,
   '& .MuiChip-label': { px: 1.25 },
 };
 
@@ -614,13 +614,13 @@ export default function EmployeePayslips() {
                 mb: 1.2,
                 bgcolor: GREEN_UI.greenSoft,
                 color: GREEN_UI.greenDark,
-                fontWeight: 900,
+                fontWeight: 700,
                 '& .MuiChip-icon': { color: GREEN_UI.greenDark },
               }}
             />
             <Typography
               variant="h4"
-              fontWeight={900}
+              fontWeight={700}
               sx={{
                 fontSize: { xs: '1.55rem', sm: '2rem', md: '2.35rem' },
                 color: GREEN_UI.text,
@@ -684,12 +684,12 @@ export default function EmployeePayslips() {
           >
             <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 1.5 }}>
               <Box>
-                <Typography variant="body2" sx={{ color: GREEN_UI.muted, fontWeight: 800 }}>
+                <Typography variant="body2" sx={{ color: GREEN_UI.muted, fontWeight: 600 }}>
                   {stat.label}
                 </Typography>
                 <Typography
                   variant="h4"
-                  fontWeight={900}
+                  fontWeight={700}
                   sx={{ color: GREEN_UI.text, mt: 0.5, letterSpacing: '-0.04em', fontSize: { xs: '1.65rem', md: '1.95rem' } }}
                 >
                   {stat.value}
@@ -755,7 +755,7 @@ export default function EmployeePayslips() {
               <Paid />
             </Box>
             <Box>
-              <Typography variant="h6" fontWeight={900} sx={{ color: GREEN_UI.text, letterSpacing: '-0.02em' }}>
+              <Typography variant="h6" fontWeight={700} sx={{ color: GREEN_UI.text, letterSpacing: '-0.02em' }}>
                 Released Payslip Records
               </Typography>
               <Typography variant="caption" sx={{ color: GREEN_UI.muted }}>
@@ -785,7 +785,7 @@ export default function EmployeePayslips() {
                     '& th': {
                       borderBottom: `1px solid ${GREEN_UI.border}`,
                       color: GREEN_UI.muted,
-                      fontWeight: 900,
+                      fontWeight: 700,
                       fontSize: '0.76rem',
                       letterSpacing: '0.04em',
                       textTransform: 'uppercase',
@@ -810,7 +810,7 @@ export default function EmployeePayslips() {
                     <TableCell colSpan={9} align="center" sx={{ py: 7, color: GREEN_UI.muted }}>
                       <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1 }}>
                         <ReceiptLong sx={{ fontSize: 42, color: GREEN_UI.greenDark, opacity: 0.7 }} />
-                        <Typography fontWeight={900} sx={{ color: GREEN_UI.text }}>No released payslips found.</Typography>
+                        <Typography fontWeight={700} sx={{ color: GREEN_UI.text }}>No released payslips found.</Typography>
                         <Typography variant="body2" sx={{ color: GREEN_UI.muted }}>
                           Released payroll records will show here once available.
                         </Typography>
@@ -833,7 +833,7 @@ export default function EmployeePayslips() {
                         size="small"
                         variant="outlined"
                         sx={{
-                          fontWeight: 800,
+                          fontWeight: 600,
                           bgcolor: '#f8fcf5',
                           borderColor: GREEN_UI.border,
                           color: GREEN_UI.greenDark,
@@ -844,7 +844,7 @@ export default function EmployeePayslips() {
                     <TableCell>
                       <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
                         <EventNote sx={{ fontSize: 18, color: GREEN_UI.greenDark }} />
-                        <Typography fontWeight={800} sx={{ color: GREEN_UI.text }}>{p.period}</Typography>
+                        <Typography fontWeight={600} sx={{ color: GREEN_UI.text }}>{p.period}</Typography>
                       </Box>
                     </TableCell>
                     <TableCell>
@@ -859,9 +859,9 @@ export default function EmployeePayslips() {
                         <Typography variant="body2" sx={{ color: GREEN_UI.text }}>{p.position || '—'}</Typography>
                       </Box>
                     </TableCell>
-                    <TableCell sx={{ fontWeight: 800, color: GREEN_UI.text }}>{p.grossPay}</TableCell>
-                    <TableCell sx={{ fontWeight: 800, color: '#9c2f2f' }}>{p.deductions}</TableCell>
-                    <TableCell sx={{ fontWeight: 900, color: GREEN_UI.greenDark }}>{p.netPay}</TableCell>
+                    <TableCell sx={{ fontWeight: 600, color: GREEN_UI.text }}>{p.grossPay}</TableCell>
+                    <TableCell sx={{ fontWeight: 600, color: '#9c2f2f' }}>{p.deductions}</TableCell>
+                    <TableCell sx={{ fontWeight: 700, color: GREEN_UI.greenDark }}>{p.netPay}</TableCell>
                     <TableCell>
                       <Chip
                         icon={<CheckCircle sx={{ fontSize: '0.95rem !important' }} />}
@@ -950,7 +950,7 @@ export default function EmployeePayslips() {
                 <ReceiptLong />
               </Box>
               <Box>
-                <Typography variant="h6" fontWeight={900} sx={{ color: GREEN_UI.text, letterSpacing: '-0.02em' }}>
+                <Typography variant="h6" fontWeight={700} sx={{ color: GREEN_UI.text, letterSpacing: '-0.02em' }}>
                   Payslip Preview
                 </Typography>
                 <Typography variant="caption" sx={{ color: GREEN_UI.muted }}>
@@ -963,7 +963,7 @@ export default function EmployeePayslips() {
                 label={selected.displayId ?? selected.id}
                 size="small"
                 variant="outlined"
-                sx={{ fontWeight: 800, borderColor: GREEN_UI.border, color: GREEN_UI.greenDark }}
+                sx={{ fontWeight: 600, borderColor: GREEN_UI.border, color: GREEN_UI.greenDark }}
               />
             )}
           </Box>
@@ -978,8 +978,8 @@ export default function EmployeePayslips() {
             const hdmf     = 100;
             const totalDed = dedAmt > 0 ? dedAmt : sss + phic + hdmf;
 
-            const labelSx = { fontWeight: 800, color: GREEN_UI.muted, fontSize: '0.76rem' };
-            const valueSx = { fontWeight: 800, color: GREEN_UI.text, fontSize: '0.78rem' };
+            const labelSx = { fontWeight: 600, color: GREEN_UI.muted, fontSize: '0.76rem' };
+            const valueSx = { fontWeight: 600, color: GREEN_UI.text, fontSize: '0.78rem' };
 
             const earningsRows: [string, string, string][] = [
               ['Basic Pay',          selected.totalHours || '—',                                           selected.basicPayAmt || fmt(grossAmt)],
@@ -1009,7 +1009,7 @@ export default function EmployeePayslips() {
             return (
               <Paper elevation={0} sx={{ ...innerCardSx, overflow: 'hidden', bgcolor: '#ffffff' }}>
                 <Box sx={{ textAlign: 'center', py: 1.5, px: 2, borderBottom: `1px solid ${GREEN_UI.border}` }}>
-                  <Typography fontWeight={900} sx={{ color: GREEN_UI.greenDark, letterSpacing: '0.08em', fontSize: '0.9rem' }}>
+                  <Typography fontWeight={700} sx={{ color: GREEN_UI.greenDark, letterSpacing: '0.08em', fontSize: '0.9rem' }}>
                     BUENAVENTURA ESTATE
                   </Typography>
                   <Typography variant="caption" sx={{ color: GREEN_UI.muted, fontWeight: 700 }}>
@@ -1045,47 +1045,47 @@ export default function EmployeePayslips() {
                 <Divider sx={{ borderColor: GREEN_UI.border }} />
 
                 <Box sx={{ px: 1.5, py: 1.25 }}>
-                  <Typography fontWeight={900} sx={{ color: GREEN_UI.text, mb: 1, display: 'flex', alignItems: 'center', gap: 0.75 }}>
+                  <Typography fontWeight={700} sx={{ color: GREEN_UI.text, mb: 1, display: 'flex', alignItems: 'center', gap: 0.75 }}>
                     <Paid sx={{ fontSize: 18, color: GREEN_UI.greenDark }} /> Earnings
                   </Typography>
                   <Box sx={{ border: `1px solid ${GREEN_UI.border}`, borderRadius: '16px', overflow: 'hidden' }}>
                     <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 120px 120px', bgcolor: GREEN_UI.cardBgSoft, borderBottom: `1px solid ${GREEN_UI.border}` }}>
-                      <Typography sx={{ p: 1, fontSize: '0.73rem', fontWeight: 900, color: GREEN_UI.muted }}>Item</Typography>
-                      <Typography sx={{ p: 1, fontSize: '0.73rem', fontWeight: 900, color: GREEN_UI.muted, textAlign: 'right' }}>Days/Hours/Mins.</Typography>
-                      <Typography sx={{ p: 1, fontSize: '0.73rem', fontWeight: 900, color: GREEN_UI.muted, textAlign: 'right' }}>Amount</Typography>
+                      <Typography sx={{ p: 1, fontSize: '0.73rem', fontWeight: 700, color: GREEN_UI.muted }}>Item</Typography>
+                      <Typography sx={{ p: 1, fontSize: '0.73rem', fontWeight: 700, color: GREEN_UI.muted, textAlign: 'right' }}>Days/Hours/Mins.</Typography>
+                      <Typography sx={{ p: 1, fontSize: '0.73rem', fontWeight: 700, color: GREEN_UI.muted, textAlign: 'right' }}>Amount</Typography>
                     </Box>
                     {earningsRows.map(([label, days, amount]) => (
                       <Box key={label} sx={{ display: 'grid', gridTemplateColumns: '1fr 120px 120px', borderBottom: `1px solid ${GREEN_UI.border}` }}>
                         <Typography sx={{ p: 1, fontSize: '0.77rem', color: GREEN_UI.text }}>{label}</Typography>
                         <Typography sx={{ p: 1, fontSize: '0.77rem', color: GREEN_UI.text, textAlign: 'right' }}>{days}</Typography>
-                        <Typography sx={{ p: 1, fontSize: '0.77rem', color: GREEN_UI.text, textAlign: 'right', fontWeight: 800 }}>{amount}</Typography>
+                        <Typography sx={{ p: 1, fontSize: '0.77rem', color: GREEN_UI.text, textAlign: 'right', fontWeight: 600 }}>{amount}</Typography>
                       </Box>
                     ))}
                     <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 120px', bgcolor: '#fff9d7' }}>
-                      <Typography sx={{ p: 1, fontSize: '0.78rem', fontWeight: 900, color: GREEN_UI.text, textAlign: 'center' }}>GROSS PAY</Typography>
-                      <Typography sx={{ p: 1, fontSize: '0.78rem', fontWeight: 900, color: GREEN_UI.text, textAlign: 'right' }}>{fmt(grossAmt)}</Typography>
+                      <Typography sx={{ p: 1, fontSize: '0.78rem', fontWeight: 700, color: GREEN_UI.text, textAlign: 'center' }}>GROSS PAY</Typography>
+                      <Typography sx={{ p: 1, fontSize: '0.78rem', fontWeight: 700, color: GREEN_UI.text, textAlign: 'right' }}>{fmt(grossAmt)}</Typography>
                     </Box>
                   </Box>
                 </Box>
 
                 <Box sx={{ px: 1.5, py: 1.25 }}>
-                  <Typography fontWeight={900} sx={{ color: GREEN_UI.text, mb: 1, display: 'flex', alignItems: 'center', gap: 0.75 }}>
+                  <Typography fontWeight={700} sx={{ color: GREEN_UI.text, mb: 1, display: 'flex', alignItems: 'center', gap: 0.75 }}>
                     <Payments sx={{ fontSize: 18, color: '#9c2f2f' }} /> Deductions
                   </Typography>
                   <Box sx={{ border: `1px solid ${GREEN_UI.border}`, borderRadius: '16px', overflow: 'hidden' }}>
                     {deductionRows.map(([label, amount]) => (
                       <Box key={label} sx={{ display: 'grid', gridTemplateColumns: '1fr 130px', borderBottom: `1px solid ${GREEN_UI.border}` }}>
                         <Typography sx={{ p: 1, fontSize: '0.77rem', color: GREEN_UI.text }}>{label}</Typography>
-                        <Typography sx={{ p: 1, fontSize: '0.77rem', color: GREEN_UI.text, textAlign: 'right', fontWeight: 800 }}>{amount}</Typography>
+                        <Typography sx={{ p: 1, fontSize: '0.77rem', color: GREEN_UI.text, textAlign: 'right', fontWeight: 600 }}>{amount}</Typography>
                       </Box>
                     ))}
                     <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 130px', bgcolor: GREEN_UI.cardBgSoft, borderBottom: `1px solid ${GREEN_UI.border}` }}>
-                      <Typography sx={{ p: 1, fontSize: '0.78rem', fontWeight: 900, color: GREEN_UI.text, textAlign: 'right' }}>TOTAL DEDUCTIONS</Typography>
-                      <Typography sx={{ p: 1, fontSize: '0.78rem', fontWeight: 900, color: '#9c2f2f', textAlign: 'right' }}>{fmt(totalDed)}</Typography>
+                      <Typography sx={{ p: 1, fontSize: '0.78rem', fontWeight: 700, color: GREEN_UI.text, textAlign: 'right' }}>TOTAL DEDUCTIONS</Typography>
+                      <Typography sx={{ p: 1, fontSize: '0.78rem', fontWeight: 700, color: '#9c2f2f', textAlign: 'right' }}>{fmt(totalDed)}</Typography>
                     </Box>
                     <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 130px', bgcolor: '#fff9d7' }}>
-                      <Typography sx={{ p: 1, fontSize: '0.82rem', fontWeight: 900, color: GREEN_UI.greenDark, textAlign: 'center' }}>NET PAY</Typography>
-                      <Typography sx={{ p: 1, fontSize: '0.82rem', fontWeight: 900, color: GREEN_UI.greenDark, textAlign: 'right' }}>{fmt(netAmt)}</Typography>
+                      <Typography sx={{ p: 1, fontSize: '0.82rem', fontWeight: 700, color: GREEN_UI.greenDark, textAlign: 'center' }}>NET PAY</Typography>
+                      <Typography sx={{ p: 1, fontSize: '0.82rem', fontWeight: 700, color: GREEN_UI.greenDark, textAlign: 'right' }}>{fmt(netAmt)}</Typography>
                     </Box>
                   </Box>
                 </Box>
@@ -1097,7 +1097,7 @@ export default function EmployeePayslips() {
                   <Box sx={{ display: 'flex', alignItems: 'flex-end', mt: 2, gap: 2, flexWrap: 'wrap' }}>
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75, color: GREEN_UI.muted }}>
                       <EventNote sx={{ fontSize: 17 }} />
-                      <Typography variant="caption" fontWeight={800}>
+                      <Typography variant="caption" fontWeight={600}>
                         Date:{' '}
                         {selected.payslipDate
                           ? new Date(selected.payslipDate + 'T00:00:00').toLocaleDateString('en-PH', { year: 'numeric', month: 'long', day: 'numeric' })
@@ -1105,7 +1105,7 @@ export default function EmployeePayslips() {
                       </Typography>
                     </Box>
                     <Box sx={{ flex: 1, minWidth: 220, textAlign: 'center' }}>
-                      <Typography sx={{ fontWeight: 900, fontSize: '0.82rem', pb: '4px', borderBottom: `1px solid ${GREEN_UI.text}`, color: GREEN_UI.text }}>
+                      <Typography sx={{ fontWeight: 700, fontSize: '0.82rem', pb: '4px', borderBottom: `1px solid ${GREEN_UI.text}`, color: GREEN_UI.text }}>
                         {selected.employee.toUpperCase()}
                       </Typography>
                       <Typography variant="caption" sx={{ color: GREEN_UI.muted }}>{selected.position || '—'}</Typography>

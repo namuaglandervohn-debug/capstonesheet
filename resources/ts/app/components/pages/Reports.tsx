@@ -178,7 +178,7 @@ const statusChipSx = (value: any) => {
     bgcolor: selected.bg,
     color: selected.color,
     borderColor: selected.border,
-    fontWeight: 800,
+    fontWeight: 600,
     '& .MuiChip-label': { px: 1.25 },
   };
 };
@@ -668,13 +668,13 @@ export default function Reports() {
                 mb: 1.2,
                 bgcolor: GREEN_UI.greenSoft,
                 color: GREEN_UI.greenDark,
-                fontWeight: 900,
+                fontWeight: 700,
                 '& .MuiChip-icon': { color: GREEN_UI.greenDark },
               }}
             />
             <Typography
               variant="h4"
-              fontWeight={900}
+              fontWeight={700}
               sx={{
                 fontSize: { xs: '1.55rem', sm: '2rem', md: '2.35rem' },
                 color: GREEN_UI.text,
@@ -728,12 +728,12 @@ export default function Reports() {
             >
               <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 1.5 }}>
                 <Box sx={{ minWidth: 0 }}>
-                  <Typography variant="body2" sx={{ color: GREEN_UI.muted, fontWeight: 800 }}>
+                  <Typography variant="body2" sx={{ color: GREEN_UI.muted, fontWeight: 600 }}>
                     {stat.label}
                   </Typography>
                   <Typography
                     variant="h4"
-                    fontWeight={900}
+                    fontWeight={700}
                     sx={{ color: GREEN_UI.text, mt: 0.5, letterSpacing: '-0.04em', fontSize: { xs: '1.65rem', sm: '1.95rem' } }}
                   >
                     {stat.value}
@@ -798,7 +798,7 @@ export default function Reports() {
             <Tune fontSize="small" />
           </Box>
           <Box>
-            <Typography variant="h6" fontWeight={900} sx={{ color: GREEN_UI.text, lineHeight: 1.1 }}>
+            <Typography variant="h6" fontWeight={700} sx={{ color: GREEN_UI.text, lineHeight: 1.1 }}>
               Report Configuration
             </Typography>
             <Typography variant="caption" sx={{ color: GREEN_UI.muted }}>
@@ -926,7 +926,7 @@ export default function Reports() {
                         {rt.icon}
                       </Box>
                       <Box sx={{ minWidth: 0 }}>
-                        <Typography fontWeight={900} sx={{ fontSize: '0.9rem', lineHeight: 1.2 }} noWrap>
+                        <Typography fontWeight={700} sx={{ fontSize: '0.9rem', lineHeight: 1.2 }} noWrap>
                           {rt.label}
                         </Typography>
                         <Typography variant="caption" sx={{ color: active ? 'rgba(255,255,255,0.76)' : GREEN_UI.muted }}>
@@ -942,7 +942,7 @@ export default function Reports() {
                         size="small"
                         variant="outlined"
                         sx={{
-                          fontWeight: 900,
+                          fontWeight: 700,
                           bgcolor: active ? 'rgba(255,255,255,0.15)' : '#ffffff',
                           color: active ? '#ffffff' : GREEN_UI.greenDark,
                           borderColor: active ? 'rgba(255,255,255,0.28)' : GREEN_UI.border,
@@ -986,7 +986,7 @@ export default function Reports() {
               {selected.icon}
             </Box>
             <Box sx={{ minWidth: 0 }}>
-              <Typography variant="h6" fontWeight={900} sx={{ color: GREEN_UI.text, lineHeight: 1.1 }}>
+              <Typography variant="h6" fontWeight={700} sx={{ color: GREEN_UI.text, lineHeight: 1.1 }}>
                 {selected.label} — Data Preview
               </Typography>
               <Typography variant="caption" sx={{ color: GREEN_UI.muted }}>
@@ -998,7 +998,7 @@ export default function Reports() {
             label={`${filtered.length} record${filtered.length !== 1 ? 's' : ''}`}
             size="small"
             variant="outlined"
-            sx={{ fontWeight: 900, color: GREEN_UI.greenDark, borderColor: GREEN_UI.borderStrong, bgcolor: '#ffffff' }}
+            sx={{ fontWeight: 700, color: GREEN_UI.greenDark, borderColor: GREEN_UI.borderStrong, bgcolor: '#ffffff' }}
           />
         </Box>
 
@@ -1024,7 +1024,7 @@ export default function Reports() {
             >
               <InsertDriveFile />
             </Box>
-            <Typography fontWeight={900} sx={{ color: GREEN_UI.text }}>
+            <Typography fontWeight={700} sx={{ color: GREEN_UI.text }}>
               No records found
             </Typography>
             <Typography variant="body2" sx={{ color: GREEN_UI.muted, mt: 0.5 }}>
@@ -1048,7 +1048,7 @@ export default function Reports() {
                         background: 'linear-gradient(90deg, #eff8eb 0%, #f8fcf5 100%)',
                         '& th': {
                           color: GREEN_UI.greenDark,
-                          fontWeight: 900,
+                          fontWeight: 700,
                           fontSize: '0.78rem',
                           letterSpacing: '0.02em',
                           textTransform: 'uppercase',
@@ -1081,7 +1081,7 @@ export default function Reports() {
                             {statusColumns.has(c) ? (
                               <Chip label={formatValue(c, row[c])} size="small" variant="outlined" sx={statusChipSx(row[c])} />
                             ) : c === 'finalScore' || c === 'rawScore' ? (
-                              <Typography variant="body2" fontWeight={900} sx={{ color: GREEN_UI.greenDark }}>
+                              <Typography variant="body2" fontWeight={700} sx={{ color: GREEN_UI.greenDark }}>
                                 {formatValue(c, row[c])}
                               </Typography>
                             ) : c === 'id' || c === 'rank' ? (
@@ -1089,7 +1089,7 @@ export default function Reports() {
                                 label={formatValue(c, row[c])}
                                 size="small"
                                 variant="outlined"
-                                sx={{ fontWeight: 800, bgcolor: '#f8fcf5', borderColor: GREEN_UI.border }}
+                                sx={{ fontWeight: 600, bgcolor: '#f8fcf5', borderColor: GREEN_UI.border }}
                               />
                             ) : (
                               formatValue(c, row[c])

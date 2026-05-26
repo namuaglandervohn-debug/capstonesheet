@@ -267,7 +267,7 @@ const tableHeadRowSx = {
   background: "linear-gradient(90deg, #eff8eb 0%, #f8fcf5 100%)",
   "& th": {
     color: GREEN_UI.greenDark,
-    fontWeight: 900,
+    fontWeight: 700,
     fontSize: "0.78rem",
     letterSpacing: "0.02em",
     textTransform: "uppercase",
@@ -306,22 +306,22 @@ const statusChipSx = (status: EvaluationStatus | string) => {
     bgcolor: selected.bg,
     color: selected.color,
     borderColor: selected.border,
-    fontWeight: 800,
+    fontWeight: 600,
     "& .MuiChip-label": { px: 1.25 },
   };
 };
 
 const ratingChipSx = (score: number) => {
   if (score >= 90) {
-    return { bgcolor: "#fff7e0", color: "#9b6b00", borderColor: "#f5d786", fontWeight: 800};
+    return { bgcolor: "#fff7e0", color: "#9b6b00", borderColor: "#f5d786", fontWeight: 600};
   }
   if (score >= 85) {
-    return { bgcolor: "#e5f8e9", color: "#217a43", borderColor: "#a9dfb6", fontWeight: 800};
+    return { bgcolor: "#e5f8e9", color: "#217a43", borderColor: "#a9dfb6", fontWeight: 600};
   }
   if (score >= 75) {
-    return { bgcolor: "#eef9ea", color: GREEN_UI.greenDark, borderColor: GREEN_UI.borderStrong, fontWeight: 800};
+    return { bgcolor: "#eef9ea", color: GREEN_UI.greenDark, borderColor: GREEN_UI.borderStrong, fontWeight: 600};
   }
-  return { bgcolor: GREEN_UI.dangerSoft, color: GREEN_UI.dangerDark, borderColor: "#efb8b8", fontWeight: 800};
+  return { bgcolor: GREEN_UI.dangerSoft, color: GREEN_UI.dangerDark, borderColor: "#efb8b8", fontWeight: 600};
 };
 
 const actionChipSx = (tone: "primary" | "success" | "danger" | "warning" = "primary") => {
@@ -335,7 +335,7 @@ const actionChipSx = (tone: "primary" | "success" | "danger" | "warning" = "prim
   return {
     minWidth: 92,
     justifyContent: "center",
-    fontWeight: 800,
+    fontWeight: 600,
     borderColor: styles.border,
     color: styles.color,
     bgcolor: styles.bg,
@@ -368,6 +368,9 @@ export default function PerformanceEvaluation() {
 
   const [evalDialogOpen, setEvalDialogOpen] = useState(false);
   const [form, setForm] = useState<FormState>(() => buildEmptyForm([]));
+  const selectedFormEmployee = form.employee_id
+    ? employees.find((emp) => emp.employee_id === form.employee_id)
+    : null;
 
   const [criteriaDialogOpen, setCriteriaDialogOpen] = useState(false);
   const [criteriaDraft, setCriteriaDraft] = useState<CriteriaEditorRow[]>([]);
@@ -428,12 +431,25 @@ export default function PerformanceEvaluation() {
 
       if (err) throw err;
 
+      const { data: userAccountsData, error: userAccountsErr } = await supabase
+        .from("user_accounts")
+        .select("employee_id, outlet");
+
+      if (userAccountsErr) throw userAccountsErr;
+
+      const outletMap = new Map(
+        (userAccountsData ?? []).map((u: any) => [
+          u.employee_id,
+          u.outlet,
+        ])
+      );
+
       setEmployees(
         (data || []).map((e: any) => ({
           employee_id: e.employee_id,
           name: fullName(e) || e.employee_id,
           position: e.position || "",
-          outlet: e.outlet || "",
+          outlet: outletMap.get(e.employee_id) || e.outlet || "",
           status: e.status || "Active",
         }))
       );
@@ -597,6 +613,10 @@ export default function PerformanceEvaluation() {
 
     setSaving(true);
     try {
+      const linkedEmployee = employees.find((emp) => emp.employee_id === form.employee_id);
+      const employeePosition = linkedEmployee?.position || form.position || "";
+      const employeeOutlet = linkedEmployee?.outlet || form.outlet || "";
+
       const { data: evalId, error: templateErr } = await supabase.rpc("create_employee_evaluation_template", {
         p_employee_id: form.employee_id,
         p_period_start: form.periodStart,
@@ -630,6 +650,8 @@ export default function PerformanceEvaluation() {
       const { error: evalUpdateErr } = await supabase
         .from("employee_evaluations")
         .update({
+          position: employeePosition,
+          outlet: employeeOutlet,
           status: "Submitted",
           remarks: form.remarks || null,
           submitted_at: new Date().toISOString(),
@@ -1003,13 +1025,13 @@ export default function PerformanceEvaluation() {
                 mb: 1.2,
                 bgcolor: GREEN_UI.greenSoft,
                 color: GREEN_UI.greenDark,
-                fontWeight: 900,
+                fontWeight: 700,
                 "& .MuiChip-icon": { color: GREEN_UI.greenDark },
               }}
             />
             <Typography
               variant="h4"
-              fontWeight={900}
+              fontWeight={700}
               sx={{
                 fontSize: { xs: "1.55rem", sm: "2rem", md: "2.35rem" },
                 color: GREEN_UI.text,
@@ -1122,12 +1144,12 @@ export default function PerformanceEvaluation() {
             >
               <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 1.5 }}>
                 <Box sx={{ minWidth: 0 }}>
-                  <Typography variant="body2" sx={{ color: GREEN_UI.muted, fontWeight: 800 }}>
+                  <Typography variant="body2" sx={{ color: GREEN_UI.muted, fontWeight: 600 }}>
                     {stat.label}
                   </Typography>
                   <Typography
                     variant={stat.featured ? "subtitle1" : "h4"}
-                    fontWeight={900}
+                    fontWeight={700}
                     sx={{
                       color: GREEN_UI.text,
                       mt: 0.5,
@@ -1206,7 +1228,7 @@ export default function PerformanceEvaluation() {
             <Insights />
           </Box>
           <Box sx={{ minWidth: 0 }}>
-            <Typography fontWeight={900} sx={{ color: GREEN_UI.text, mb: 0.5 }}>
+            <Typography fontWeight={700} sx={{ color: GREEN_UI.text, mb: 0.5 }}>
               DSS Weighted Scoring Formula
             </Typography>
             <Typography variant="body2" sx={{ color: GREEN_UI.muted, lineHeight: 1.8 }}>
@@ -1239,7 +1261,7 @@ export default function PerformanceEvaluation() {
                 <Groups fontSize="small" />
               </Box>
               <Box>
-                <Typography fontWeight={900} sx={{ color: GREEN_UI.text }}>
+                <Typography fontWeight={700} sx={{ color: GREEN_UI.text }}>
                   Employee List
                 </Typography>
                 <Typography variant="caption" sx={{ color: GREEN_UI.muted }}>
@@ -1279,7 +1301,7 @@ export default function PerformanceEvaluation() {
                           <Box sx={{ width: 54, height: 54, borderRadius: "20px", display: "grid", placeItems: "center", mx: "auto", mb: 1.5, bgcolor: GREEN_UI.greenSoft, color: GREEN_UI.greenDark }}>
                             <Groups />
                           </Box>
-                          <Typography fontWeight={900} sx={{ color: GREEN_UI.text }}>
+                          <Typography fontWeight={700} sx={{ color: GREEN_UI.text }}>
                             No employees found
                           </Typography>
                           <Typography variant="body2" sx={{ color: GREEN_UI.muted, mt: 0.5 }}>
@@ -1292,10 +1314,10 @@ export default function PerformanceEvaluation() {
                     employees.map((emp) => (
                       <TableRow key={emp.employee_id} hover>
                         <TableCell>
-                          <Chip label={emp.employee_id} size="small" variant="outlined" sx={{ fontWeight: 800, bgcolor: "#f8fcf5", borderColor: GREEN_UI.border }} />
+                          <Chip label={emp.employee_id} size="small" variant="outlined" sx={{ fontWeight: 600, bgcolor: "#f8fcf5", borderColor: GREEN_UI.border }} />
                         </TableCell>
                         <TableCell sx={{ whiteSpace: "nowrap" }}>
-                          <Typography fontWeight={800} sx={{ color: GREEN_UI.text }}>
+                          <Typography fontWeight={600} sx={{ color: GREEN_UI.text }}>
                             {emp.name}
                           </Typography>
                         </TableCell>
@@ -1374,7 +1396,7 @@ export default function PerformanceEvaluation() {
                       <Box sx={{ width: 54, height: 54, borderRadius: "20px", display: "grid", placeItems: "center", mx: "auto", mb: 1.5, bgcolor: GREEN_UI.greenSoft, color: GREEN_UI.greenDark }}>
                         <TaskAlt />
                       </Box>
-                      <Typography fontWeight={900} sx={{ color: GREEN_UI.text }}>
+                      <Typography fontWeight={700} sx={{ color: GREEN_UI.text }}>
                         No evaluations found
                       </Typography>
                       <Typography variant="body2" sx={{ color: GREEN_UI.muted, mt: 0.5 }}>
@@ -1392,11 +1414,11 @@ export default function PerformanceEvaluation() {
                         label={`#${i + 1}`}
                         size="small"
                         variant="outlined"
-                        sx={i === 0 ? ratingChipSx(90) : { fontWeight: 800, bgcolor: "#f8fcf5", borderColor: GREEN_UI.border }}
+                        sx={i === 0 ? ratingChipSx(90) : { fontWeight: 600, bgcolor: "#f8fcf5", borderColor: GREEN_UI.border }}
                       />
                     </TableCell>
                     <TableCell sx={{ whiteSpace: "nowrap" }}>
-                      <Typography fontWeight={800} sx={{ color: GREEN_UI.text }}>
+                      <Typography fontWeight={600} sx={{ color: GREEN_UI.text }}>
                         {r.employee_name}
                       </Typography>
                       <Typography variant="caption" sx={{ color: GREEN_UI.muted }}>
@@ -1418,13 +1440,13 @@ export default function PerformanceEvaluation() {
                             label={s ? `${Number(s.raw_score || 0).toFixed(0)}%` : "—"}
                             size="small"
                             variant="outlined"
-                            sx={{ fontWeight: 800, bgcolor: "#ffffff", borderColor: GREEN_UI.border }}
+                            sx={{ fontWeight: 600, bgcolor: "#ffffff", borderColor: GREEN_UI.border }}
                           />
                         </TableCell>
                       );
                     })}
                     <TableCell>
-                      <Typography fontWeight={900} sx={{ whiteSpace: "nowrap", color: GREEN_UI.greenDark }}>
+                      <Typography fontWeight={700} sx={{ whiteSpace: "nowrap", color: GREEN_UI.greenDark }}>
                         {Number(r.final_weighted_score || 0).toFixed(2)}%
                       </Typography>
                     </TableCell>
@@ -1498,7 +1520,7 @@ export default function PerformanceEvaluation() {
                 <EmojiEvents fontSize="small" />
               </Box>
               <Box>
-                <Typography fontWeight={900} sx={{ color: GREEN_UI.text }}>
+                <Typography fontWeight={700} sx={{ color: GREEN_UI.text }}>
                   DSS Ranking Results
                 </Typography>
                 <Typography variant="caption" sx={{ color: GREEN_UI.muted }}>
@@ -1538,7 +1560,7 @@ export default function PerformanceEvaluation() {
                         <Box sx={{ width: 54, height: 54, borderRadius: "20px", display: "grid", placeItems: "center", mx: "auto", mb: 1.5, bgcolor: GREEN_UI.warningSoft, color: GREEN_UI.warningDark }}>
                           <EmojiEvents />
                         </Box>
-                        <Typography fontWeight={900} sx={{ color: GREEN_UI.text }}>
+                        <Typography fontWeight={700} sx={{ color: GREEN_UI.text }}>
                           No DSS ranking generated yet
                         </Typography>
                         <Typography variant="body2" sx={{ color: GREEN_UI.muted, mt: 0.5 }}>
@@ -1556,11 +1578,11 @@ export default function PerformanceEvaluation() {
                           label={item.rank_no === 1 ? "#1" : `#${item.rank_no}`}
                           size="small"
                           variant="outlined"
-                          sx={item.rank_no === 1 ? ratingChipSx(90) : { fontWeight: 800, bgcolor: "#f8fcf5", borderColor: GREEN_UI.border }}
+                          sx={item.rank_no === 1 ? ratingChipSx(90) : { fontWeight: 600, bgcolor: "#f8fcf5", borderColor: GREEN_UI.border }}
                         />
                       </TableCell>
                       <TableCell sx={{ whiteSpace: "nowrap" }}>
-                        <Typography fontWeight={800} sx={{ color: GREEN_UI.text }}>
+                        <Typography fontWeight={600} sx={{ color: GREEN_UI.text }}>
                           {item.employee_name}
                         </Typography>
                         <Typography variant="caption" sx={{ color: GREEN_UI.muted }}>
@@ -1570,7 +1592,7 @@ export default function PerformanceEvaluation() {
                       <TableCell sx={{ whiteSpace: "nowrap" }}>{item.position || "—"}</TableCell>
                       <TableCell sx={{ whiteSpace: "nowrap" }}>{item.outlet || "—"}</TableCell>
                       <TableCell>
-                        <Typography fontWeight={900} sx={{ color: GREEN_UI.greenDark }}>
+                        <Typography fontWeight={700} sx={{ color: GREEN_UI.greenDark }}>
                           {Number(item.final_weighted_score || 0).toFixed(2)}%
                         </Typography>
                       </TableCell>
@@ -1606,13 +1628,13 @@ export default function PerformanceEvaluation() {
       )}
 
       <Dialog open={evalDialogOpen} onClose={() => setEvalDialogOpen(false)} maxWidth="md" fullWidth PaperProps={{ sx: dialogPaperSx }}>
-        <DialogTitle fontWeight={900} sx={dialogTitleSx}>
+        <DialogTitle fontWeight={700} sx={dialogTitleSx}>
           <Box sx={{ display: "flex", alignItems: "center", gap: 1.2 }}>
             <Box sx={{ width: 38, height: 38, borderRadius: "14px", display: "grid", placeItems: "center", bgcolor: GREEN_UI.greenSoft, color: GREEN_UI.greenDark }}>
               <Grade fontSize="small" />
             </Box>
             <Box>
-              <Typography fontWeight={900} sx={{ color: GREEN_UI.text }}>
+              <Typography fontWeight={700} sx={{ color: GREEN_UI.text }}>
                 Employee Performance Evaluation
               </Typography>
               <Typography variant="caption" sx={{ color: GREEN_UI.muted }}>
@@ -1627,7 +1649,7 @@ export default function PerformanceEvaluation() {
               <TextField
                 fullWidth
                 select
-                label="Employee"
+                label="Employee ID"
                 value={form.employee_id}
                 onChange={(e) => {
                   const selected = employees.find((emp) => emp.employee_id === e.target.value);
@@ -1645,7 +1667,7 @@ export default function PerformanceEvaluation() {
                 <MenuItem value="">Select employee…</MenuItem>
                 {employees.map((emp) => (
                   <MenuItem key={emp.employee_id} value={emp.employee_id}>
-                    {emp.employee_id} — {emp.name}
+                    {emp.employee_id}
                   </MenuItem>
                 ))}
               </TextField>
@@ -1674,8 +1696,9 @@ export default function PerformanceEvaluation() {
               <TextField
                 fullWidth
                 select
-                label="Outlet"
+                label="Outlet / Branch"
                 value={form.outlet}
+                disabled={Boolean(selectedFormEmployee?.outlet)}
                 onChange={(e) => setForm({ ...form, outlet: e.target.value })}
                 InputLabelProps={{ shrink: true }}
                 sx={softTextFieldSx}
@@ -1699,7 +1722,7 @@ export default function PerformanceEvaluation() {
           </Grid>
 
           <Divider sx={{ my: 3, borderColor: GREEN_UI.border }}>
-            <Chip label="DSS Criteria Scores" size="small" variant="outlined" sx={{ fontWeight: 900, color: GREEN_UI.greenDark, borderColor: GREEN_UI.borderStrong, bgcolor: "#ffffff" }} />
+            <Chip label="DSS Criteria Scores" size="small" variant="outlined" sx={{ fontWeight: 700, color: GREEN_UI.greenDark, borderColor: GREEN_UI.borderStrong, bgcolor: "#ffffff" }} />
           </Divider>
 
           <Grid container spacing={1.5}>
@@ -1708,7 +1731,7 @@ export default function PerformanceEvaluation() {
                 <Paper elevation={0} sx={{ ...innerCardSx, p: 2 }}>
                   <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 1, mb: 1 }}>
                     <Box>
-                      <Typography variant="body2" fontWeight={900} sx={{ color: GREEN_UI.text }}>{c.criteria_name}</Typography>
+                      <Typography variant="body2" fontWeight={700} sx={{ color: GREEN_UI.text }}>{c.criteria_name}</Typography>
                       <Typography variant="caption" sx={{ color: GREEN_UI.muted }}>Weight: {Number(c.weight || 0)}%</Typography>
                     </Box>
                     <Chip label={`${form.scores[c.criteria_id] ?? 0}%`} size="small" variant="outlined" sx={ratingChipSx(Number(form.scores[c.criteria_id] ?? 0))} />
@@ -1749,10 +1772,10 @@ export default function PerformanceEvaluation() {
           >
             <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 2, flexWrap: "wrap" }}>
               <Box>
-                <Typography variant="body2" sx={{ color: GREEN_UI.muted, fontWeight: 800 }}>
+                <Typography variant="body2" sx={{ color: GREEN_UI.muted, fontWeight: 600 }}>
                   Projected Final Score
                 </Typography>
-                <Typography variant="h4" fontWeight={900} sx={{ color: previewScore >= 90 ? GREEN_UI.warningDark : GREEN_UI.greenDark, letterSpacing: "-0.04em" }}>
+                <Typography variant="h4" fontWeight={700} sx={{ color: previewScore >= 90 ? GREEN_UI.warningDark : GREEN_UI.greenDark, letterSpacing: "-0.04em" }}>
                   {previewScore.toFixed(2)}%
                 </Typography>
               </Box>
@@ -1778,14 +1801,14 @@ export default function PerformanceEvaluation() {
       </Dialog>
 
       <Dialog open={criteriaDialogOpen} onClose={() => setCriteriaDialogOpen(false)} maxWidth="md" fullWidth PaperProps={{ sx: dialogPaperSx }}>
-        <DialogTitle fontWeight={900} sx={dialogTitleSx}>
+        <DialogTitle fontWeight={700} sx={dialogTitleSx}>
           <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 1.5 }}>
             <Box sx={{ display: "flex", alignItems: "center", gap: 1.2 }}>
               <Box sx={{ width: 38, height: 38, borderRadius: "14px", display: "grid", placeItems: "center", bgcolor: GREEN_UI.greenSoft, color: GREEN_UI.greenDark }}>
                 <Edit fontSize="small" />
               </Box>
               <Box>
-                <Typography fontWeight={900} sx={{ color: GREEN_UI.text }}>
+                <Typography fontWeight={700} sx={{ color: GREEN_UI.text }}>
                   Manage DSS Criteria
                 </Typography>
                 <Typography variant="caption" sx={{ color: GREEN_UI.muted }}>
@@ -1807,8 +1830,8 @@ export default function PerformanceEvaluation() {
           {criteriaDraft.map((c, i) => (
             <Paper key={c.criteria_id} elevation={0} sx={{ ...innerCardSx, p: 2, mb: 2 }}>
               <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 1.5 }}>
-                <Chip label={`#${i + 1}`} size="small" variant="outlined" sx={{ fontWeight: 800, bgcolor: "#ffffff", borderColor: GREEN_UI.border }} />
-                <Typography variant="subtitle2" fontWeight={900} sx={{ flex: 1, color: GREEN_UI.text }}>{c.criteria_name}</Typography>
+                <Chip label={`#${i + 1}`} size="small" variant="outlined" sx={{ fontWeight: 600, bgcolor: "#ffffff", borderColor: GREEN_UI.border }} />
+                <Typography variant="subtitle2" fontWeight={700} sx={{ flex: 1, color: GREEN_UI.text }}>{c.criteria_name}</Typography>
                 <Tooltip title="Remove criterion">
                   <IconButton size="small" onClick={() => removeCriterion(i)} sx={{ color: GREEN_UI.dangerDark, bgcolor: "#fffafa", "&:hover": { bgcolor: GREEN_UI.dangerSoft } }}>
                     <DeleteOutline fontSize="small" />
@@ -1876,13 +1899,13 @@ export default function PerformanceEvaluation() {
       </Dialog>
 
       <Dialog open={dssDialogOpen} onClose={() => setDssDialogOpen(false)} maxWidth="sm" fullWidth PaperProps={{ sx: dialogPaperSx }}>
-        <DialogTitle fontWeight={900} sx={dialogTitleSx}>
+        <DialogTitle fontWeight={700} sx={dialogTitleSx}>
           <Box sx={{ display: "flex", alignItems: "center", gap: 1.2 }}>
             <Box sx={{ width: 38, height: 38, borderRadius: "14px", display: "grid", placeItems: "center", bgcolor: GREEN_UI.warningSoft, color: GREEN_UI.warningDark }}>
               <Insights fontSize="small" />
             </Box>
             <Box>
-              <Typography fontWeight={900} sx={{ color: GREEN_UI.text }}>
+              <Typography fontWeight={700} sx={{ color: GREEN_UI.text }}>
                 Generate DSS Ranking
               </Typography>
               <Typography variant="caption" sx={{ color: GREEN_UI.muted }}>

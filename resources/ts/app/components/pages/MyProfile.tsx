@@ -2,13 +2,14 @@ import { useState, useEffect, useRef } from 'react';
 import {
   Box, Typography, Paper, Grid, Chip, Divider, CircularProgress,
   Alert, Card, CardContent, Avatar, TextField, Button, IconButton,
-  Snackbar, Stack, LinearProgress, Tooltip,
+  Snackbar, Stack, LinearProgress, Tooltip, Dialog, DialogTitle,
+  DialogContent, DialogActions,
 } from '@mui/material';
 import {
   AccountCircle, BusinessCenter, Phone, Email, LocationOn, CalendarMonth,
   Assignment, TaskAlt, CancelOutlined, HelpOutline, Badge,
   EditNote, Save, Close, CloudUpload, InsertDriveFile,
-  DeleteOutline as DeleteIcon, FileDownload,
+  DeleteOutline as DeleteIcon, FileDownload, Visibility,
 } from '@mui/icons-material';
 import { useAuth } from '../../context/AuthContext';
 import { supabase } from '../../lib/supabaseClient';
@@ -17,14 +18,17 @@ interface Employee {
   id: string; name: string; position: string; department?: string;
   outlet: string; status: string; contact: string; email?: string;
   address?: string; supervisor?: string; dateHired?: string;
-  emergencyContact?: string;
+  emergencyContact?: string; tin?: string; sss?: string;
+  philhealth?: string; pagibig?: string;
 }
 
 interface Application {
   id: string; name: string; position: string; dateApplied: string;
   status: string; email?: string; hasResume?: boolean; hasBirthCert?: boolean;
   hasTOR?: boolean; hasMedCert?: boolean; requirementsNote?: string;
-  education?: string; experience?: string;
+  education?: string; experience?: string; phone?: string; address?: string;
+  emergencyContact?: string; tin?: string; sss?: string; philhealth?: string;
+  pagibig?: string; documents?: DocFile[];
 }
 
 interface DocFile { name: string; size: number; uploadedAt: string; dataUrl?: string; }
@@ -40,7 +44,6 @@ const READONLY_FIELDS: { key: keyof Employee; label: string; icon: React.ReactNo
   { key: 'position',   label: 'Position / Job Title',  icon: <BusinessCenter fontSize="small" /> },
   { key: 'department', label: 'Department',            icon: <Badge fontSize="small" /> },
   { key: 'outlet',     label: 'Outlet / Branch',       icon: <LocationOn fontSize="small" /> },
-  { key: 'supervisor', label: 'Direct Supervisor',     icon: <AccountCircle fontSize="small" /> },
   { key: 'dateHired',  label: 'Date Hired',            icon: <CalendarMonth fontSize="small" /> },
 ];
 
@@ -78,7 +81,7 @@ const innerCardSx = {
 const pillButtonSx = {
   borderRadius: '12px',
   textTransform: 'none',
-  fontWeight: 800,
+  fontWeight: 600,
   px: 2,
 };
 
@@ -123,6 +126,85 @@ const rowCardSx = {
   background: '#fbfff9',
 };
 
+const firstValue = (...values: unknown[]) =>
+  values.find(value => String(value ?? '').trim()) as string | undefined;
+
+const safeJson = (value: unknown): any => {
+  if (!value) return {};
+  if (typeof value === 'object') return value;
+  try {
+    return JSON.parse(String(value));
+  } catch (_) {
+    return {};
+  }
+};
+
+const normalizeApplicationDocuments = (applicant: any, coverLetter: any): DocFile[] => {
+  const docs: DocFile[] = [];
+  const pushDoc = (name: unknown, dataUrl?: unknown) => {
+    const cleanName = String(name ?? '').trim();
+    if (!cleanName || docs.some(doc => doc.name === cleanName)) return;
+    docs.push({
+      name: cleanName,
+      size: 0,
+      uploadedAt: applicant?.created_at ?? new Date().toISOString(),
+      dataUrl: typeof dataUrl === 'string' ? dataUrl : undefined,
+    });
+  };
+
+  pushDoc(applicant?.resume_file_name, applicant?.resume_file_data);
+
+  const fileSources = [
+    applicant?.supporting_document_files,
+    applicant?.supporting_documents,
+    coverLetter?.submittedDocuments,
+  ];
+
+  fileSources.forEach(source => {
+    const parsed = typeof source === 'string' ? safeJson(source) : source;
+    const items = Array.isArray(parsed)
+      ? parsed
+      : typeof source === 'string'
+        ? source.split(',').filter(Boolean)
+        : source && typeof source === 'object'
+          ? [source]
+          : [];
+    items.forEach((item: any) => {
+      if (typeof item === 'string') {
+        pushDoc(item);
+      } else {
+        pushDoc(item?.name ?? item?.fileName ?? item?.label, item?.data ?? item?.dataUrl);
+      }
+    });
+  });
+
+  return docs;
+};
+
+const mimeFromFileName = (name: string) => {
+  const extension = name.split('.').pop()?.toLowerCase();
+  if (extension === 'pdf') return 'application/pdf';
+  if (['jpg', 'jpeg'].includes(extension ?? '')) return 'image/jpeg';
+  if (extension === 'png') return 'image/png';
+  if (extension === 'gif') return 'image/gif';
+  if (extension === 'webp') return 'image/webp';
+  if (extension === 'doc') return 'application/msword';
+  if (extension === 'docx') return 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
+  return 'application/octet-stream';
+};
+
+const getDocSource = (doc: DocFile) => {
+  const raw = String(doc.dataUrl ?? '').trim();
+  if (!raw) return '';
+  if (raw.startsWith('data:') || raw.startsWith('blob:') || raw.startsWith('http')) return raw;
+  return `data:${mimeFromFileName(doc.name)};base64,${raw}`;
+};
+
+const isPreviewableDoc = (doc: DocFile) => {
+  const mime = mimeFromFileName(doc.name);
+  return mime.startsWith('image/') || mime === 'application/pdf';
+};
+
 export default function MyProfile() {
   const { user } = useAuth();
   const [employee, setEmployee] = useState<Employee | null>(null);
@@ -132,6 +214,7 @@ export default function MyProfile() {
   const [editForm, setEditForm] = useState<Partial<Employee>>({});
   const [saving, setSaving] = useState(false);
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' as 'success' | 'error' });
+  const [previewDoc, setPreviewDoc] = useState<DocFile | null>(null);
 
   // Document management
   const [docs, setDocs] = useState<DocFile[]>([]);
@@ -143,6 +226,8 @@ export default function MyProfile() {
     (async () => {
       try {
         let found: Employee | null = null;
+        let employeeRow: any = null;
+        let accountOutlet = '';
 
         if (user.employeeId) {
           const { data: row } = await supabase
@@ -151,6 +236,44 @@ export default function MyProfile() {
             .eq('employee_id', user.employeeId)
             .maybeSingle();
 
+          employeeRow = row;
+
+          const { data: account } = await supabase
+            .from('user_accounts')
+            .select('outlet')
+            .eq('employee_id', user.employeeId)
+            .maybeSingle();
+          accountOutlet = account?.outlet ?? '';
+        }
+
+        let applicant: any = null;
+        if (employeeRow?.applicant_id) {
+          const { data } = await supabase
+            .from('applicants')
+            .select('*')
+            .eq('applicant_id', employeeRow.applicant_id)
+            .maybeSingle();
+          applicant = data;
+        }
+
+        if (!applicant) {
+          const lookupEmail = firstValue(employeeRow?.email, user.email);
+          if (lookupEmail) {
+            const { data } = await supabase
+              .from('applicants')
+              .select('*')
+              .eq('email', lookupEmail)
+              .order('created_at', { ascending: false })
+              .limit(1)
+              .maybeSingle();
+            applicant = data;
+          }
+        }
+
+        const coverLetter = safeJson(applicant?.cover_letter);
+
+        if (employeeRow) {
+          const row = employeeRow;
           if (row) {
             const fullName = [row.first_name, row.middle_name, row.last_name, row.suffix]
               .filter(Boolean)
@@ -158,30 +281,26 @@ export default function MyProfile() {
               .trim();
             found = {
               id: row.employee_id,
-              name: fullName || user.name,
-              position: row.position ?? '',
+              name: fullName || applicant?.name || user.name,
+              position: firstValue(row.position, applicant?.position_applied) ?? '',
               department: row.department ?? '',
-              outlet: row.outlet ?? '',
+              outlet: firstValue(accountOutlet, row.outlet, (user as any)?.outlet) ?? '',
               status: row.status ?? 'Active',
-              contact: row.phone_number ?? '',
-              email: row.email ?? user.email,
-              address: row.address ?? '',
+              contact: firstValue(row.phone_number, applicant?.phone_number) ?? '',
+              email: firstValue(row.email, applicant?.email, user.email) ?? '',
+              address: firstValue(row.address, applicant?.address, coverLetter?.currentAddress, coverLetter?.permanentAddress) ?? '',
               dateHired: row.hire_date ?? '',
-              emergencyContact: row.emergency_contact ?? '',
+              emergencyContact: firstValue(row.emergency_contact, applicant?.emergency_contact) ?? '',
+              tin: firstValue(row.tin, applicant?.tin) ?? '',
+              sss: firstValue(row.sss, applicant?.sss) ?? '',
+              philhealth: firstValue(row.philhealth, applicant?.philhealth) ?? '',
+              pagibig: firstValue(row.pagibig, applicant?.pagibig) ?? '',
             };
           }
         }
 
         setEmployee(found);
         setEditForm(found ?? {});
-
-        const { data: applicant } = await supabase
-          .from('applicants')
-          .select('applicant_id, name, position_applied, created_at, status, email, education, experience')
-          .eq('email', user.email)
-          .order('created_at', { ascending: false })
-          .limit(1)
-          .maybeSingle();
 
         setApplication(
           applicant
@@ -192,8 +311,21 @@ export default function MyProfile() {
                 dateApplied: applicant.created_at ?? '',
                 status: applicant.status ?? '',
                 email: applicant.email ?? undefined,
+                phone: applicant.phone_number ?? undefined,
+                address: firstValue(applicant.address, coverLetter?.currentAddress, coverLetter?.permanentAddress),
+                emergencyContact: applicant.emergency_contact ?? undefined,
                 education: applicant.education ?? undefined,
                 experience: applicant.experience ?? undefined,
+                hasResume: applicant.has_resume ?? Boolean(applicant.resume_file_name || applicant.resume_file_data),
+                hasBirthCert: applicant.has_birth_cert ?? false,
+                hasTOR: applicant.has_tor ?? false,
+                hasMedCert: applicant.has_med_cert ?? false,
+                requirementsNote: applicant.requirements_note ?? undefined,
+                tin: applicant.tin ?? undefined,
+                sss: applicant.sss ?? undefined,
+                philhealth: applicant.philhealth ?? undefined,
+                pagibig: applicant.pagibig ?? undefined,
+                documents: normalizeApplicationDocuments(applicant, coverLetter),
               }
             : null
         );
@@ -267,11 +399,17 @@ export default function MyProfile() {
   };
 
   const handleDownload = (doc: DocFile) => {
-    if (!doc.dataUrl) return;
+    const source = getDocSource(doc);
+    if (!source) return;
     const a = document.createElement('a');
-    a.href = doc.dataUrl;
+    a.href = source;
     a.download = doc.name;
     a.click();
+  };
+
+  const handleViewDoc = (doc: DocFile) => {
+    if (!getDocSource(doc)) return;
+    setPreviewDoc(doc);
   };
 
   const handleDeleteDoc = (idx: number) => {
@@ -282,7 +420,8 @@ export default function MyProfile() {
   const formatBytes = (b: number) => b < 1024 ? `${b} B` : b < 1048576 ? `${(b/1024).toFixed(1)} KB` : `${(b/1048576).toFixed(1)} MB`;
   const profileName = user?.name ?? employee?.name ?? 'My Profile';
   const profileStatus = employee?.status ?? 'Active';
-  const applicationStatus = application?.status ?? 'No application record';
+  const applicationDocs = application?.documents ?? [];
+  const totalDocumentCount = docs.length + applicationDocs.length;
 
   if (loading) {
     return (
@@ -377,7 +516,7 @@ export default function MyProfile() {
                 bgcolor: GREEN_UI.green,
                 color: '#fff',
                 fontSize: { xs: '1.45rem', sm: '1.85rem' },
-                fontWeight: 900,
+                fontWeight: 700,
                 border: '4px solid rgba(255,255,255,0.84)',
                 boxShadow: '0 18px 34px rgba(31, 122, 70, 0.20)',
                 flexShrink: 0,
@@ -394,12 +533,12 @@ export default function MyProfile() {
                   mb: 1.2,
                   bgcolor: GREEN_UI.greenSoft,
                   color: GREEN_UI.greenDark,
-                  fontWeight: 900,
+                  fontWeight: 700,
                 }}
               />
               <Typography
                 variant="h4"
-                fontWeight={900}
+                fontWeight={700}
                 sx={{
                   fontSize: { xs: '1.55rem', sm: '2rem', md: '2.35rem' },
                   color: GREEN_UI.text,
@@ -418,13 +557,13 @@ export default function MyProfile() {
                   icon={<BusinessCenter sx={{ fontSize: '16px !important' }} />}
                   label={employee?.position ?? 'No position linked'}
                   size="small"
-                  sx={{ bgcolor: '#fbfff9', border: `1px solid ${GREEN_UI.border}`, color: GREEN_UI.text, fontWeight: 800}}
+                  sx={{ bgcolor: '#fbfff9', border: `1px solid ${GREEN_UI.border}`, color: GREEN_UI.text, fontWeight: 600}}
                 />
                 <Chip
                   icon={<LocationOn sx={{ fontSize: '16px !important' }} />}
                   label={employee?.outlet ?? 'No outlet'}
                   size="small"
-                  sx={{ bgcolor: '#fbfff9', border: `1px solid ${GREEN_UI.border}`, color: GREEN_UI.text, fontWeight: 800}}
+                  sx={{ bgcolor: '#fbfff9', border: `1px solid ${GREEN_UI.border}`, color: GREEN_UI.text, fontWeight: 600}}
                 />
                 <Chip
                   label={profileStatus}
@@ -433,7 +572,7 @@ export default function MyProfile() {
                     bgcolor: profileStatus === 'Active' ? '#e5f8e9' : '#fff7e0',
                     color: profileStatus === 'Active' ? '#217a43' : '#9b6b00',
                     border: `1px solid ${profileStatus === 'Active' ? '#a9dfb6' : '#f5d786'}`,
-                    fontWeight: 900,
+                    fontWeight: 700,
                   }}
                 />
               </Box>
@@ -490,8 +629,8 @@ export default function MyProfile() {
       <Grid container spacing={1.5} sx={{ mb: 2.5 }}>
         {[
           { label: 'Employee ID', value: employee?.id ?? 'Not linked', caption: 'System profile record', icon: <Badge /> },
-          { label: 'Application', value: applicationStatus, caption: application ? `Applied ${application.dateApplied}` : 'No application on file', icon: <Assignment /> },
-          { label: 'Documents', value: docs.length, caption: 'Uploaded self-service files', icon: <InsertDriveFile /> },
+          { label: 'Outlet / Branch', value: employee?.outlet || 'Not set', caption: 'Assigned branch from HR records', icon: <LocationOn /> },
+          { label: 'Documents', value: totalDocumentCount, caption: 'Self-service and application files', icon: <InsertDriveFile /> },
           { label: 'Contact', value: employee?.contact ?? 'Not set', caption: employee?.email ?? 'Update your contact details', icon: <Phone /> },
         ].map(stat => (
           <Grid key={stat.label} size={{ xs: 12, sm: 6, md: 3 }}>
@@ -510,12 +649,12 @@ export default function MyProfile() {
             >
               <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 1.5 }}>
                 <Box sx={{ minWidth: 0 }}>
-                  <Typography variant="body2" sx={{ color: GREEN_UI.muted, fontWeight: 800 }}>
+                  <Typography variant="body2" sx={{ color: GREEN_UI.muted, fontWeight: 600 }}>
                     {stat.label}
                   </Typography>
                   <Typography
                     variant="h5"
-                    fontWeight={900}
+                    fontWeight={700}
                     sx={{
                       color: GREEN_UI.text,
                       mt: 0.5,
@@ -546,7 +685,7 @@ export default function MyProfile() {
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
                 <Box sx={sectionIconSx}><AccountCircle /></Box>
                 <Box>
-                  <Typography variant="h6" fontWeight={900} sx={{ color: GREEN_UI.text, letterSpacing: '-0.02em' }}>
+                  <Typography variant="h6" fontWeight={700} sx={{ color: GREEN_UI.text, letterSpacing: '-0.02em' }}>
                     Personal & Employment Information
                   </Typography>
                   <Typography variant="body2" sx={{ color: GREEN_UI.muted }}>
@@ -558,7 +697,7 @@ export default function MyProfile() {
                 <Chip
                   label="Editing"
                   size="small"
-                  sx={{ bgcolor: '#fff7e0', color: '#9b6b00', border: '1px solid #f5d786', fontWeight: 900}}
+                  sx={{ bgcolor: '#fff7e0', color: '#9b6b00', border: '1px solid #f5d786', fontWeight: 700}}
                 />
               )}
             </Box>
@@ -571,7 +710,7 @@ export default function MyProfile() {
             ) : (
               <>
                 <Paper elevation={0} sx={{ ...innerCardSx, p: { xs: 1.5, sm: 2 }, mb: 2.25 }}>
-                  <Typography variant="caption" sx={{ display: 'block', mb: 1.5, color: GREEN_UI.greenDark, fontWeight: 900, letterSpacing: '0.08em' }}>
+                  <Typography variant="caption" sx={{ display: 'block', mb: 1.5, color: GREEN_UI.greenDark, fontWeight: 700, letterSpacing: '0.08em' }}>
                     EMPLOYMENT DETAILS · HR MANAGED
                   </Typography>
                   <Grid container spacing={1.5}>
@@ -592,7 +731,7 @@ export default function MyProfile() {
                 </Paper>
 
                 <Paper elevation={0} sx={{ ...innerCardSx, p: { xs: 1.5, sm: 2 } }}>
-                  <Typography variant="caption" sx={{ display: 'block', mb: 1.5, color: GREEN_UI.greenDark, fontWeight: 900, letterSpacing: '0.08em' }}>
+                  <Typography variant="caption" sx={{ display: 'block', mb: 1.5, color: GREEN_UI.greenDark, fontWeight: 700, letterSpacing: '0.08em' }}>
                     {editing ? 'YOUR INFORMATION · EDITABLE' : 'YOUR INFORMATION'}
                   </Typography>
                   <Grid container spacing={1.5}>
@@ -620,6 +759,32 @@ export default function MyProfile() {
                     ))}
                   </Grid>
                 </Paper>
+
+                <Paper elevation={0} sx={{ ...innerCardSx, p: { xs: 1.5, sm: 2 }, mt: 2.25 }}>
+                  <Typography variant="caption" sx={{ display: 'block', mb: 1.5, color: GREEN_UI.greenDark, fontWeight: 700, letterSpacing: '0.08em' }}>
+                    GOVERNMENT AND BANK DETAILS
+                  </Typography>
+                  <Grid container spacing={1.5}>
+                    {[
+                      ['TIN', employee.tin || application?.tin || '000-000-000-000'],
+                      ['SSS', employee.sss || application?.sss || '00-0000000-0'],
+                      ['PhilHealth', employee.philhealth || application?.philhealth || '00-000000000-0'],
+                      ['Pag-IBIG', employee.pagibig || application?.pagibig || '0000-0000-0000'],
+                    ].map(([label, value]) => (
+                      <Grid key={label} size={{ xs: 12, sm: 6 }}>
+                        <TextField
+                          fullWidth
+                          label={label}
+                          value={value}
+                          disabled
+                          size="small"
+                          sx={softTextFieldSx}
+                          InputProps={{ startAdornment: <Box sx={{ mr: 1, color: GREEN_UI.greenDark, display: 'flex' }}><Badge fontSize="small" /></Box> }}
+                        />
+                      </Grid>
+                    ))}
+                  </Grid>
+                </Paper>
               </>
             )}
           </Paper>
@@ -629,7 +794,7 @@ export default function MyProfile() {
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
                 <Box sx={sectionIconSx}><Badge /></Box>
                 <Box>
-                  <Typography variant="h6" fontWeight={900} sx={{ color: GREEN_UI.text, letterSpacing: '-0.02em' }}>
+                  <Typography variant="h6" fontWeight={700} sx={{ color: GREEN_UI.text, letterSpacing: '-0.02em' }}>
                     Account Information
                   </Typography>
                   <Typography variant="body2" sx={{ color: GREEN_UI.muted }}>
@@ -645,7 +810,6 @@ export default function MyProfile() {
                 ['Username / Email', user?.email ?? '—', <Email fontSize="small" />],
                 ['Role', user?.role === 'hr' ? 'HR Personnel / Admin' : user?.role === 'employee' ? 'Employee' : user?.role === 'supervisor' ? 'Supervisor' : user?.role === 'gm' ? 'General Manager' : 'Accounting & Finance', <AccountCircle fontSize="small" />],
                 ['Linked Employee ID', user?.employeeId ?? '—', <Badge fontSize="small" />],
-                ['Assigned Outlet', user?.outlet ?? employee?.outlet ?? '—', <LocationOn fontSize="small" />],
               ].map(([k, v, icon]) => (
                 <Grid key={String(k)} size={12}>
                   <Box
@@ -661,9 +825,9 @@ export default function MyProfile() {
                   >
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, color: GREEN_UI.muted }}>
                       {icon}
-                      <Typography variant="body2" fontWeight={800}>{k}</Typography>
+                      <Typography variant="body2" fontWeight={600}>{k}</Typography>
                     </Box>
-                    <Typography variant="body2" fontWeight={800} sx={{ color: GREEN_UI.text, textAlign: { xs: 'left', sm: 'right' }, wordBreak: 'break-word' }}>
+                    <Typography variant="body2" fontWeight={600} sx={{ color: GREEN_UI.text, textAlign: { xs: 'left', sm: 'right' }, wordBreak: 'break-word' }}>
                       {v}
                     </Typography>
                   </Box>
@@ -679,7 +843,7 @@ export default function MyProfile() {
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
                 <Box sx={sectionIconSx}><CloudUpload /></Box>
                 <Box>
-                  <Typography variant="h6" fontWeight={900} sx={{ color: GREEN_UI.text, letterSpacing: '-0.02em' }}>
+                  <Typography variant="h6" fontWeight={700} sx={{ color: GREEN_UI.text, letterSpacing: '-0.02em' }}>
                     My Documents
                   </Typography>
                   <Typography variant="body2" sx={{ color: GREEN_UI.muted }}>
@@ -732,7 +896,7 @@ export default function MyProfile() {
               >
                 <CloudUpload />
               </Box>
-              <Typography variant="body2" fontWeight={900} sx={{ color: GREEN_UI.text }}>
+              <Typography variant="body2" fontWeight={700} sx={{ color: GREEN_UI.text }}>
                 Click to Upload Documents
               </Typography>
               <Typography variant="caption" sx={{ color: GREEN_UI.muted }}>
@@ -767,17 +931,26 @@ export default function MyProfile() {
                       <InsertDriveFile sx={{ fontSize: 20 }} />
                     </Box>
                     <Box sx={{ flex: 1, minWidth: 0 }}>
-                      <Typography variant="caption" fontWeight={900} sx={{ color: GREEN_UI.text, display: 'block', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      <Typography variant="caption" fontWeight={700} sx={{ color: GREEN_UI.text, display: 'block', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                         {doc.name}
                       </Typography>
                       <Typography variant="caption" sx={{ color: GREEN_UI.muted }}>
                         {formatBytes(doc.size)} · {new Date(doc.uploadedAt).toLocaleDateString()}
                       </Typography>
                     </Box>
-                    <Tooltip title="Download">
-                      <IconButton size="small" onClick={() => handleDownload(doc)} sx={{ color: GREEN_UI.greenDark }}>
+                    <Tooltip title={doc.dataUrl ? "View" : "Preview unavailable"}>
+                      <span>
+                        <IconButton size="small" disabled={!doc.dataUrl} onClick={() => handleViewDoc(doc)} sx={{ color: GREEN_UI.greenDark }}>
+                          <Visibility fontSize="small" />
+                        </IconButton>
+                      </span>
+                    </Tooltip>
+                    <Tooltip title={doc.dataUrl ? "Download" : "Download unavailable"}>
+                      <span>
+                      <IconButton size="small" disabled={!doc.dataUrl} onClick={() => handleDownload(doc)} sx={{ color: GREEN_UI.greenDark }}>
                         <FileDownload fontSize="small" />
                       </IconButton>
+                      </span>
                     </Tooltip>
                     <Tooltip title="Remove">
                       <IconButton size="small" color="error" onClick={() => handleDeleteDoc(i)}>
@@ -795,7 +968,7 @@ export default function MyProfile() {
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
                 <Box sx={sectionIconSx}><Assignment /></Box>
                 <Box>
-                  <Typography variant="h6" fontWeight={900} sx={{ color: GREEN_UI.text, letterSpacing: '-0.02em' }}>
+                  <Typography variant="h6" fontWeight={700} sx={{ color: GREEN_UI.text, letterSpacing: '-0.02em' }}>
                     Application Documents
                   </Typography>
                   <Typography variant="body2" sx={{ color: GREEN_UI.muted }}>
@@ -813,13 +986,55 @@ export default function MyProfile() {
             ) : (
               <Box>
                 <Paper elevation={0} sx={{ ...innerCardSx, p: 1.5, mb: 1.5 }}>
-                  <Typography variant="caption" sx={{ color: GREEN_UI.muted, display: 'block', fontWeight: 800 }}>
+                  <Typography variant="caption" sx={{ color: GREEN_UI.muted, display: 'block', fontWeight: 600 }}>
                     Application: {application.id}
                   </Typography>
-                  <Typography variant="caption" sx={{ color: GREEN_UI.text, display: 'block', fontWeight: 900 }}>
+                  <Typography variant="caption" sx={{ color: GREEN_UI.text, display: 'block', fontWeight: 700 }}>
                     Applied {application.dateApplied}
                   </Typography>
                 </Paper>
+                {applicationDocs.length > 0 && (
+                  <Stack spacing={1} sx={{ mb: 1.5 }}>
+                    {applicationDocs.map((doc, i) => (
+                      <Box
+                        key={`${doc.name}-${i}`}
+                        sx={{
+                          ...rowCardSx,
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: 1,
+                          p: 1.25,
+                        }}
+                      >
+                        <Box sx={{ ...sectionIconSx, width: 38, height: 38, borderRadius: '14px' }}>
+                          <InsertDriveFile sx={{ fontSize: 20 }} />
+                        </Box>
+                        <Box sx={{ flex: 1, minWidth: 0 }}>
+                          <Typography variant="caption" fontWeight={700} sx={{ color: GREEN_UI.text, display: 'block', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                            {doc.name}
+                          </Typography>
+                          <Typography variant="caption" sx={{ color: GREEN_UI.muted }}>
+                            Application file
+                          </Typography>
+                        </Box>
+                        <Tooltip title={doc.dataUrl ? "View" : "Preview unavailable"}>
+                          <span>
+                            <IconButton size="small" disabled={!doc.dataUrl} onClick={() => handleViewDoc(doc)} sx={{ color: GREEN_UI.greenDark }}>
+                              <Visibility fontSize="small" />
+                            </IconButton>
+                          </span>
+                        </Tooltip>
+                        <Tooltip title={doc.dataUrl ? "Download" : "Download unavailable"}>
+                          <span>
+                            <IconButton size="small" disabled={!doc.dataUrl} onClick={() => handleDownload(doc)} sx={{ color: GREEN_UI.greenDark }}>
+                              <FileDownload fontSize="small" />
+                            </IconButton>
+                          </span>
+                        </Tooltip>
+                      </Box>
+                    ))}
+                  </Stack>
+                )}
                 {[
                   { key: 'hasResume',    label: 'Resume / CV' },
                   { key: 'hasBirthCert', label: 'Birth Certificate' },
@@ -843,7 +1058,7 @@ export default function MyProfile() {
                           {submitted
                             ? <TaskAlt sx={{ color: 'success.main', fontSize: 20, flexShrink: 0 }} />
                             : <CancelOutlined sx={{ color: 'error.main', fontSize: 20, flexShrink: 0 }} />}
-                          <Typography variant="body2" fontWeight={800} sx={{ color: GREEN_UI.text }}>{label}</Typography>
+                          <Typography variant="body2" fontWeight={600} sx={{ color: GREEN_UI.text }}>{label}</Typography>
                         </Box>
                         <Chip
                           label={submitted ? 'On File' : 'Missing'}
@@ -852,7 +1067,7 @@ export default function MyProfile() {
                             bgcolor: submitted ? '#e5f8e9' : '#fdeaea',
                             color: submitted ? '#217a43' : '#9c2f2f',
                             border: `1px solid ${submitted ? '#a9dfb6' : '#efb8b8'}`,
-                            fontWeight: 900,
+                            fontWeight: 700,
                             flexShrink: 0,
                           }}
                         />
@@ -885,6 +1100,53 @@ export default function MyProfile() {
           {snackbar.message}
         </Alert>
       </Snackbar>
+
+      <Dialog
+        open={Boolean(previewDoc)}
+        onClose={() => setPreviewDoc(null)}
+        maxWidth="md"
+        fullWidth
+        PaperProps={{ sx: { borderRadius: '24px', overflow: 'hidden', border: `1px solid ${GREEN_UI.border}` } }}
+      >
+        <DialogTitle sx={{ bgcolor: '#fbfff9', borderBottom: `1px solid ${GREEN_UI.border}`, color: GREEN_UI.text, fontWeight: 700 }}>
+          {previewDoc?.name}
+        </DialogTitle>
+        <DialogContent sx={{ p: 0, bgcolor: '#f7fbf3', minHeight: 420 }}>
+          {previewDoc && isPreviewableDoc(previewDoc) ? (
+            mimeFromFileName(previewDoc.name).startsWith('image/') ? (
+              <Box
+                component="img"
+                src={getDocSource(previewDoc)}
+                alt={previewDoc.name}
+                sx={{ display: 'block', maxWidth: '100%', maxHeight: '72vh', mx: 'auto', objectFit: 'contain' }}
+              />
+            ) : (
+              <Box
+                component="iframe"
+                src={getDocSource(previewDoc)}
+                title={previewDoc.name}
+                sx={{ width: '100%', height: '72vh', border: 0, display: 'block', bgcolor: '#fff' }}
+              />
+            )
+          ) : (
+            <Box sx={{ p: 4, textAlign: 'center' }}>
+              <InsertDriveFile sx={{ color: GREEN_UI.muted, fontSize: 44, mb: 1 }} />
+              <Typography fontWeight={700} sx={{ color: GREEN_UI.text }}>Preview is not available for this file type.</Typography>
+              <Typography variant="body2" sx={{ color: GREEN_UI.muted, mt: 0.5 }}>Download the file to open it on your device.</Typography>
+            </Box>
+          )}
+        </DialogContent>
+        <DialogActions sx={{ px: 2.5, py: 1.5, bgcolor: '#fbfff9', borderTop: `1px solid ${GREEN_UI.border}` }}>
+          {previewDoc && (
+            <Button startIcon={<FileDownload />} onClick={() => handleDownload(previewDoc)} sx={{ ...pillButtonSx, color: GREEN_UI.greenDark }}>
+              Download
+            </Button>
+          )}
+          <Button variant="contained" onClick={() => setPreviewDoc(null)} sx={{ ...pillButtonSx, bgcolor: GREEN_UI.green, '&:hover': { bgcolor: GREEN_UI.greenDark } }}>
+            Close
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 }

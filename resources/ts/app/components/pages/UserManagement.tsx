@@ -28,6 +28,12 @@ interface UserAccount {
   createdAt?: string;
 }
 
+interface EmployeeOption {
+  employeeId: string;
+  name: string;
+  outlet: string;
+}
+
 const EMPTY_FORM = {
   name: '',
   email: '',
@@ -78,7 +84,7 @@ const innerCardSx = {
 const pillButtonSx = {
   borderRadius: "12px",
   textTransform: 'none',
-  fontWeight: 800,
+  fontWeight: 600,
   px: 2,
 };
 
@@ -112,7 +118,7 @@ const roleChipSx = (role: UserRole) => {
     bgcolor: selected.bg,
     color: selected.color,
     borderColor: selected.border,
-    fontWeight: 800,
+    fontWeight: 600,
     '& .MuiChip-label': { px: 1.3 },
   };
 };
@@ -121,7 +127,7 @@ const activeChipSx = (active?: boolean) => ({
   bgcolor: active === false ? '#f2f4f1' : '#e5f8e9',
   color: active === false ? '#6f786f' : '#217a43',
   borderColor: active === false ? '#dce2d9' : '#a9dfb6',
-  fontWeight: 900,
+  fontWeight: 700,
   '& .MuiChip-label': { px: 1.35 },
 });
 
@@ -147,6 +153,7 @@ export default function UserManagement() {
   const [selectedUser, setSelectedUser] = useState<UserAccount | null>(null);
   const [form, setForm]             = useState(EMPTY_FORM);
   const [editForm, setEditForm]     = useState<Partial<UserAccount>>({});
+  const [employeeOptions, setEmployeeOptions] = useState<EmployeeOption[]>([]);
   const [newPwd, setNewPwd]         = useState('');
   const [showPwd, setShowPwd]       = useState(false);
   const [showEditPwd, setShowEditPwd] = useState(false);
@@ -192,6 +199,40 @@ export default function UserManagement() {
 };
 
   useEffect(() => { fetchUsers(); }, []);
+
+  const fetchEmployeeOptions = async () => {
+    const { data, error } = await supabase
+      .from("employees")
+      .select("employee_id, first_name, middle_name, last_name, suffix, outlet")
+      .order("first_name", { ascending: true });
+
+    if (error) {
+      console.warn("Could not load employee outlet options:", error.message);
+      return;
+    }
+
+    setEmployeeOptions((data ?? []).map((employee: any) => ({
+      employeeId: employee.employee_id ?? "",
+      name: `${employee.first_name ?? ""} ${employee.middle_name ?? ""} ${employee.last_name ?? ""} ${employee.suffix ?? ""}`
+        .replace(/\s+/g, " ")
+        .trim(),
+      outlet: employee.outlet ?? "",
+    })).filter(employee => employee.employeeId));
+  };
+
+  useEffect(() => { fetchEmployeeOptions(); }, []);
+
+  const getEmployeeOption = (employeeId?: string) =>
+    employeeOptions.find(employee => employee.employeeId === employeeId);
+
+  useEffect(() => {
+    if (!openEdit || !editForm.employeeId) return;
+
+    const linkedEmployee = getEmployeeOption(editForm.employeeId);
+    if (linkedEmployee?.outlet && editForm.outlet !== linkedEmployee.outlet) {
+      setEditForm(prev => ({ ...prev, outlet: linkedEmployee.outlet }));
+    }
+  }, [openEdit, editForm.employeeId, editForm.outlet, employeeOptions]);
 
   /** Fetch all existing employee IDs (from /employees + already-loaded users),
    *  compute the next sequential EMP ID, then open the Create dialog. */
@@ -326,11 +367,14 @@ export default function UserManagement() {
   setSaving(true);
 
   try {
+    const linkedEmployee = getEmployeeOption(editForm.employeeId);
+    const employeeOutlet = linkedEmployee?.outlet || editForm.outlet || "";
+
     const updateData: any = {
       full_name: editForm.name,
       email: editForm.email,
       role: editForm.role,
-      outlet: editForm.outlet,
+      outlet: employeeOutlet,
       employee_id: editForm.employeeId,
       is_active: editForm.active ?? selectedUser.active ?? true,
     };
@@ -368,7 +412,7 @@ export default function UserManagement() {
       role: data.role ?? "employee",
       employeeId: data.employee_id ?? "",
       applicantId: data.applicant_id ?? "",
-      outlet: data.outlet ?? "",
+      outlet: employeeOutlet || data.outlet || "",
       active: data.is_active ?? true,
       createdAt: data.created_at ?? "",
     };
@@ -504,7 +548,7 @@ export default function UserManagement() {
         />
         <Typography
           variant="subtitle2"
-          fontWeight={900}
+          fontWeight={700}
           sx={{ color: GREEN_UI.greenDark, letterSpacing: 0.4, textTransform: 'uppercase' }}
         >
           {title}
@@ -576,12 +620,12 @@ export default function UserManagement() {
                 mb: 1.2,
                 bgcolor: GREEN_UI.greenSoft,
                 color: GREEN_UI.greenDark,
-                fontWeight: 900,
+                fontWeight: 700,
               }}
             />
             <Typography
               variant="h4"
-              fontWeight={900}
+              fontWeight={700}
               sx={{
                 fontSize: { xs: '1.55rem', sm: '2rem', md: '2.35rem' },
                 color: GREEN_UI.text,
@@ -657,10 +701,10 @@ export default function UserManagement() {
             >
               <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 1.5 }}>
                 <Box>
-                  <Typography variant="body2" sx={{ color: GREEN_UI.muted, fontWeight: 800 }}>
+                  <Typography variant="body2" sx={{ color: GREEN_UI.muted, fontWeight: 600 }}>
                     {stat.label}
                   </Typography>
-                  <Typography variant="h4" fontWeight={900} sx={{ color: GREEN_UI.text, mt: 0.5, letterSpacing: '-0.04em' }}>
+                  <Typography variant="h4" fontWeight={700} sx={{ color: GREEN_UI.text, mt: 0.5, letterSpacing: '-0.04em' }}>
                     {stat.value}
                   </Typography>
                 </Box>
@@ -703,7 +747,7 @@ export default function UserManagement() {
             borderRadius: 1.2,
             bgcolor: 'rgba(58, 168, 101, 0.10)',
             color: GREEN_UI.greenDark,
-            fontWeight: 800,
+            fontWeight: 600,
           },
         }}
       >
@@ -748,7 +792,7 @@ export default function UserManagement() {
                   background: 'linear-gradient(90deg, #eff8eb 0%, #f8fcf5 100%)',
                   '& th': {
                     color: GREEN_UI.greenDark,
-                    fontWeight: 900,
+                    fontWeight: 700,
                     fontSize: '0.78rem',
                     letterSpacing: '0.02em',
                     textTransform: 'uppercase',
@@ -784,7 +828,7 @@ export default function UserManagement() {
                       >
                         <AdminPanelSettings />
                       </Box>
-                      <Typography fontWeight={900} sx={{ color: GREEN_UI.text }}>
+                      <Typography fontWeight={700} sx={{ color: GREEN_UI.text }}>
                         No user accounts yet
                       </Typography>
                       <Typography variant="body2" sx={{ color: GREEN_UI.muted, mt: 0.5 }}>
@@ -810,7 +854,7 @@ export default function UserManagement() {
                         label={u.id || '—'}
                         size="small"
                         variant="outlined"
-                        sx={{ fontWeight: 800, bgcolor: '#f8fcf5', borderColor: GREEN_UI.border, fontFamily: 'monospace' }}
+                        sx={{ fontWeight: 600, bgcolor: '#f8fcf5', borderColor: GREEN_UI.border }}
                       />
                     </TableCell>
 
@@ -825,14 +869,14 @@ export default function UserManagement() {
                             placeItems: 'center',
                             bgcolor: GREEN_UI.greenSoft,
                             color: GREEN_UI.greenDark,
-                            fontWeight: 900,
+                            fontWeight: 700,
                             flexShrink: 0,
                           }}
                         >
                           {(u.name || '?').trim().charAt(0).toUpperCase()}
                         </Box>
                         <Box sx={{ minWidth: 0 }}>
-                          <Typography fontWeight={800} sx={{ color: GREEN_UI.text, lineHeight: 1.2 }} noWrap>
+                          <Typography fontWeight={600} sx={{ color: GREEN_UI.text, lineHeight: 1.2 }} noWrap>
                             {u.name || 'Unnamed Account'}
                           </Typography>
                           <Typography variant="caption" sx={{ color: GREEN_UI.muted }} noWrap>
@@ -878,7 +922,7 @@ export default function UserManagement() {
                           sx={{
                             minWidth: 118,
                             justifyContent: 'center',
-                            fontWeight: 800,
+                            fontWeight: 600,
                             borderColor: u.active === false ? '#a9dfb6' : '#efd69a',
                             color: u.active === false ? '#1f7a46' : '#8a6400',
                             bgcolor: u.active === false ? '#f1fbf2' : '#fffaf0',
@@ -894,13 +938,14 @@ export default function UserManagement() {
                           variant="outlined"
                           icon={<EditNote />}
                           onClick={() => {
+                            const linkedEmployee = getEmployeeOption(u.employeeId);
                             setSelectedUser(u);
 
                             setEditForm({
                               name: u.name,
                               email: u.email,
                               role: u.role,
-                              outlet: u.outlet,
+                              outlet: linkedEmployee?.outlet || u.outlet,
                               employeeId: u.employeeId,
                               applicantId: u.applicantId,
                               active: u.active,
@@ -913,7 +958,7 @@ export default function UserManagement() {
                           sx={{
                             minWidth: 76,
                             justifyContent: 'center',
-                            fontWeight: 800,
+                            fontWeight: 600,
                             borderColor: GREEN_UI.borderStrong,
                             color: GREEN_UI.greenDark,
                             bgcolor: '#ffffff',
@@ -932,7 +977,7 @@ export default function UserManagement() {
                           sx={{
                             minWidth: 86,
                             justifyContent: 'center',
-                            fontWeight: 800,
+                            fontWeight: 600,
                             borderColor: '#efb8b8',
                             color: '#9c2f2f',
                             bgcolor: '#fffafa',
@@ -967,7 +1012,7 @@ export default function UserManagement() {
         }}
       >
         <DialogTitle
-          fontWeight={900}
+          fontWeight={700}
           sx={{
             px: { xs: 2, sm: 3 },
             py: 2.25,
@@ -975,7 +1020,7 @@ export default function UserManagement() {
             borderBottom: `1px solid ${GREEN_UI.border}`,
           }}
         >
-          <Typography fontWeight={900} sx={{ color: GREEN_UI.text }}>
+          <Typography fontWeight={700} sx={{ color: GREEN_UI.text }}>
             Create New User Account
           </Typography>
           <Typography variant="body2" sx={{ color: GREEN_UI.muted, mt: 0.5, fontWeight: 500 }}>
@@ -1057,7 +1102,7 @@ export default function UserManagement() {
                   ...softTextFieldSx,
                   '& .MuiInputBase-input.Mui-disabled': {
                     WebkitTextFillColor: GREEN_UI.text,
-                    fontWeight: 800,
+                    fontWeight: 600,
                   },
                 }}
               />
@@ -1136,7 +1181,7 @@ export default function UserManagement() {
         }}
       >
         <DialogTitle
-          fontWeight={900}
+          fontWeight={700}
           sx={{
             px: { xs: 2, sm: 3 },
             py: 2.25,
@@ -1146,7 +1191,7 @@ export default function UserManagement() {
         >
           <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 1 }}>
             <Box>
-              <Typography fontWeight={900} sx={{ color: GREEN_UI.text }}>
+              <Typography fontWeight={700} sx={{ color: GREEN_UI.text }}>
                 Edit Account
               </Typography>
               <Typography variant="body2" sx={{ color: GREEN_UI.muted, mt: 0.5, fontWeight: 500 }}>
@@ -1206,6 +1251,7 @@ export default function UserManagement() {
                 select
                 label="Outlet / Branch"
                 value={editForm.outlet ?? ''}
+                disabled={Boolean(getEmployeeOption(editForm.employeeId)?.outlet)}
                 onChange={e => setEditForm({ ...editForm, outlet: e.target.value })}
                 InputLabelProps={{ shrink: true }}
                 sx={softTextFieldSx}
@@ -1219,7 +1265,15 @@ export default function UserManagement() {
                 fullWidth
                 label="Linked Employee ID"
                 value={editForm.employeeId ?? ''}
-                onChange={e => setEditForm({ ...editForm, employeeId: e.target.value })}
+                onChange={e => {
+                  const employeeId = e.target.value;
+                  const linkedEmployee = getEmployeeOption(employeeId);
+                  setEditForm({
+                    ...editForm,
+                    employeeId,
+                    outlet: linkedEmployee?.outlet || editForm.outlet || '',
+                  });
+                }}
                 sx={softTextFieldSx}
               />
             </Grid>

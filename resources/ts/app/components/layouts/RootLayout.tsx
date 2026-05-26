@@ -15,6 +15,18 @@ import { supabase } from '../../lib/supabaseClient';
 
 const drawerWidth = 268;
 
+const NAV_UI = {
+  sidebarBg: 'linear-gradient(180deg, #0b4a2b 0%, #145f38 46%, #1d7a48 100%)',
+  sidebarBorder: 'rgba(213, 245, 218, 0.16)',
+  sidebarText: '#f7fff7',
+  sidebarMuted: 'rgba(232, 249, 235, 0.68)',
+  gold: '#f4bd4f',
+  goldSoft: 'rgba(244, 189, 79, 0.18)',
+  greenSoft: 'rgba(224, 248, 224, 0.14)',
+  selectedBg: 'linear-gradient(135deg, rgba(244, 189, 79, 0.24), rgba(255, 255, 255, 0.14))',
+  headerBg: 'linear-gradient(135deg, rgba(21, 117, 67, 0.96), rgba(31, 132, 75, 0.92))',
+};
+
 // Role-specific nav items — each includes which roles can see it
 const ALL_MENU_ITEMS = [
   { text: 'Dashboard',         icon: <SpaceDashboard />,     path: '/dashboard',                  roles: ['hr','employee','supervisor','gm','accounting'] },
@@ -126,11 +138,59 @@ export default function RootLayout() {
   };
 
   const drawerContent = (
-    <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+    <Box
+      sx={{
+        display: 'flex',
+        flexDirection: 'column',
+        height: '100%',
+        position: 'relative',
+        overflow: 'hidden',
+        color: NAV_UI.sidebarText,
+        background: NAV_UI.sidebarBg,
+        '&:before': {
+          content: '""',
+          position: 'absolute',
+          width: 220,
+          height: 220,
+          borderRadius: '50%',
+          top: -96,
+          left: -94,
+          background: 'rgba(255,255,255,0.10)',
+        },
+        '&:after': {
+          content: '""',
+          position: 'absolute',
+          width: 190,
+          height: 190,
+          borderRadius: '50%',
+          right: -95,
+          bottom: 108,
+          background: 'rgba(244,189,79,0.10)',
+        },
+        '& > *': { position: 'relative', zIndex: 1 },
+      }}
+    >
       <Box sx={{ display: { xs: 'block', md: 'none' } }}><Toolbar /></Box>
 
-      <Box onClick={() => handleNavigate('/dashboard')} sx={{ px: 2.5, py: 2.5, display: 'flex', alignItems: 'center', gap: 1.5, cursor: 'pointer', borderRadius: 2, mx: 1, transition: 'background 0.18s', '&:hover': { background: 'rgba(255,255,255,0.07)' } }}>
-        <Box sx={{ width: 44, height: 44, minWidth: 44, borderRadius: '14px', background: 'linear-gradient(135deg, #E8A33D 0%, #F5C277 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 8px 16px rgba(232,163,61,0.35)' }}>
+      <Box
+        onClick={() => handleNavigate('/dashboard')}
+        sx={{
+          px: 1.5,
+          py: 1.5,
+          m: 1.5,
+          display: 'flex',
+          alignItems: 'center',
+          gap: 1.4,
+          cursor: 'pointer',
+          borderRadius: '22px',
+          border: '1px solid transparent',
+          background: 'transparent',
+          boxShadow: 'none',
+          transition: 'transform 0.18s ease, background 0.18s ease',
+          '&:hover': { background: 'rgba(255,255,255,0.06)', transform: 'translateY(-1px)' },
+        }}
+      >
+        <Box sx={{ width: 48, height: 48, minWidth: 48, borderRadius: '16px', background: 'linear-gradient(135deg, #f0a93f 0%, #ffd276 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 14px 28px rgba(244,189,79,0.28)' }}>
           <CorporateFare sx={{ color: 'white' }} />
         </Box>
         <Box sx={{ minWidth: 0 }}>
@@ -139,26 +199,46 @@ export default function RootLayout() {
         </Box>
       </Box>
 
-      <Divider sx={{ borderColor: 'rgba(255,255,255,0.08)', mx: 2 }} />
+      <Divider sx={{ borderColor: NAV_UI.sidebarBorder, mx: 2 }} />
 
       <Box sx={{ px: 2.5, pt: 1.5, pb: 0.5 }}>
         <Chip size="small" label={ROLE_LABELS[user.role] ?? user.role.toUpperCase()}
-          sx={{ bgcolor: 'rgba(217,164,65,0.22)', color: '#F5D38A', fontWeight: 700, fontSize: '0.7rem', letterSpacing: 0.5 }} />
+          sx={{ bgcolor: NAV_UI.goldSoft, color: '#ffe6a7', border: '1px solid rgba(244,189,79,0.26)', fontWeight: 700, fontSize: '0.7rem', letterSpacing: 0.5 }} />
       </Box>
 
-      <Typography sx={{ px: 3, pt: 1.5, pb: 1, fontSize: '0.7rem', letterSpacing: 1.5, color: 'rgba(230,238,248,0.55)', fontWeight: 700 }}>
+      <Typography sx={{ px: 3, pt: 1.5, pb: 1, fontSize: '0.7rem', letterSpacing: 1.8, color: NAV_UI.sidebarMuted, fontWeight: 700 }}>
         MAIN MENU
       </Typography>
 
       <Box sx={{ flexGrow: 1, overflow: 'auto', pb: 1 }}>
-        <List sx={{ px: 0.5 }}>
+        <List sx={{ px: 1.2 }}>
           {filteredMenuItems.map((item) => {
             const selected = item.path === '/dashboard' ? location.pathname === '/dashboard' : location.pathname.startsWith(item.path);
             return (
-              <ListItem key={item.text} disablePadding>
-                <ListItemButton selected={selected} onClick={() => handleNavigate(item.path)}>
+              <ListItem key={item.text} disablePadding sx={{ mb: 0.45 }}>
+                <ListItemButton
+                  selected={selected}
+                  onClick={() => handleNavigate(item.path)}
+                  sx={{
+                    minHeight: 48,
+                    borderRadius: '14px',
+                    px: 1.6,
+                    color: NAV_UI.sidebarText,
+                    transition: 'transform 0.18s ease, background 0.18s ease, box-shadow 0.18s ease',
+                    '& .MuiListItemIcon-root': { color: selected ? '#ffe39b' : 'rgba(232,249,235,0.78)', minWidth: 38 },
+                    '&.Mui-selected': {
+                      background: NAV_UI.selectedBg,
+                      boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.18), 0 12px 26px rgba(0,0,0,0.13)',
+                      color: '#fff',
+                    },
+                    '&.Mui-selected:hover, &:hover': {
+                      background: selected ? NAV_UI.selectedBg : 'rgba(255,255,255,0.09)',
+                      transform: 'translateX(3px)',
+                    },
+                  }}
+                >
                   <ListItemIcon>{item.icon}</ListItemIcon>
-                  <ListItemText primary={item.text} primaryTypographyProps={{ fontSize: '0.92rem', fontWeight: 600 }} />
+                  <ListItemText primary={item.text} primaryTypographyProps={{ fontSize: '0.93rem', fontWeight: selected ? 700 : 600 }} />
                 </ListItemButton>
               </ListItem>
             );
@@ -168,11 +248,11 @@ export default function RootLayout() {
 
       {/* User card */}
       <Box sx={{ p: 2 }}>
-        <Box sx={{ p: 1.5, borderRadius: 2, background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.08)', display: 'flex', alignItems: 'center', gap: 1.25 }}>
-          <Avatar sx={{ bgcolor: 'secondary.main', width: 38, height: 38, fontWeight: 700 }}>{user.name.charAt(0)}</Avatar>
+        <Box sx={{ p: 1.45, borderRadius: '24px', background: 'rgba(255,255,255,0.10)', border: `1px solid ${NAV_UI.sidebarBorder}`, boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.12)', display: 'flex', alignItems: 'center', gap: 1.25 }}>
+          <Avatar sx={{ bgcolor: NAV_UI.gold, color: '#fff', width: 40, height: 40, fontWeight: 700 }}>{user.name.charAt(0)}</Avatar>
           <Box sx={{ minWidth: 0, flex: 1 }}>
             <Typography sx={{ color: 'white', fontSize: '0.85rem', fontWeight: 600 }} noWrap>{user.name}</Typography>
-            <Typography sx={{ color: 'rgba(230,238,248,0.7)', fontSize: '0.7rem' }} noWrap>{ROLE_LABELS[user.role] ?? user.role}</Typography>
+            <Typography sx={{ color: NAV_UI.sidebarMuted, fontSize: '0.7rem' }} noWrap>{ROLE_LABELS[user.role] ?? user.role}</Typography>
           </Box>
           <Tooltip title="Logout">
             <IconButton size="small" onClick={handleLogout} sx={{ color: 'rgba(230,238,248,0.85)' }}><Logout fontSize="small" /></IconButton>
@@ -184,29 +264,41 @@ export default function RootLayout() {
 
   return (
     <Box sx={{ display: 'flex', minHeight: '100vh', bgcolor: 'background.default' }}>
-      <AppBar position="fixed" sx={{ zIndex: (t) => t.zIndex.drawer + 1, width: { md: `calc(100% - ${drawerWidth}px)` }, ml: { md: `${drawerWidth}px` } }}>
-        <Toolbar sx={{ gap: 1 }}>
+      <AppBar
+        position="fixed"
+        elevation={0}
+        sx={{
+          zIndex: (t) => t.zIndex.drawer + 1,
+          width: { md: `calc(100% - ${drawerWidth}px)` },
+          ml: { md: `${drawerWidth}px` },
+          background: NAV_UI.headerBg,
+          borderBottom: '1px solid rgba(255,255,255,0.18)',
+          boxShadow: '0 18px 42px rgba(21, 86, 50, 0.18)',
+          backdropFilter: 'blur(16px)',
+        }}
+      >
+        <Toolbar sx={{ gap: 1.25, minHeight: { xs: 64, sm: 70 } }}>
           <IconButton color="inherit" edge="start" onClick={() => setMobileOpen(prev => !prev)} sx={{ display: { md: 'none' } }}><MenuIcon /></IconButton>
           <Box sx={{ flexGrow: 1, minWidth: 0 }}>
-            <Typography noWrap sx={{ fontWeight: 700, fontSize: { xs: '0.95rem', sm: '1.05rem' }, lineHeight: 1.2 }}>
+            <Typography noWrap sx={{ fontWeight: 700, fontSize: { xs: '1rem', sm: '1.08rem' }, lineHeight: 1.2, letterSpacing: '-0.02em' }}>
               HRIS — Human Resource Information System
             </Typography>
-            <Typography noWrap sx={{ color: 'rgba(255,255,255,0.75)', fontSize: '0.72rem', letterSpacing: 0.5, display: { xs: 'none', sm: 'block' } }}>
+            <Typography noWrap sx={{ color: 'rgba(245,255,246,0.76)', fontSize: '0.74rem', letterSpacing: 0.25, display: { xs: 'none', sm: 'block' } }}>
               with Decision Support System · Buenaventura Estate
             </Typography>
           </Box>
           <Stack direction="row" spacing={1} alignItems="center">
             <Chip size="small" label={ROLE_LABELS[user.role] ?? user.role.toUpperCase()}
-              sx={{ display: { xs: 'none', sm: 'inline-flex' }, bgcolor: 'rgba(255,255,255,0.15)', color: 'white', border: '1px solid rgba(255,255,255,0.25)' }} />
+              sx={{ display: { xs: 'none', sm: 'inline-flex' }, bgcolor: 'rgba(255,255,255,0.16)', color: 'white', border: '1px solid rgba(255,255,255,0.28)', fontWeight: 700, backdropFilter: 'blur(10px)' }} />
             <Tooltip title="Notifications">
-              <IconButton color="inherit" size="small" onClick={e => setNotifAnchor(e.currentTarget)}>
+              <IconButton color="inherit" size="small" onClick={e => setNotifAnchor(e.currentTarget)} sx={{ bgcolor: 'rgba(255,255,255,0.10)', border: '1px solid rgba(255,255,255,0.18)', '&:hover': { bgcolor: 'rgba(255,255,255,0.18)' } }}>
                 <Badge badgeContent={unreadCount} color="error">
                   <NotificationsNone />
                 </Badge>
               </IconButton>
             </Tooltip>
             <IconButton onClick={(e) => setAnchorEl(e.currentTarget)} size="small">
-              <Avatar sx={{ bgcolor: 'secondary.main', width: 36, height: 36, fontWeight: 700 }}>{user.name.charAt(0)}</Avatar>
+              <Avatar sx={{ bgcolor: NAV_UI.gold, width: 38, height: 38, fontWeight: 700, boxShadow: '0 10px 22px rgba(0,0,0,0.16)' }}>{user.name.charAt(0)}</Avatar>
             </IconButton>
           </Stack>
           <Menu anchorEl={anchorEl} open={Boolean(anchorEl)} onClose={() => setAnchorEl(null)} PaperProps={{ sx: { mt: 1, minWidth: 220, borderRadius: 2 } }}>
@@ -304,10 +396,10 @@ export default function RootLayout() {
         </Toolbar>
       </AppBar>
 
-      <Drawer variant="permanent" sx={{ display: { xs: 'none', md: 'block' }, width: drawerWidth, flexShrink: 0, '& .MuiDrawer-paper': { width: drawerWidth, boxSizing: 'border-box' } }} open>
+      <Drawer variant="permanent" sx={{ display: { xs: 'none', md: 'block' }, width: drawerWidth, flexShrink: 0, '& .MuiDrawer-paper': { width: drawerWidth, boxSizing: 'border-box', border: 0, boxShadow: '18px 0 44px rgba(12, 74, 43, 0.18)' } }} open>
         {drawerContent}
       </Drawer>
-      <Drawer variant="temporary" open={mobileOpen} onClose={() => setMobileOpen(false)} ModalProps={{ keepMounted: true }} sx={{ display: { xs: 'block', md: 'none' }, '& .MuiDrawer-paper': { width: drawerWidth, boxSizing: 'border-box' } }}>
+      <Drawer variant="temporary" open={mobileOpen} onClose={() => setMobileOpen(false)} ModalProps={{ keepMounted: true }} sx={{ display: { xs: 'block', md: 'none' }, '& .MuiDrawer-paper': { width: drawerWidth, boxSizing: 'border-box', border: 0 } }}>
         {drawerContent}
       </Drawer>
 

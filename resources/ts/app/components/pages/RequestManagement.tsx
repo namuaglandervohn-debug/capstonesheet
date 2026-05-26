@@ -181,7 +181,7 @@ const innerCardSx = {
 const pillButtonSx = {
   borderRadius: '12px',
   textTransform: 'none',
-  fontWeight: 800,
+  fontWeight: 600,
   px: 2,
 };
 
@@ -201,7 +201,7 @@ const requestStatusChipSx = (status: RequestStatus) => {
     bgcolor: selected.bg,
     color: selected.color,
     borderColor: selected.border,
-    fontWeight: 800,
+    fontWeight: 600,
     '& .MuiChip-label': { px: 1.25 },
   };
 };
@@ -219,7 +219,7 @@ const requestTypeChipSx = (type: RequestType) => {
     bgcolor: selected.bg,
     color: selected.color,
     borderColor: selected.border,
-    fontWeight: 800,
+    fontWeight: 600,
     '& .MuiChip-label': { px: 1.25 },
   };
 };
@@ -846,13 +846,13 @@ export default function RequestManagement() {
                 mb: 1.2,
                 bgcolor: GREEN_UI.greenSoft,
                 color: GREEN_UI.greenDark,
-                fontWeight: 900,
+                fontWeight: 700,
                 '& .MuiChip-icon': { color: GREEN_UI.greenDark },
               }}
             />
             <Typography
               variant="h4"
-              fontWeight={900}
+              fontWeight={700}
               sx={{
                 fontSize: { xs: '1.55rem', sm: '2rem', md: '2.35rem' },
                 color: GREEN_UI.text,
@@ -930,10 +930,10 @@ export default function RequestManagement() {
             >
               <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 1.5 }}>
                 <Box>
-                  <Typography variant="body2" sx={{ color: GREEN_UI.muted, fontWeight: 800 }}>
+                  <Typography variant="body2" sx={{ color: GREEN_UI.muted, fontWeight: 600 }}>
                     {stat.label}
                   </Typography>
-                  <Typography variant="h4" fontWeight={900} sx={{ color: GREEN_UI.text, mt: 0.5, letterSpacing: '-0.04em' }}>
+                  <Typography variant="h4" fontWeight={700} sx={{ color: GREEN_UI.text, mt: 0.5, letterSpacing: '-0.04em' }}>
                     {stat.value}
                   </Typography>
                 </Box>
@@ -1009,7 +1009,7 @@ export default function RequestManagement() {
               px: 1.6,
               borderRadius: '12px',
               textTransform: 'none',
-              fontWeight: 800,
+              fontWeight: 600,
               color: GREEN_UI.muted,
               transition: 'all 180ms ease',
             },
@@ -1049,7 +1049,7 @@ export default function RequestManagement() {
                   background: 'linear-gradient(90deg, #eff8eb 0%, #f8fcf5 100%)',
                   '& th': {
                     color: GREEN_UI.greenDark,
-                    fontWeight: 900,
+                    fontWeight: 700,
                     fontSize: '0.78rem',
                     letterSpacing: '0.02em',
                     textTransform: 'uppercase',
@@ -1088,7 +1088,7 @@ export default function RequestManagement() {
                       >
                         <AssignmentTurnedIn />
                       </Box>
-                      <Typography fontWeight={900} sx={{ color: GREEN_UI.text }}>
+                      <Typography fontWeight={700} sx={{ color: GREEN_UI.text }}>
                         No requests in this category
                       </Typography>
                       <Typography variant="body2" sx={{ color: GREEN_UI.muted, mt: 0.5 }}>
@@ -1121,7 +1121,7 @@ export default function RequestManagement() {
                           size="small"
                           variant="outlined"
                           sx={{
-                            fontWeight: 800,
+                            fontWeight: 600,
                             bgcolor: '#f8fcf5',
                             borderColor: GREEN_UI.border,
                             '& .MuiChip-icon': { color: GREEN_UI.greenDark },
@@ -1144,7 +1144,7 @@ export default function RequestManagement() {
                           >
                             <Person fontSize="small" />
                           </Box>
-                          <Typography fontWeight={800} sx={{ color: GREEN_UI.text }}>
+                          <Typography fontWeight={600} sx={{ color: GREEN_UI.text }}>
                             {req.employee}
                           </Typography>
                         </Box>
@@ -1206,7 +1206,7 @@ export default function RequestManagement() {
                             sx={{
                               minWidth: 126,
                               justifyContent: 'center',
-                              fontWeight: 800,
+                              fontWeight: 600,
                               borderColor: GREEN_UI.borderStrong,
                               color: GREEN_UI.greenDark,
                               bgcolor: '#ffffff',
@@ -1230,7 +1230,7 @@ export default function RequestManagement() {
                               sx={{
                                 minWidth: 104,
                                 justifyContent: 'center',
-                                fontWeight: 800,
+                                fontWeight: 600,
                                 borderColor: '#a9dfb6',
                                 color: GREEN_UI.greenDark,
                                 bgcolor: '#f4fbf5',
@@ -1251,7 +1251,7 @@ export default function RequestManagement() {
                               sx={{
                                 minWidth: 92,
                                 justifyContent: 'center',
-                                fontWeight: 800,
+                                fontWeight: 600,
                                 borderColor: '#f5d786',
                                 color: '#9b6b00',
                                 bgcolor: '#fffdf5',
@@ -1272,7 +1272,7 @@ export default function RequestManagement() {
                               sx={{
                                 minWidth: 90,
                                 justifyContent: 'center',
-                                fontWeight: 800,
+                                fontWeight: 600,
                                 borderColor: '#efb8b8',
                                 color: '#9c2f2f',
                                 bgcolor: '#fffafa',
@@ -1308,7 +1308,7 @@ export default function RequestManagement() {
         }}
       >
         <DialogTitle
-          fontWeight={900}
+          fontWeight={700}
           sx={{
             px: { xs: 2, sm: 3 },
             py: 2.25,
@@ -1318,7 +1318,7 @@ export default function RequestManagement() {
         >
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
             <AddCircleOutline sx={{ color: GREEN_UI.greenDark }} />
-            <Typography fontWeight={900} sx={{ color: GREEN_UI.text }}>
+            <Typography fontWeight={700} sx={{ color: GREEN_UI.text }}>
               Submit New Request
             </Typography>
           </Box>
@@ -1480,7 +1480,7 @@ export default function RequestManagement() {
         }}
       >
         <DialogTitle
-          fontWeight={900}
+          fontWeight={700}
           sx={{
             px: { xs: 2, sm: 3 },
             py: 2.25,
@@ -1491,7 +1491,7 @@ export default function RequestManagement() {
           <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 1 }}>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
               <Description sx={{ color: GREEN_UI.greenDark }} />
-              <Typography fontWeight={900} sx={{ color: GREEN_UI.text }}>
+              <Typography fontWeight={700} sx={{ color: GREEN_UI.text }}>
                 Request Details — {selectedReq?.requestId}
               </Typography>
             </Box>
@@ -1531,8 +1531,8 @@ export default function RequestManagement() {
                       borderBottom: index === arr.length - 1 ? 'none' : `1px solid ${GREEN_UI.border}`,
                     }}
                   >
-                    <Typography variant="body2" sx={{ color: GREEN_UI.muted, fontWeight: 800 }}>{label}</Typography>
-                    <Typography variant="body2" fontWeight={800} textAlign="right" sx={{ color: GREEN_UI.text }}>{value}</Typography>
+                    <Typography variant="body2" sx={{ color: GREEN_UI.muted, fontWeight: 600 }}>{label}</Typography>
+                    <Typography variant="body2" fontWeight={600} textAlign="right" sx={{ color: GREEN_UI.text }}>{value}</Typography>
                   </Box>
                 ))}
               </Paper>

@@ -130,7 +130,7 @@ const softCardSx = {
 const pillButtonSx = {
   borderRadius: '12px',
   textTransform: "none",
-  fontWeight: 800,
+  fontWeight: 600,
   px: 2,
 };
 
@@ -364,13 +364,13 @@ export default function EmployeeDTR() {
                   mb: 1.2,
                   bgcolor: GREEN_UI.greenSoft,
                   color: GREEN_UI.greenDark,
-                  fontWeight: 900,
+                  fontWeight: 700,
                   "& .MuiChip-icon": { color: GREEN_UI.greenDark },
                 }}
               />
               <Typography
                 variant="h4"
-                fontWeight={900}
+                fontWeight={700}
                 sx={{
                   fontSize: { xs: "1.55rem", sm: "2rem", md: "2.35rem" },
                   color: GREEN_UI.text,
@@ -428,12 +428,12 @@ export default function EmployeeDTR() {
             >
               <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 1.5 }}>
                 <Box sx={{ minWidth: 0 }}>
-                  <Typography variant="body2" sx={{ color: GREEN_UI.muted, fontWeight: 800 }}>
+                  <Typography variant="body2" sx={{ color: GREEN_UI.muted, fontWeight: 600 }}>
                     {stat.label}
                   </Typography>
                   <Typography
                     variant="h4"
-                    fontWeight={900}
+                    fontWeight={700}
                     sx={{
                       color: GREEN_UI.text,
                       mt: 0.5,
@@ -492,7 +492,7 @@ export default function EmployeeDTR() {
               <PersonOutline />
             </Box>
             <Box>
-              <Typography fontWeight={900} sx={{ color: GREEN_UI.text, letterSpacing: "-0.02em" }}>
+              <Typography fontWeight={700} sx={{ color: GREEN_UI.text, letterSpacing: "-0.02em" }}>
                 Printable DTR Form
               </Typography>
               <Typography variant="caption" sx={{ color: GREEN_UI.muted }}>
@@ -510,7 +510,7 @@ export default function EmployeeDTR() {
             </Box>
           ) : (
             <>
-              <Typography align="center" fontWeight="bold" sx={{ mb: 0.5, fontSize: 16 }}>
+              <Typography align="center" fontWeight={700} sx={{ mb: 0.5, fontSize: 16 }}>
                 DAILY TIME RECORD
               </Typography>
 

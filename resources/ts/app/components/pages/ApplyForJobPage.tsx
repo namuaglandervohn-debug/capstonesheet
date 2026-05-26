@@ -278,7 +278,7 @@ const SectionTitle = ({
     <Box sx={{ minWidth: 0 }}>
       <Typography
         variant="h6"
-        fontWeight={900}
+        fontWeight={700}
         sx={{ color: '#14532d', lineHeight: 1.15, letterSpacing: '-0.02em', overflowWrap: 'anywhere' }}
       >
         {title}
@@ -337,13 +337,13 @@ export default function ApplyForJobPage() {
     '& .MuiFormHelperText-root': {
       mx: { xs: 0.5, sm: 1.75 },
       overflowWrap: 'anywhere',
-      fontWeight: 650,
+      fontWeight: 600,
     },
   };
 
   const softButtonSx = {
     textTransform: 'none',
-    fontWeight: 900,
+    fontWeight: 700,
     borderRadius: '16px',
     minHeight: { xs: 46, sm: 52 },
     px: { xs: 2.5, sm: 4 },
@@ -389,13 +389,13 @@ export default function ApplyForJobPage() {
   const responsiveHeroTitleSx = {
     color: '#14532d',
     lineHeight: 1.05,
-    fontSize: { xs: '1.85rem', sm: '2.35rem', md: '3rem' },
+    fontSize: { xs: '1.55rem', sm: '2rem', md: '2.35rem' },
     overflowWrap: 'anywhere',
   };
   const responsiveFormTitleSx = {
     color: '#14532d',
     mb: 1,
-    fontSize: { xs: '1.5rem', sm: '1.85rem', md: '2.125rem' },
+    fontSize: { xs: '1.55rem', sm: '2rem', md: '2.35rem' },
     overflowWrap: 'anywhere',
   };
   const compactChoiceSx = {
@@ -920,12 +920,12 @@ export default function ApplyForJobPage() {
                   bgcolor: 'rgba(220,252,231,0.92)',
                   color: '#166534',
                   border: '1px solid rgba(34,197,94,0.20)',
-                  fontWeight: 900,
+                  fontWeight: 700,
                   letterSpacing: '-0.01em',
                 }}
               />
-              <Typography variant="h3" fontWeight={900} sx={responsiveHeroTitleSx}>Buenaventura Estate</Typography>
-              <Typography color="text.secondary" sx={{ mt: 1, fontSize: { xs: '0.9rem', sm: '1rem' }, fontWeight: 650, overflowWrap: 'anywhere' }}>Human Resource Information System — Applicant Portal</Typography>
+              <Typography variant="h3" fontWeight={700} sx={responsiveHeroTitleSx}>Buenaventura Estate</Typography>
+              <Typography color="text.secondary" sx={{ mt: 1, fontSize: { xs: '0.9rem', sm: '1rem' }, fontWeight: 600, overflowWrap: 'anywhere' }}>Human Resource Information System — Applicant Portal</Typography>
             </Box>
             <Button variant="contained" startIcon={<ArrowBackRounded />} onClick={() => navigate('/')} sx={{ ...softButtonSx, px: { xs: 2.5, sm: 4 }, py: 1.2, width: { xs: '100%', md: 'auto' }, background: 'linear-gradient(135deg, #166534 0%, #22c55e 100%)', '&:hover': { background: 'linear-gradient(135deg, #14532d 0%, #16a34a 100%)' } }}>Back to Careers</Button>
           </Stack>
@@ -951,8 +951,8 @@ export default function ApplyForJobPage() {
                     <AssignmentTurnedInOutlined />
                   </Box>
                   <Box sx={{ minWidth: 0 }}>
-                    <Typography variant="h4" fontWeight={900} sx={responsiveFormTitleSx}>Job Application Form</Typography>
-                    <Typography color="text.secondary" sx={{ fontSize: { xs: '0.9rem', sm: '1rem' }, fontWeight: 650 }}>Complete your application details and upload your requirements.</Typography>
+                    <Typography variant="h4" fontWeight={700} sx={responsiveFormTitleSx}>Job Application Form</Typography>
+                    <Typography color="text.secondary" sx={{ fontSize: { xs: '0.9rem', sm: '1rem' }, fontWeight: 600 }}>Complete your application details and upload your requirements.</Typography>
                   </Box>
                 </Stack>
                 <Box
@@ -1035,7 +1035,7 @@ export default function ApplyForJobPage() {
                                 display: 'flex',
                                 alignItems: 'center',
                                 justifyContent: 'center',
-                                fontWeight: 900,
+                                fontWeight: 700,
                                 fontSize: { xs: '0.8rem', sm: '0.95rem', md: '1rem' },
                                 border: isReached ? '2px solid #86efac' : '1.5px solid #bbf7d0',
                                 boxShadow: isCurrent
@@ -1054,7 +1054,7 @@ export default function ApplyForJobPage() {
                               variant="caption"
                               sx={{
                                 display: { xs: 'none', sm: 'block' },
-                                fontWeight: 800,
+                                fontWeight: 600,
                                 color: isReached ? '#14532d' : '#475569',
                                 textAlign: 'center',
                                 lineHeight: 1.2,
@@ -1076,7 +1076,7 @@ export default function ApplyForJobPage() {
                         display: { xs: 'block', sm: 'none' },
                         mt: 1.5,
                         textAlign: 'center',
-                        fontWeight: 800,
+                        fontWeight: 600,
                         color: '#14532d',
                         overflowWrap: 'anywhere',
                       }}
@@ -1154,9 +1154,9 @@ export default function ApplyForJobPage() {
                     <Grid size={fieldGrid}><TextField fullWidth required select label="Nationality" value={formData.nationality} onChange={set('nationality')} error={!!fieldErrors.nationality} helperText={fieldErrors.nationality} InputLabelProps={{ shrink: true }} sx={textFieldSx}>{NATIONALITIES.map((nationality) => <MenuItem key={nationality} value={nationality}>{nationality}</MenuItem>)}</TextField></Grid>
                     <Grid size={fieldGrid}><TextField fullWidth required label="Contact Number" value={formData.contactNumber} onChange={setPhone('contactNumber')} error={!!fieldErrors.contactNumber} helperText={fieldErrors.contactNumber || 'Enter 10 digits after +63.'} inputProps={phoneInputFieldProps} InputProps={{ startAdornment: phoneAdornment }} sx={textFieldSx} /></Grid>
                     <Grid size={fieldGrid}><TextField fullWidth required type="email" label="Email Address" value={formData.email} onChange={setEmail} error={!!fieldErrors.email} helperText={fieldErrors.email} inputProps={{ maxLength: 80 }} sx={textFieldSx} /></Grid>
-                    <Grid size={{ xs: 12 }}><Stack direction="row" spacing={1} alignItems="center" sx={{ mt: 1, mb: 1 }}><LocationOnOutlined sx={{ color: '#166534' }} /><Typography fontWeight={900} sx={{ color: '#14532d' }}>Current Address</Typography></Stack></Grid>
+                    <Grid size={{ xs: 12 }}><Stack direction="row" spacing={1} alignItems="center" sx={{ mt: 1, mb: 1 }}><LocationOnOutlined sx={{ color: '#166534' }} /><Typography fontWeight={700} sx={{ color: '#14532d' }}>Current Address</Typography></Stack></Grid>
                     {renderPhilippineAddressFields('current')}
-                    <Grid size={{ xs: 12 }}><Stack direction={{ xs: 'column', sm: 'row' }} alignItems={{ xs: 'stretch', sm: 'center' }} justifyContent="space-between" spacing={2} sx={{ mt: 2, mb: 1 }}><Stack direction="row" spacing={1} alignItems="center"><HomeWorkOutlined sx={{ color: '#166534' }} /><Typography fontWeight={900} sx={{ color: '#14532d' }}>Permanent Address</Typography></Stack><Button type="button" variant="outlined" onClick={copyCurrentToPermanent} sx={{ ...softButtonSx, borderColor: '#166534', color: '#166534', background: '#ffffff', minHeight: { xs: 44, sm: 46 } }}>Same as Current Address</Button></Stack></Grid>
+                    <Grid size={{ xs: 12 }}><Stack direction={{ xs: 'column', sm: 'row' }} alignItems={{ xs: 'stretch', sm: 'center' }} justifyContent="space-between" spacing={2} sx={{ mt: 2, mb: 1 }}><Stack direction="row" spacing={1} alignItems="center"><HomeWorkOutlined sx={{ color: '#166534' }} /><Typography fontWeight={700} sx={{ color: '#14532d' }}>Permanent Address</Typography></Stack><Button type="button" variant="outlined" onClick={copyCurrentToPermanent} sx={{ ...softButtonSx, borderColor: '#166534', color: '#166534', background: '#ffffff', minHeight: { xs: 44, sm: 46 } }}>Same as Current Address</Button></Stack></Grid>
                     {renderPhilippineAddressFields('permanent')}
                   </Grid>
                 </Paper>
@@ -1167,9 +1167,9 @@ export default function ApplyForJobPage() {
                   <SectionTitle icon={<SchoolOutlined />} title="III. Educational Background and IV. Work Experience" description="Provide your educational background and previous work experience, if applicable." />
                   <Stack spacing={3}>
                     <Paper elevation={0} sx={nestedPaperSx}>
-                      <Stack direction="row" spacing={1} alignItems="center" sx={{ mb: 2 }}><SchoolOutlined sx={{ color: '#166534' }} /><Typography fontWeight={900} sx={{ color: '#14532d' }}>Educational Background</Typography></Stack>
+                      <Stack direction="row" spacing={1} alignItems="center" sx={{ mb: 2 }}><SchoolOutlined sx={{ color: '#166534' }} /><Typography fontWeight={700} sx={{ color: '#14532d' }}>Educational Background</Typography></Stack>
                       <Grid container spacing={2.5}>
-                        <Grid size={fieldGrid}><TextField fullWidth required select label="Educational Level" value={formData.education} onChange={set('education')} error={!!fieldErrors.education} helperText={fieldErrors.education} InputLabelProps={{ shrink: true }} sx={textFieldSx}>{EDUCATIONAL_ATTAINMENT.map((level) => <MenuItem key={level} value={level}>{level}</MenuItem>)}</TextField></Grid>
+                        <Grid size={fieldGrid}><TextField fullWidth required select label="Highest Educational Level" value={formData.education} onChange={set('education')} error={!!fieldErrors.education} helperText={fieldErrors.education} InputLabelProps={{ shrink: true }} sx={textFieldSx}>{EDUCATIONAL_ATTAINMENT.map((level) => <MenuItem key={level} value={level}>{level}</MenuItem>)}</TextField></Grid>
                         <Grid size={fieldGrid}><TextField fullWidth required label="Name of School" value={formData.schoolName} onChange={set('schoolName')} error={!!fieldErrors.schoolName} helperText={fieldErrors.schoolName} inputProps={{ maxLength: 120 }} sx={textFieldSx} /></Grid>
                         <Grid size={fieldGrid}><TextField fullWidth label="Course / Program" value={formData.courseProgram} onChange={set('courseProgram')} inputProps={{ maxLength: 120 }} sx={textFieldSx} /></Grid>
                         <Grid size={fieldGrid}><TextField fullWidth label="Year Graduated" value={formData.yearGraduated} onChange={setNumeric('yearGraduated', 4)} error={!!fieldErrors.yearGraduated} helperText={fieldErrors.yearGraduated} inputProps={{ inputMode: 'numeric', pattern: '[0-9]*', maxLength: 4 }} sx={textFieldSx} /></Grid>
@@ -1178,14 +1178,14 @@ export default function ApplyForJobPage() {
                     </Paper>
                     <Paper elevation={0} sx={nestedPaperSx}>
                       <Stack direction={{ xs: 'column', sm: 'row' }} justifyContent="space-between" alignItems={{ xs: 'stretch', sm: 'center' }} spacing={2} sx={{ mb: 2 }}>
-                        <Stack direction="row" spacing={1} alignItems="center"><WorkOutline sx={{ color: '#166534' }} /><Typography fontWeight={900} sx={{ color: '#14532d' }}>Work Experience</Typography></Stack>
+                        <Stack direction="row" spacing={1} alignItems="center"><WorkOutline sx={{ color: '#166534' }} /><Typography fontWeight={700} sx={{ color: '#14532d' }}>Work Experience</Typography></Stack>
                         <Button type="button" variant="outlined" startIcon={<Add />} onClick={addWorkExperience} sx={{ ...softButtonSx, borderColor: '#166534', color: '#166534', background: '#ffffff', minHeight: { xs: 44, sm: 46 } }}>Add Work Experience</Button>
                       </Stack>
                       <Stack spacing={2.5}>
                         {workExperiences.map((workExperience, index) => (
                           <Paper key={`work-experience-${index}`} elevation={0} sx={nestedPaperSx}>
                             <Stack direction={{ xs: 'column', sm: 'row' }} justifyContent="space-between" alignItems={{ xs: 'stretch', sm: 'center' }} spacing={2} sx={{ mb: 2 }}>
-                              <Stack direction="row" spacing={1} alignItems="center"><WorkOutline sx={{ color: '#166534' }} /><Typography fontWeight={900} sx={{ color: '#14532d' }}>Work Experience {index + 1}</Typography></Stack>
+                              <Stack direction="row" spacing={1} alignItems="center"><WorkOutline sx={{ color: '#166534' }} /><Typography fontWeight={700} sx={{ color: '#14532d' }}>Work Experience {index + 1}</Typography></Stack>
                               {workExperiences.length > 1 && <Button type="button" color="error" variant="outlined" startIcon={<Delete />} onClick={() => removeWorkExperience(index)} sx={{ ...softButtonSx, minHeight: 40 }}>Remove</Button>}
                             </Stack>
                             <Grid container spacing={2.5}>
@@ -1231,7 +1231,7 @@ export default function ApplyForJobPage() {
                     {characterReferences.map((reference, index) => (
                       <Paper key={`reference-${index}`} elevation={0} sx={nestedPaperSx}>
                         <Stack direction={{ xs: 'column', sm: 'row' }} justifyContent="space-between" alignItems={{ xs: 'stretch', sm: 'center' }} spacing={2} sx={{ mb: 2 }}>
-                          <Stack direction="row" spacing={1} alignItems="center"><Groups2Outlined sx={{ color: '#166534' }} /><Typography fontWeight={900} sx={{ color: '#14532d' }}>Character Reference {index + 1}</Typography></Stack>
+                          <Stack direction="row" spacing={1} alignItems="center"><Groups2Outlined sx={{ color: '#166534' }} /><Typography fontWeight={700} sx={{ color: '#14532d' }}>Character Reference {index + 1}</Typography></Stack>
                           {characterReferences.length > 1 && <Button type="button" color="error" variant="outlined" startIcon={<Delete />} onClick={() => removeCharacterReference(index)} sx={{ ...softButtonSx, minHeight: 40 }}>Remove</Button>}
                         </Stack>
                         <Grid container spacing={2.5}>
@@ -1248,14 +1248,14 @@ export default function ApplyForJobPage() {
                   {fieldErrors.emergencyContactRelationOther && <Alert severity="warning" sx={{ mb: 2 }}>{fieldErrors.emergencyContactRelationOther}</Alert>}
                   {fieldErrors.emergencyContactPhone && <Alert severity="warning" sx={{ mb: 2 }}>{fieldErrors.emergencyContactPhone}</Alert>}
                   <Stack direction={{ xs: 'column', sm: 'row' }} alignItems={{ xs: 'stretch', sm: 'center' }} justifyContent="space-between" spacing={2} sx={{ mt: 4, mb: 2 }}>
-                    <Stack direction="row" spacing={1} alignItems="center"><FavoriteBorderRounded sx={{ color: '#166534' }} /><Typography variant="h6" fontWeight={900} sx={{ color: '#14532d' }}>Emergency Contact</Typography></Stack>
+                    <Stack direction="row" spacing={1} alignItems="center"><FavoriteBorderRounded sx={{ color: '#166534' }} /><Typography variant="h6" fontWeight={700} sx={{ color: '#14532d' }}>Emergency Contact</Typography></Stack>
                     <Button type="button" variant="outlined" startIcon={<Add />} onClick={addEmergencyContact} sx={{ ...softButtonSx, borderColor: '#166534', color: '#166534', background: '#ffffff', minHeight: { xs: 44, sm: 46 } }}>Add Emergency Contact</Button>
                   </Stack>
                   <Stack spacing={2.5}>
                     {emergencyContacts.map((emergencyContact, index) => (
                       <Paper key={`emergency-contact-${index}`} elevation={0} sx={nestedPaperSx}>
                         <Stack direction={{ xs: 'column', sm: 'row' }} justifyContent="space-between" alignItems={{ xs: 'stretch', sm: 'center' }} spacing={2} sx={{ mb: 2 }}>
-                          <Stack direction="row" spacing={1} alignItems="center"><FavoriteBorderRounded sx={{ color: '#166534' }} /><Typography fontWeight={900} sx={{ color: '#14532d' }}>Emergency Contact {index + 1}</Typography></Stack>
+                          <Stack direction="row" spacing={1} alignItems="center"><FavoriteBorderRounded sx={{ color: '#166534' }} /><Typography fontWeight={700} sx={{ color: '#14532d' }}>Emergency Contact {index + 1}</Typography></Stack>
                           {emergencyContacts.length > 1 && <Button type="button" color="error" variant="outlined" startIcon={<Delete />} onClick={() => removeEmergencyContact(index)} sx={{ ...softButtonSx, minHeight: 40 }}>Remove</Button>}
                         </Stack>
                         <Grid container spacing={2.5}>
@@ -1279,7 +1279,7 @@ export default function ApplyForJobPage() {
                     <Grid size={{ xs: 12 }}><TextField fullWidth label="Other Document" value={formData.otherDocument} onChange={set('otherDocument')} inputProps={{ maxLength: 120 }} sx={textFieldSx} /></Grid>
                     <Grid size={halfGrid}><Button fullWidth component="label" variant="outlined" startIcon={<UploadFile />} sx={uploadButtonSx}><input hidden type="file" accept="*/*" onChange={(e) => { const files = Array.from(e.target.files ?? []); setResumeFiles(files.slice(0, 1)); clearFieldError('resumeFiles'); }} />{resumeFiles[0] ? `Resume: ${resumeFiles[0].name}` : 'Select Resume / Biodata'}</Button>{fieldErrors.resumeFiles && <Typography color="error" variant="caption" sx={{ mt: 1, display: 'block' }}>{fieldErrors.resumeFiles}</Typography>}</Grid>
                     <Grid size={halfGrid}><Button fullWidth component="label" variant="outlined" startIcon={<UploadFile />} sx={uploadButtonSx}><input hidden multiple type="file" onChange={(e) => { const selectedFiles = Array.from(e.target.files ?? []); setSupportingFiles((prev) => [...prev, ...selectedFiles]); e.target.value = ''; }} />{supportingFiles.length > 0 ? `Add More Supporting Documents (${supportingFiles.length} selected)` : 'Select Supporting Documents'}</Button></Grid>
-                    <Grid size={{ xs: 12 }}>{supportingFiles.length > 0 && <Paper elevation={0} sx={{ p: 2, borderRadius: 3, bgcolor: '#f9fcf9', border: '1px solid #cfe5d5' }}><Stack spacing={1}>{supportingFiles.map((file, fileIndex) => <Stack key={`${file.name}-${file.lastModified}-${fileIndex}`} direction={{ xs: 'column', sm: 'row' }} spacing={1} justifyContent="space-between" alignItems={{ xs: 'stretch', sm: 'center' }}><Stack direction="row" spacing={1} alignItems="center" sx={{ minWidth: 0 }}><ArticleOutlined sx={{ color: '#166534', fontSize: 18 }} /><Typography variant="body2" color="text.secondary" sx={{ overflowWrap: 'anywhere', fontWeight: 700 }}>{file.name}</Typography></Stack><Button type="button" size="small" color="error" variant="outlined" onClick={() => setSupportingFiles((prev) => prev.filter((_, currentIndex) => currentIndex !== fileIndex))} sx={{ textTransform: 'none', fontWeight: 800 }}>Remove</Button></Stack>)}</Stack></Paper>}</Grid>
+                    <Grid size={{ xs: 12 }}>{supportingFiles.length > 0 && <Paper elevation={0} sx={{ p: 2, borderRadius: 3, bgcolor: '#f9fcf9', border: '1px solid #cfe5d5' }}><Stack spacing={1}>{supportingFiles.map((file, fileIndex) => <Stack key={`${file.name}-${file.lastModified}-${fileIndex}`} direction={{ xs: 'column', sm: 'row' }} spacing={1} justifyContent="space-between" alignItems={{ xs: 'stretch', sm: 'center' }}><Stack direction="row" spacing={1} alignItems="center" sx={{ minWidth: 0 }}><ArticleOutlined sx={{ color: '#166534', fontSize: 18 }} /><Typography variant="body2" color="text.secondary" sx={{ overflowWrap: 'anywhere', fontWeight: 700 }}>{file.name}</Typography></Stack><Button type="button" size="small" color="error" variant="outlined" onClick={() => setSupportingFiles((prev) => prev.filter((_, currentIndex) => currentIndex !== fileIndex))} sx={{ textTransform: 'none', fontWeight: 600 }}>Remove</Button></Stack>)}</Stack></Paper>}</Grid>
                     <Grid size={{ xs: 12 }}><Alert severity="info">I hereby certify that all information provided in this application form is true, complete, and correct to the best of my knowledge. I understand that any false information or omission may result in the rejection of my application or termination of employment if hired.</Alert></Grid>
                     <Grid size={halfGrid}><TextField fullWidth required label="Applicant's Signature / Full Name" value={formData.applicantSignature} onChange={setUpperText('applicantSignature')} error={!!fieldErrors.applicantSignature} helperText={fieldErrors.applicantSignature} inputProps={{ maxLength: 120 }} sx={textFieldSx} /></Grid>
                     <Grid size={halfGrid}><TextField fullWidth required type="date" label="Date" value={formData.declarationDate} onChange={set('declarationDate')} error={!!fieldErrors.declarationDate} helperText={fieldErrors.declarationDate} InputLabelProps={{ shrink: true }} sx={textFieldSx} /></Grid>
@@ -1297,7 +1297,7 @@ export default function ApplyForJobPage() {
       </Box>
 
       <Dialog open={successDialog} onClose={handleCloseDialog} maxWidth="sm" fullWidth PaperProps={{ sx: { borderRadius: '26px', border: '1px solid rgba(22,101,52,0.12)', boxShadow: '0 28px 80px rgba(15,23,42,0.18)' } }}>
-        <DialogContent sx={{ textAlign: 'center', p: { xs: 2.5, sm: 4 } }}><Box sx={{ width: { xs: 68, sm: 78 }, height: { xs: 68, sm: 78 }, borderRadius: '22px', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', mb: 2, background: 'linear-gradient(135deg, #dcfce7, #bbf7d0)', color: '#166534', boxShadow: '0 16px 34px rgba(22,101,52,0.18)' }}><VerifiedUserOutlined sx={{ fontSize: { xs: 42, sm: 50 } }} /></Box><Typography variant="h5" fontWeight={900} gutterBottom>Application Submitted Successfully</Typography><Typography color="text.secondary" sx={{ mb: 3 }}>Please save your Applicant ID. You will use this to track your application status.</Typography><Paper elevation={0} sx={{ p: 2, borderRadius: 3, bgcolor: 'rgba(31,122,71,0.08)', border: '1px solid rgba(31,122,71,0.18)', mb: 2 }}><Typography variant="h6" fontWeight={900} color="primary" sx={{ overflowWrap: 'anywhere' }}>{applicantId}</Typography></Paper>{copied && <Alert severity="success" sx={{ mb: 2 }}>Applicant ID copied!</Alert>}{copyFailed && <Alert severity="error" sx={{ mb: 2 }}>Unable to copy Applicant ID.</Alert>}</DialogContent>
+        <DialogContent sx={{ textAlign: 'center', p: { xs: 2.5, sm: 4 } }}><Box sx={{ width: { xs: 68, sm: 78 }, height: { xs: 68, sm: 78 }, borderRadius: '22px', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', mb: 2, background: 'linear-gradient(135deg, #dcfce7, #bbf7d0)', color: '#166534', boxShadow: '0 16px 34px rgba(22,101,52,0.18)' }}><VerifiedUserOutlined sx={{ fontSize: { xs: 42, sm: 50 } }} /></Box><Typography variant="h5" fontWeight={700} gutterBottom>Application Submitted Successfully</Typography><Typography color="text.secondary" sx={{ mb: 3 }}>Please save your Applicant ID. You will use this to track your application status.</Typography><Paper elevation={0} sx={{ p: 2, borderRadius: 3, bgcolor: 'rgba(31,122,71,0.08)', border: '1px solid rgba(31,122,71,0.18)', mb: 2 }}><Typography variant="h6" fontWeight={700} color="primary" sx={{ overflowWrap: 'anywhere' }}>{applicantId}</Typography></Paper>{copied && <Alert severity="success" sx={{ mb: 2 }}>Applicant ID copied!</Alert>}{copyFailed && <Alert severity="error" sx={{ mb: 2 }}>Unable to copy Applicant ID.</Alert>}</DialogContent>
         <DialogActions sx={{ p: { xs: 2, sm: 3 }, justifyContent: 'center', gap: 1, flexWrap: 'wrap' }}><Button variant="outlined" startIcon={<ContentCopy />} onClick={handleCopyId} sx={{ ...softButtonSx, borderColor: '#166534', color: '#166534', background: '#ffffff', width: { xs: '100%', sm: 'auto' } }}>Copy Applicant ID</Button><Button variant="contained" onClick={() => navigate('/track')} sx={{ ...softButtonSx, background: 'linear-gradient(135deg, #1F7A47 0%, #3FA46A 100%)', width: { xs: '100%', sm: 'auto' } }}>Track Application</Button><Button onClick={handleCloseDialog} sx={{ ...softButtonSx, width: { xs: '100%', sm: 'auto' } }}>Close</Button></DialogActions>
       </Dialog>
     </AuthBackground>

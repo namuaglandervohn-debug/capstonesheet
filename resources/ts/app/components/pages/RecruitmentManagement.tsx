@@ -195,7 +195,7 @@ const innerCardSx = {
 const pillButtonSx = {
   borderRadius: "12px",
   textTransform: 'none',
-  fontWeight: 700,
+  fontWeight: 600,
   px: 2,
 };
 
@@ -229,8 +229,8 @@ const statusChipSx = (status: AppStatus) => {
     bgcolor: selected.bg,
     color: selected.color,
     borderColor: selected.border,
-    fontWeight: 800,
-    '& .MuiChip-label': { px: 1.25 },
+    fontWeight: 600,
+    '& .MuiChip-label': { px: 1.25, fontWeight: 600 },
   };
 };
 
@@ -244,8 +244,19 @@ const softTextFieldSx = {
     '&.Mui-focused fieldset': { borderColor: GREEN_UI.green, borderWidth: 1.5 },
     '&.Mui-disabled': { backgroundColor: '#f6fbf4' },
   },
-  '& .MuiInputLabel-root': { color: GREEN_UI.muted },
-  '& .MuiInputBase-input.Mui-disabled': { WebkitTextFillColor: GREEN_UI.text },
+  '& .MuiInputLabel-root': { color: GREEN_UI.muted, fontWeight: 400 },
+  '& .MuiInputBase-input, & .MuiSelect-select, & textarea': {
+    fontWeight: 400,
+    color: GREEN_UI.text,
+  },
+  '& .MuiInputBase-input.Mui-disabled, & .MuiSelect-select.Mui-disabled': {
+    WebkitTextFillColor: GREEN_UI.text,
+    fontWeight: 400,
+  },
+  '& .MuiInputBase-input::placeholder, & textarea::placeholder': {
+    fontWeight: 400,
+    opacity: 0.72,
+  },
 };
 
 const APPLICANT_LIST_COLUMNS = `
@@ -1180,23 +1191,37 @@ export default function RecruitmentManagement() {
 
   const renderProfileSectionTitle = (title: string) => (
     <Grid size={12}>
-      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mt: 1, mb: 0.5 }}>
+      <Box
+        sx={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: 1.25,
+          mt: 1.25,
+          mb: 0.75,
+          px: 1.25,
+          py: 1,
+          borderRadius: '16px',
+          bgcolor: 'rgba(230, 248, 233, 0.58)',
+          border: `1px solid ${GREEN_UI.border}`,
+        }}
+      >
         <Box
           sx={{
-            width: 34,
-            height: 6,
-            background: `linear-gradient(90deg, ${GREEN_UI.green}, rgba(58, 168, 101, 0.08))`,
+            width: 8,
+            height: 28,
+            borderRadius: '999px',
+            background: `linear-gradient(180deg, ${GREEN_UI.green}, rgba(58, 168, 101, 0.18))`,
+            flexShrink: 0,
           }}
         />
         <Typography
           variant="subtitle2"
-          fontWeight={900}
-          sx={{ color: GREEN_UI.greenDark, letterSpacing: 0.4, textTransform: 'uppercase' }}
+          fontWeight={700}
+          sx={{ color: GREEN_UI.greenDark, letterSpacing: 0.35, textTransform: 'uppercase' }}
         >
           {title}
         </Typography>
       </Box>
-      <Divider sx={{ borderColor: GREEN_UI.border, mb: 1 }} />
     </Grid>
   );
 
@@ -1205,7 +1230,7 @@ export default function RecruitmentManagement() {
       <Paper elevation={0} sx={{ p: { xs: 1.75, sm: 2.25 }, ...innerCardSx }}>
         <Box sx={{ display: 'flex', justifyContent: 'space-between', gap: 1, alignItems: 'center', flexWrap: 'wrap', mb: 1 }}>
           <Box>
-            <Typography fontWeight={700}>Requirements Checklist</Typography>
+            <Typography fontWeight={600}>Requirements Checklist</Typography>
             <Typography variant="caption" color="text.secondary">
               HR can mark submitted requirements before interview scheduling.
             </Typography>
@@ -1640,12 +1665,12 @@ export default function RecruitmentManagement() {
                 mb: 1.2,
                 bgcolor: GREEN_UI.greenSoft,
                 color: GREEN_UI.greenDark,
-                fontWeight: 900,
+                fontWeight: 700,
               }}
             />
             <Typography
               variant="h4"
-              fontWeight={900}
+              fontWeight={700}
               sx={{
                 fontSize: { xs: '1.55rem', sm: '2rem', md: '2.35rem' },
                 color: GREEN_UI.text,
@@ -1707,10 +1732,10 @@ export default function RecruitmentManagement() {
             >
               <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 1.5 }}>
                 <Box>
-                  <Typography variant="body2" sx={{ color: GREEN_UI.muted, fontWeight: 800 }}>
+                  <Typography variant="body2" sx={{ color: GREEN_UI.muted, fontWeight: 500 }}>
                     {stat.label}
                   </Typography>
-                  <Typography variant="h4" fontWeight={900} sx={{ color: GREEN_UI.text, mt: 0.5, letterSpacing: '-0.04em' }}>
+                  <Typography variant="h4" fontWeight={700} sx={{ color: GREEN_UI.text, mt: 0.5, letterSpacing: '-0.04em' }}>
                     {stat.value}
                   </Typography>
                 </Box>
@@ -1767,7 +1792,7 @@ export default function RecruitmentManagement() {
               px: 1.6,
               borderRadius: '10px',
               textTransform: 'none',
-              fontWeight: 800,
+              fontWeight: 700,
               color: GREEN_UI.muted,
               transition: 'all 180ms ease',
             },
@@ -1798,7 +1823,7 @@ export default function RecruitmentManagement() {
         {loading ? (
           <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', py: 7, gap: 2 }}>
             <CircularProgress size={28} sx={{ color: GREEN_UI.green }} />
-            <Typography sx={{ color: GREEN_UI.muted, fontWeight: 700 }}>Loading applications…</Typography>
+            <Typography sx={{ color: GREEN_UI.muted, fontWeight: 500 }}>Loading applications…</Typography>
           </Box>
         ) : (
           <Table sx={{ minWidth: 850, '& th, & td': { borderColor: 'rgba(139, 184, 144, 0.16)' } }}>
@@ -1808,7 +1833,7 @@ export default function RecruitmentManagement() {
                   background: 'linear-gradient(90deg, #eff8eb 0%, #f8fcf5 100%)',
                   '& th': {
                     color: GREEN_UI.greenDark,
-                    fontWeight: 900,
+                    fontWeight: 700,
                     fontSize: '0.78rem',
                     letterSpacing: '0.02em',
                     textTransform: 'uppercase',
@@ -1874,7 +1899,7 @@ export default function RecruitmentManagement() {
                       >
                         <InsertDriveFile />
                       </Box>
-                      <Typography fontWeight={900} sx={{ color: GREEN_UI.text }}>
+                      <Typography fontWeight={700} sx={{ color: GREEN_UI.text }}>
                         No applications in this category
                       </Typography>
                       <Typography variant="body2" sx={{ color: GREEN_UI.muted, mt: 0.5 }}>
@@ -1902,7 +1927,7 @@ export default function RecruitmentManagement() {
                         variant="outlined"
                         sx={{
                           ...chipIconSx,
-                          fontWeight: 800,
+                          fontWeight: 600,
                           bgcolor: '#f8fcf5',
                           borderColor: GREEN_UI.border,
                           color: GREEN_UI.greenDark,
@@ -1921,13 +1946,13 @@ export default function RecruitmentManagement() {
                             bgcolor: GREEN_UI.greenSoft,
                             color: GREEN_UI.greenDark,
                             flexShrink: 0,
-                            fontWeight: 900,
+                            fontWeight: 600,
                             fontSize: '0.82rem',
                           }}
                         >
                           {app.name?.charAt(0)?.toUpperCase() || 'A'}
                         </Box>
-                        <Typography fontWeight={800} sx={{ color: GREEN_UI.text }}>
+                        <Typography fontWeight={600} sx={{ color: GREEN_UI.text }}>
                           {app.name}
                         </Typography>
                       </Box>
@@ -1935,19 +1960,19 @@ export default function RecruitmentManagement() {
                     <TableCell sx={{ whiteSpace: 'nowrap' }}>
                       <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
                         <WorkOutline sx={{ fontSize: 17, color: GREEN_UI.greenDark }} />
-                        <Typography variant="body2" sx={{ color: GREEN_UI.muted, fontWeight: 700 }}>
+                        <Typography variant="body2" sx={{ color: GREEN_UI.muted, fontWeight: 500 }}>
                           {app.position || '—'}
                         </Typography>
                       </Box>
                     </TableCell>
                     <TableCell sx={{ whiteSpace: 'nowrap' }}>
-                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75, color: GREEN_UI.muted, fontWeight: 700 }}>
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75, color: GREEN_UI.muted, fontWeight: 500 }}>
                         <CalendarToday sx={{ fontSize: 17, color: GREEN_UI.greenDark }} />
                         {formatDateTime(app.dateApplied)}
                       </Box>
                     </TableCell>
                     <TableCell sx={{ whiteSpace: 'nowrap' }}>
-                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75, color: GREEN_UI.muted, fontWeight: 700 }}>
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75, color: GREEN_UI.muted, fontWeight: 500 }}>
                         <EventAvailable sx={{ fontSize: 17, color: GREEN_UI.greenDark }} />
                         {formatInterviewDateTime(app.interviewDate, app.interviewTime)}
                       </Box>
@@ -1974,7 +1999,7 @@ export default function RecruitmentManagement() {
                             ...chipIconSx,
                             minWidth: 110,
                             justifyContent: 'center',
-                            fontWeight: 800,
+                            fontWeight: 600,
                             borderColor: GREEN_UI.borderStrong,
                             color: GREEN_UI.greenDark,
                             bgcolor: '#ffffff',
@@ -1993,7 +2018,7 @@ export default function RecruitmentManagement() {
                               ...chipIconSx,
                               minWidth: 122,
                               justifyContent: 'center',
-                              fontWeight: 800,
+                              fontWeight: 600,
                               borderColor: '#a9dfb6',
                               color: GREEN_UI.greenDark,
                               bgcolor: '#f4fbf5',
@@ -2013,7 +2038,7 @@ export default function RecruitmentManagement() {
                               ...chipIconSx,
                               minWidth: 76,
                               justifyContent: 'center',
-                              fontWeight: 800,
+                              fontWeight: 600,
                               borderColor: '#efb8b8',
                               color: '#9c2f2f',
                               bgcolor: '#fffafa',
@@ -2034,7 +2059,7 @@ export default function RecruitmentManagement() {
       <Dialog
         open={viewDialog}
         onClose={closeViewDialog}
-        maxWidth="md"
+        maxWidth="lg"
         fullWidth
         PaperProps={{
           sx: {
@@ -2047,7 +2072,7 @@ export default function RecruitmentManagement() {
         }}
       >
         <DialogTitle
-          fontWeight={900}
+          fontWeight={700}
           sx={{
             px: { xs: 2, sm: 3 },
             py: 2.25,
@@ -2071,7 +2096,7 @@ export default function RecruitmentManagement() {
               >
                 <PersonSearch fontSize="small" />
               </Box>
-              <Typography fontWeight={900} sx={{ color: GREEN_UI.text }}>
+              <Typography fontWeight={700} sx={{ color: GREEN_UI.text }}>
                 Application — {selectedApp?.id}
               </Typography>
             </Box>
@@ -2087,7 +2112,7 @@ export default function RecruitmentManagement() {
           </Box>
         </DialogTitle>
 
-        <DialogContent sx={{ px: { xs: 2, sm: 3 }, py: 2.5, bgcolor: '#fbfff9' }}>
+        <DialogContent sx={{ px: { xs: 2, sm: 3 }, py: 2.5, bgcolor: '#fbfff9', maxHeight: { xs: '72vh', sm: '76vh' } }}>
           {profileLoading && (
             <Box sx={{ mb: 2 }}>
               <LinearProgress sx={{ mb: 1 }} />
@@ -2183,20 +2208,19 @@ export default function RecruitmentManagement() {
                   {renderProfileField('Current Address', currentAddress, { xs: 12 }, 'address', { multiline: true, rows: 2 })}
                   {renderProfileField('Permanent Address', permanentAddress, { xs: 12 })}
 
-                  {renderProfileSectionTitle('III. EDUCATIONAL BACKGROUND and IV. WORK EXPERIENCE')}
+                  {renderProfileSectionTitle('III. EDUCATIONAL BACKGROUND')}
                   {renderProfileField('Educational Level', selectedApp.education ?? educationBackground.level, { xs: 12, sm: 6 }, 'education')}
                   {renderProfileField('Name of School', raw.school_name ?? educationBackground.schoolName)}
                   {renderProfileField('Course / Program', raw.course_program ?? educationBackground.courseProgram)}
                   {renderProfileField('Year Graduated', raw.year_graduated ?? educationBackground.yearGraduated)}
                   {renderProfileField('Honors / Awards', raw.honors_awards ?? educationBackground.honorsAwards, { xs: 12 })}
+
+                  {renderProfileSectionTitle('IV. WORK EXPERIENCE')}
                   {renderProfileField('Total Years of Experience', selectedApp.experience ?? workExperience.totalYearsExperience, { xs: 12, sm: 6 }, 'experience')}
                   {renderProfileField('Company / Organization', raw.company_organization ?? workExperience.companyOrganization)}
                   {renderProfileField('Position Held', raw.position_held ?? workExperience.positionHeld)}
                   {renderProfileField('Employment Period', raw.employment_period ?? workExperience.employmentPeriod)}
-                  {renderProfileField('Previous Supervisor / Manager', raw.previous_supervisor ?? workExperience.previousSupervisor)}
-                  {renderProfileField('Supervisor Contact Number / Email', raw.supervisor_contact ?? workExperience.supervisorContact)}
                   {renderProfileField('Duties / Responsibilities', raw.duties_responsibilities ?? workExperience.dutiesResponsibilities, { xs: 12 })}
-                  {renderProfileField('Reason for Leaving', raw.reason_for_leaving ?? workExperience.reasonForLeaving, { xs: 12 })}
 
                   {renderProfileSectionTitle('V. SKILLS AND QUALIFICATIONS')}
                   {renderProfileField('Skills', skills, { xs: 12 })}
@@ -2213,7 +2237,7 @@ export default function RecruitmentManagement() {
                     characterReferences.map((reference: any, index: number) => (
                       <Grid key={`reference-${index}`} size={12}>
                         <Paper elevation={0} sx={{ p: 2, ...innerCardSx }}>
-                          <Typography fontWeight={900} sx={{ mb: 1, color: GREEN_UI.greenDark }}>
+                          <Typography fontWeight={700} sx={{ mb: 1, color: GREEN_UI.greenDark }}>
                             Character Reference {index + 1}
                           </Typography>
                           <Grid container spacing={2}>
@@ -2524,7 +2548,7 @@ export default function RecruitmentManagement() {
         }}
       >
         <DialogTitle
-          fontWeight={900}
+          fontWeight={700}
           sx={{
             px: { xs: 2, sm: 3 },
             py: 2.25,
@@ -2614,7 +2638,7 @@ export default function RecruitmentManagement() {
         }}
       >
         <DialogTitle
-          fontWeight={900}
+          fontWeight={700}
           sx={{
             px: { xs: 2, sm: 3 },
             py: 2.25,

@@ -65,7 +65,7 @@ const pillButtonSx = {
 
 const softChipSx = {
   borderRadius: '12px',
-  fontWeight: 800,
+  fontWeight: 600,
   bgcolor: GREEN_UI.greenSoft,
   color: GREEN_UI.greenDark,
   borderColor: GREEN_UI.borderStrong,
@@ -106,6 +106,12 @@ const getRequestChipSx = (status?: string) => {
   }
 
   return { bgcolor: '#fff7e0', color: '#9b6b00', borderColor: '#f5d786' };
+};
+
+const formatPeso = (value: unknown) => {
+  const amount = Number(String(value ?? '').replace(/[₱,]/g, ''));
+  if (!Number.isFinite(amount)) return '₱0.00';
+  return `₱${amount.toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 };
 
 export default function EmployeeDashboard() {
@@ -224,7 +230,7 @@ export default function EmployeeDashboard() {
     },
     {
       title: 'Latest Net Pay',
-      value: loading ? '…' : (latestPayslip ? latestPayslip.netPay : '—'),
+      value: loading ? '…' : (latestPayslip ? formatPeso(latestPayslip.netPay) : '—'),
       icon: <Payments />,
       helper: latestPayslip ? 'Most recent released/encoded payslip' : 'No payslip available yet',
       color: '#6c3a8f',
@@ -297,11 +303,11 @@ export default function EmployeeDashboard() {
             />
             <Typography
               variant="h4"
-              fontWeight={900}
+              fontWeight={700}
               sx={{
                 color: GREEN_UI.text,
                 letterSpacing: '-0.04em',
-                fontSize: { xs: '1.7rem', sm: '2.15rem', md: '2.55rem' },
+                fontSize: { xs: '1.55rem', sm: '2rem', md: '2.35rem' },
                 lineHeight: 1.05,
               }}
             >
@@ -367,7 +373,7 @@ export default function EmployeeDashboard() {
                     size="small"
                     variant="outlined"
                     sx={{
-                      fontWeight: 800,
+                      fontWeight: 600,
                       bgcolor: '#fbfef9',
                       borderColor: GREEN_UI.border,
                       color: GREEN_UI.muted,
@@ -377,7 +383,7 @@ export default function EmployeeDashboard() {
 
                 <Typography
                   variant="h5"
-                  fontWeight={900}
+                  fontWeight={700}
                   title={String(stat.value)}
                   sx={{
                     mt: 2,
@@ -392,7 +398,7 @@ export default function EmployeeDashboard() {
                 >
                   {stat.value}
                 </Typography>
-                <Typography variant="body2" fontWeight={800} sx={{ color: GREEN_UI.text }}>
+                <Typography variant="body2" fontWeight={600} sx={{ color: GREEN_UI.text }}>
                   {stat.title}
                 </Typography>
                 <Typography
@@ -421,7 +427,7 @@ export default function EmployeeDashboard() {
               <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: { xs: 'flex-start', sm: 'center' }, flexWrap: 'wrap', gap: 1.5, mb: 2 }}>
                 <Box>
                   <Chip icon={<AccessTimeRounded />} label="Attendance" variant="outlined" sx={{ ...softChipSx, mb: 1 }} />
-                  <Typography variant="h6" fontWeight={900} sx={{ color: GREEN_UI.text, letterSpacing: '-0.02em' }}>
+                  <Typography variant="h6" fontWeight={700} sx={{ color: GREEN_UI.text, letterSpacing: '-0.02em' }}>
                     Recent Attendance
                   </Typography>
                   <Typography variant="body2" sx={{ color: GREEN_UI.muted }}>
@@ -456,14 +462,14 @@ export default function EmployeeDashboard() {
                         }}
                       >
                         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 1, mb: 1 }}>
-                          <Typography variant="body2" fontWeight={900} sx={{ color: GREEN_UI.text }}>
+                          <Typography variant="body2" fontWeight={700} sx={{ color: GREEN_UI.text }}>
                             {a.date}
                           </Typography>
                           <Chip
                             label={a.status}
                             size="small"
                             variant="outlined"
-                            sx={{ fontWeight: 800, ...statusStyle }}
+                            sx={{ fontWeight: 600, ...statusStyle }}
                           />
                         </Box>
                         <Typography variant="caption" sx={{ color: GREEN_UI.muted, display: 'flex', alignItems: 'center', gap: 0.5 }}>
@@ -485,7 +491,7 @@ export default function EmployeeDashboard() {
               <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: { xs: 'flex-start', sm: 'center' }, flexWrap: 'wrap', gap: 1.5, mb: 2 }}>
                 <Box>
                   <Chip icon={<Assignment />} label="Requests" variant="outlined" sx={{ ...softChipSx, mb: 1 }} />
-                  <Typography variant="h6" fontWeight={900} sx={{ color: GREEN_UI.text, letterSpacing: '-0.02em' }}>
+                  <Typography variant="h6" fontWeight={700} sx={{ color: GREEN_UI.text, letterSpacing: '-0.02em' }}>
                     My Requests
                   </Typography>
                   <Typography variant="body2" sx={{ color: GREEN_UI.muted }}>
@@ -520,7 +526,7 @@ export default function EmployeeDashboard() {
                     >
                       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 1.25 }}>
                         <Box sx={{ minWidth: 0 }}>
-                          <Typography variant="body2" fontWeight={900} sx={{ color: GREEN_UI.text }}>
+                          <Typography variant="body2" fontWeight={700} sx={{ color: GREEN_UI.text }}>
                             {r.type} — {r.date}
                           </Typography>
                           <Typography
@@ -542,7 +548,7 @@ export default function EmployeeDashboard() {
                           label={r.status}
                           size="small"
                           variant="outlined"
-                          sx={{ fontWeight: 800, flexShrink: 0, ...statusStyle }}
+                          sx={{ fontWeight: 600, flexShrink: 0, ...statusStyle }}
                         />
                       </Box>
                     </Paper>
@@ -571,7 +577,7 @@ export default function EmployeeDashboard() {
           >
             <WalletRounded />
           </Box>
-          <Typography fontWeight={900} sx={{ color: GREEN_UI.text }}>
+          <Typography fontWeight={700} sx={{ color: GREEN_UI.text }}>
             No recent employee activity yet
           </Typography>
           <Typography variant="body2" sx={{ color: GREEN_UI.muted, mt: 0.5 }}>

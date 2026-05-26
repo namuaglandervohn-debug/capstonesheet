@@ -33,6 +33,7 @@ import {
   MarkEmailReadOutlined,
   PhoneIphone,
   HelpOutline,
+  LockOutlined,
 } from '@mui/icons-material';
 import AuthBackground from '../AuthBackground';
 import { supabase } from '../../lib/supabaseClient';
@@ -52,6 +53,8 @@ interface ApplicationStatus {
   interviewNotes?: string;
   scheduledBy?: string;
   notes?: string;
+  accountEmail?: string;
+  accountPassword?: string;
 }
 
 const STATUS_COLORS: Record<string, any> = {
@@ -155,6 +158,32 @@ export default function TrackApplicationPage() {
         return;
       }
 
+      let accountEmail = '';
+      let accountPassword = '';
+
+      if (data.status === 'Hired') {
+        const { data: employeeData, error: employeeError } = await supabase
+          .from('employees')
+          .select('employee_id')
+          .eq('applicant_id', data.applicant_id)
+          .maybeSingle();
+
+        if (employeeError) throw employeeError;
+
+        if (employeeData?.employee_id) {
+          const { data: accountData, error: accountError } = await supabase
+            .from('user_accounts')
+            .select('email, password')
+            .eq('employee_id', employeeData.employee_id)
+            .maybeSingle();
+
+          if (accountError) throw accountError;
+
+          accountEmail = accountData?.email ?? '';
+          accountPassword = accountData?.password ?? '';
+        }
+      }
+
       setApplicationData({
         id: data.applicant_id,
         name: `${data.first_name ?? ''} ${data.middle_name ?? ''} ${data.last_name ?? ''}`.replace(/\s+/g, ' ').trim(),
@@ -169,6 +198,8 @@ export default function TrackApplicationPage() {
         interviewNotes: data.interview_notes ?? '',
         scheduledBy: data.scheduled_by ?? '',
         notes: data.notes ?? '',
+        accountEmail,
+        accountPassword,
       });
     } catch (e: any) {
       setError(`Could not retrieve application: ${e.message}`);
@@ -220,7 +251,7 @@ export default function TrackApplicationPage() {
             {label}
           </Typography>
           {chip || (
-            <Typography variant="body1" sx={{ color: '#203528', fontWeight: 800, lineHeight: 1.35, wordBreak: 'break-word' }}>
+            <Typography variant="body1" sx={{ color: '#203528', fontWeight: 600, lineHeight: 1.35, wordBreak: 'break-word' }}>
               {value || '—'}
             </Typography>
           )}
@@ -245,7 +276,7 @@ export default function TrackApplicationPage() {
             bgcolor: 'rgba(255,255,255,0.9)',
             color: '#235235',
             fontSize: 13,
-            fontWeight: 800,
+            fontWeight: 600,
             textTransform: 'none',
             border: '1px solid rgba(90, 130, 95, 0.18)',
             boxShadow: '0 14px 34px rgba(20, 82, 44, 0.12)',
@@ -308,7 +339,7 @@ export default function TrackApplicationPage() {
                     bgcolor: 'rgba(220, 245, 224, 0.92)',
                     color: '#23643c',
                     fontSize: 12,
-                    fontWeight: 800,
+                    fontWeight: 600,
                     border: '1px solid rgba(56, 142, 83, 0.16)',
                     '& .MuiChip-icon': { color: '#2f8f56' },
                   }}
@@ -317,9 +348,9 @@ export default function TrackApplicationPage() {
                   variant="h4"
                   sx={{
                     color: '#173722',
-                    fontWeight: 900,
+                    fontWeight: 700,
                     letterSpacing: -0.8,
-                    fontSize: { xs: 28, sm: 34, md: 40 },
+                    fontSize: { xs: "1.55rem", sm: "2rem", md: "2.35rem" },
                     lineHeight: 1.05,
                   }}
                 >
@@ -367,7 +398,7 @@ export default function TrackApplicationPage() {
                           height: 56,
                           borderRadius: '16px',
                           textTransform: 'none',
-                          fontWeight: 900,
+                          fontWeight: 700,
                           fontSize: 14,
                           bgcolor: '#2f8f56',
                           boxShadow: '0 16px 34px rgba(47,143,86,0.28)',
@@ -440,7 +471,7 @@ export default function TrackApplicationPage() {
                         <Box>
                           <Typography
                             variant="h5"
-                            sx={{ color: '#183722', fontWeight: 900, fontSize: { xs: 22, md: 26 }, letterSpacing: -0.4 }}
+                            sx={{ color: '#183722', fontWeight: 700, fontSize: { xs: '1.55rem', md: '2rem' }, letterSpacing: -0.4 }}
                           >
                             Application Status
                           </Typography>
@@ -461,7 +492,7 @@ export default function TrackApplicationPage() {
                           color: '#23643c',
                           bgcolor: '#f2fbf3',
                           borderColor: 'rgba(47,143,86,0.28)',
-                          fontWeight: 900,
+                          fontWeight: 700,
                           '& .MuiChip-icon': { color: '#2f8f56' },
                         }}
                       />
@@ -481,7 +512,7 @@ export default function TrackApplicationPage() {
                     >
                       <Stack direction={{ xs: 'column', sm: 'row' }} justifyContent="space-between" gap={1}>
                         <Box>
-                          <Typography variant="body2" sx={{ fontWeight: 900, fontSize: 14.5 }}>
+                          <Typography variant="body2" sx={{ fontWeight: 700, fontSize: 14.5 }}>
                             {applicationData.status}
                           </Typography>
                           <Typography variant="body2" sx={{ fontSize: 13.5 }}>{STATUS_MESSAGES[applicationData.status]}</Typography>
@@ -490,7 +521,7 @@ export default function TrackApplicationPage() {
                           label={applicationData.status}
                           color={STATUS_COLORS[applicationData.status]}
                           size="small"
-                          sx={{ alignSelf: { xs: 'flex-start', sm: 'center' }, borderRadius: '999px', fontWeight: 800 }}
+                          sx={{ alignSelf: { xs: 'flex-start', sm: 'center' }, borderRadius: '999px', fontWeight: 600 }}
                         />
                       </Stack>
                     </Alert>
@@ -514,7 +545,7 @@ export default function TrackApplicationPage() {
                               label={applicationData.status}
                               color={STATUS_COLORS[applicationData.status]}
                               size="small"
-                              sx={{ mt: 0.25, borderRadius: '999px', fontWeight: 800 }}
+                              sx={{ mt: 0.25, borderRadius: '999px', fontWeight: 600 }}
                             />
                           }
                         />
@@ -525,6 +556,25 @@ export default function TrackApplicationPage() {
                       <Grid size={{ xs: 12, md: 6 }}>
                         <InfoCard icon={<PhoneIphone />} label="Phone Number" value={applicationData.phone} />
                       </Grid>
+
+                      {applicationData.status === 'Hired' && (
+                        <>
+                          <Grid size={{ xs: 12, md: 6 }}>
+                            <InfoCard
+                              icon={<MarkEmailReadOutlined />}
+                              label="Employee Login Email"
+                              value={applicationData.accountEmail || 'Account email is not yet available'}
+                            />
+                          </Grid>
+                          <Grid size={{ xs: 12, md: 6 }}>
+                            <InfoCard
+                              icon={<LockOutlined />}
+                              label="Temporary Password"
+                              value={applicationData.accountPassword || 'Temporary password is not yet available'}
+                            />
+                          </Grid>
+                        </>
+                      )}
 
                       {/* ── Interview Schedule — shown only when status is "For Interview" ── */}
                       {applicationData.status === 'For Interview' && applicationData.interviewDate && (
@@ -556,7 +606,7 @@ export default function TrackApplicationPage() {
                                 <Event />
                               </Box>
                               <Box>
-                                <Typography variant="subtitle1" sx={{ fontWeight: 900, color: '#075a87', lineHeight: 1.25 }}>
+                                <Typography variant="subtitle1" sx={{ fontWeight: 700, color: '#075a87', lineHeight: 1.25 }}>
                                   Your Interview Schedule
                                 </Typography>
                                 <Typography variant="caption" sx={{ color: '#51798f', fontWeight: 600 }}>
@@ -602,7 +652,7 @@ export default function TrackApplicationPage() {
                             icon={<Event />}
                             sx={{ borderRadius: '18px', border: '1px solid rgba(2, 136, 209, 0.16)' }}
                           >
-                            <Typography variant="body2" fontWeight="bold">
+                            <Typography variant="body2" fontWeight={700}>
                               Interview Schedule Pending
                             </Typography>
                             <Typography variant="body2">
@@ -631,7 +681,7 @@ export default function TrackApplicationPage() {
                                 <Notes />
                               </Box>
                               <Box>
-                                <Typography variant="caption" color="text.secondary" gutterBottom sx={{ fontWeight: 800 }}>
+                                <Typography variant="caption" color="text.secondary" gutterBottom sx={{ fontWeight: 600 }}>
                                   Additional Notes
                                 </Typography>
                                 <Typography variant="body1" sx={{ color: '#203528', fontWeight: 600 }}>
@@ -673,7 +723,7 @@ export default function TrackApplicationPage() {
                     <HelpOutline />
                   </Box>
                   <Box>
-                    <Typography variant="body2" sx={{ fontWeight: 900, color: '#203528', mb: 0.5 }}>
+                    <Typography variant="body2" sx={{ fontWeight: 700, color: '#203528', mb: 0.5 }}>
                       How to get your Applicant ID?
                     </Typography>
                     <Typography variant="caption" display="block" sx={{ color: '#657568', fontSize: 12.5, lineHeight: 1.7 }}>

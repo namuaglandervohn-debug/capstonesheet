@@ -200,7 +200,7 @@ export default function LoginPage() {
                   color: "#006B3C",
                   border: "1px solid rgba(45,168,97,0.20)",
                   fontSize: "0.68rem",
-                  fontWeight: 900,
+                  fontWeight: 700,
                   "& .MuiChip-label": { px: 1.2 },
                 }}
               />
@@ -210,7 +210,7 @@ export default function LoginPage() {
                 sx={{
                   maxWidth: 430,
                   fontSize: { xs: "1.38rem", sm: "1.72rem" },
-                  fontWeight: 900,
+                  fontWeight: 700,
                   color: "#122019",
                   lineHeight: 1.15,
                   letterSpacing: "-0.04em",
@@ -266,7 +266,7 @@ export default function LoginPage() {
                   color: "#006B3C",
                   border: "1px solid rgba(45,168,97,0.22)",
                   fontSize: "0.74rem",
-                  fontWeight: 900,
+                  fontWeight: 700,
                   "& .MuiChip-label": { px: 1.1 },
                 }}
               />
@@ -421,7 +421,7 @@ export default function LoginPage() {
                   borderRadius: "16px",
                   textTransform: "none",
                   fontSize: "0.98rem",
-                  fontWeight: 900,
+                  fontWeight: 700,
                   letterSpacing: "-0.01em",
                   color: "#FFFFFF",
                   background:
@@ -457,7 +457,7 @@ export default function LoginPage() {
                 gutterBottom
                 sx={{
                   fontSize: "0.72rem",
-                  fontWeight: 900,
+                  fontWeight: 700,
                   letterSpacing: 0.5,
                   color: "#006B3C",
                   textTransform: "uppercase",
@@ -486,7 +486,7 @@ export default function LoginPage() {
                       bgcolor: "rgba(255,255,255,0.74)",
                       color: "#1D5D3A",
                       fontSize: "0.75rem",
-                      fontWeight: 800,
+                      fontWeight: 600,
                       boxShadow: "0 8px 16px rgba(26,83,55,0.05)",
                       "&:hover": {
                         borderColor: "rgba(8,116,67,0.36)",

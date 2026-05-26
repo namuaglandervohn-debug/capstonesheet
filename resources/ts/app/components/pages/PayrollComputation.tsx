@@ -68,6 +68,14 @@ interface Payroll {
   pagibigLoan?: string;
 }
 
+interface EmployeeOption {
+  employeeId: string;
+  name: string;
+  position: string;
+  outlet: string;
+  salary?: string | number | null;
+}
+
 const EMPTY = { employee: '', position: '', period: new Date().toISOString().slice(0, 7), totalHours: '', overtime: '0', deductions: '0', grossPay: '', netPay: '' };
 
 const money = (value: number | string | null | undefined) => {
@@ -175,7 +183,7 @@ const innerCardSx = {
 const pillButtonSx = {
   borderRadius: '12px',
   textTransform: 'none',
-  fontWeight: 800,
+  fontWeight: 600,
   px: 2,
 };
 
@@ -223,7 +231,7 @@ const payrollStatusChipSx = (status: Payroll['status']) => {
     bgcolor: selected.bg,
     color: selected.color,
     borderColor: selected.border,
-    fontWeight: 800,
+    fontWeight: 600,
     '& .MuiChip-label': { px: 1.25 },
   };
 };
@@ -265,6 +273,7 @@ export default function PayrollComputation() {
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' as 'success' | 'error' });
   const { user } = useAuth();
   const [generatePosition, setGeneratePosition] = useState('');
+  const [employeeOptions, setEmployeeOptions] = useState<EmployeeOption[]>([]);
 
   // ── Payslip edit state ───────────────────────────────────────────────
   const [editingPayslip, setEditingPayslip] = useState(false);
@@ -459,6 +468,42 @@ export default function PayrollComputation() {
 
   useEffect(() => { fetchPayroll(); }, []);
 
+  const fetchEmployeeOptions = async () => {
+    const { data, error } = await supabase
+      .from('employees')
+      .select('employee_id, first_name, middle_name, last_name, suffix, position, outlet, salary, status')
+      .neq('status', 'Resigned')
+      .order('last_name', { ascending: true });
+
+    if (error) {
+      console.warn('Could not load employee options for payroll:', error.message);
+      setEmployeeOptions([]);
+      return;
+    }
+
+    setEmployeeOptions((data ?? []).map((employee: any) => ({
+      employeeId: String(employee.employee_id ?? ''),
+      name: fullNameFromEmployee(employee) || String(employee.employee_id ?? ''),
+      position: String(employee.position ?? ''),
+      outlet: String(employee.outlet ?? ''),
+      salary: employee.salary ?? null,
+    })).filter(employee => employee.employeeId));
+  };
+
+  useEffect(() => { fetchEmployeeOptions(); }, []);
+
+  const getEmployeeOption = (employeeId: string) =>
+    employeeOptions.find(employee => employee.employeeId === employeeId);
+
+  const handleManualEmployeeChange = (employeeId: string) => {
+    const selected = getEmployeeOption(employeeId);
+    setForm(prev => ({
+      ...prev,
+      employee: employeeId,
+      position: selected?.position || '',
+    }));
+  };
+
   const handleAdd = async () => {
     if (!form.employee || !form.grossPay) {
       setSnackbar({ open: true, message: 'Please enter an Employee ID and Gross Pay.', severity: 'error' });
@@ -505,7 +550,7 @@ export default function PayrollComputation() {
           payroll_id: summary.payroll_id,
           employee_id: employee.employee_id,
           employee_name: employeeName,
-          position: form.position || employee.position,
+          position: employee.position || form.position,
           outlet: employee.outlet,
           salary_rate: toNumber(employee.salary),
           rate_type: 'Monthly',
@@ -1084,13 +1129,13 @@ export default function PayrollComputation() {
                 mb: 1.2,
                 bgcolor: GREEN_UI.greenSoft,
                 color: GREEN_UI.greenDark,
-                fontWeight: 900,
+                fontWeight: 700,
                 '& .MuiChip-icon': { color: GREEN_UI.greenDark },
               }}
             />
             <Typography
               variant="h4"
-              fontWeight={900}
+              fontWeight={700}
               sx={{
                 fontSize: { xs: '1.55rem', sm: '2rem', md: '2.35rem' },
                 color: GREEN_UI.text,
@@ -1151,7 +1196,11 @@ export default function PayrollComputation() {
                 <Button
                   variant="outlined"
                   startIcon={<AddCircleOutline />}
-                  onClick={() => setAddDialog(true)}
+                  onClick={() => {
+                    setForm(EMPTY);
+                    void fetchEmployeeOptions();
+                    setAddDialog(true);
+                  }}
                   sx={{ ...pillButtonSx, py: 1.1, borderColor: GREEN_UI.borderStrong, color: GREEN_UI.greenDark, bgcolor: '#ffffff' }}
                 >
                   Manual Entry
@@ -1194,10 +1243,10 @@ export default function PayrollComputation() {
             >
               <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 1.5 }}>
                 <Box>
-                  <Typography variant="body2" sx={{ color: GREEN_UI.muted, fontWeight: 800 }}>
+                  <Typography variant="body2" sx={{ color: GREEN_UI.muted, fontWeight: 600 }}>
                     {stat.label}
                   </Typography>
-                  <Typography variant="h4" fontWeight={900} sx={{ color: GREEN_UI.text, mt: 0.5, letterSpacing: '-0.04em' }}>
+                  <Typography variant="h4" fontWeight={700} sx={{ color: GREEN_UI.text, mt: 0.5, letterSpacing: '-0.04em' }}>
                     {stat.value}
                   </Typography>
                 </Box>
@@ -1251,7 +1300,7 @@ export default function PayrollComputation() {
             <Visibility fontSize="small" />
           </Box>
           <Box>
-            <Typography fontWeight={900} sx={{ color: GREEN_UI.text }}>Payroll Filters</Typography>
+            <Typography fontWeight={700} sx={{ color: GREEN_UI.text }}>Payroll Filters</Typography>
             <Typography variant="caption" sx={{ color: GREEN_UI.muted }}>Narrow payroll records by period or processing status.</Typography>
           </Box>
         </Box>
@@ -1321,7 +1370,7 @@ export default function PayrollComputation() {
                   background: 'linear-gradient(90deg, #eff8eb 0%, #f8fcf5 100%)',
                   '& th': {
                     color: GREEN_UI.greenDark,
-                    fontWeight: 900,
+                    fontWeight: 700,
                     fontSize: '0.78rem',
                     letterSpacing: '0.02em',
                     textTransform: 'uppercase',
@@ -1363,7 +1412,7 @@ export default function PayrollComputation() {
                       >
                         <Payments />
                       </Box>
-                      <Typography fontWeight={900} sx={{ color: GREEN_UI.text }}>
+                      <Typography fontWeight={700} sx={{ color: GREEN_UI.text }}>
                         {payrolls.length === 0 ? 'No payroll records yet' : 'No payroll records matched'}
                       </Typography>
                       <Typography variant="body2" sx={{ color: GREEN_UI.muted, mt: 0.5 }}>
@@ -1389,11 +1438,11 @@ export default function PayrollComputation() {
                       label={p.displayId ?? p.id}
                       size="small"
                       variant="outlined"
-                      sx={{ fontWeight: 800, bgcolor: '#f8fcf5', borderColor: GREEN_UI.border }}
+                      sx={{ fontWeight: 600, bgcolor: '#f8fcf5', borderColor: GREEN_UI.border }}
                     />
                   </TableCell>
                   <TableCell sx={{ whiteSpace: 'nowrap' }}>
-                    <Typography fontWeight={800} sx={{ color: GREEN_UI.text }}>{p.employee}</Typography>
+                    <Typography fontWeight={600} sx={{ color: GREEN_UI.text }}>{p.employee}</Typography>
                     <Typography variant="caption" sx={{ color: GREEN_UI.muted }}>{p.employeeId || 'Employee record'}</Typography>
                   </TableCell>
                   <TableCell sx={{ whiteSpace: 'nowrap' }}>
@@ -1403,9 +1452,9 @@ export default function PayrollComputation() {
                   <TableCell sx={{ whiteSpace: 'nowrap', fontWeight: 700 }}>{p.period}</TableCell>
                   <TableCell sx={{ whiteSpace: 'nowrap' }}>{p.totalHours}</TableCell>
                   <TableCell sx={{ whiteSpace: 'nowrap' }}>{p.overtime} hrs</TableCell>
-                  <TableCell sx={{ whiteSpace: 'nowrap', color: '#9c2f2f !important', fontWeight: 800 }}>{p.deductions}</TableCell>
-                  <TableCell sx={{ whiteSpace: 'nowrap', fontWeight: 800 }}>{p.grossPay}</TableCell>
-                  <TableCell sx={{ whiteSpace: 'nowrap', fontWeight: 900, color: `${GREEN_UI.greenDark} !important` }}>{p.netPay}</TableCell>
+                  <TableCell sx={{ whiteSpace: 'nowrap', color: '#9c2f2f !important', fontWeight: 600 }}>{p.deductions}</TableCell>
+                  <TableCell sx={{ whiteSpace: 'nowrap', fontWeight: 600 }}>{p.grossPay}</TableCell>
+                  <TableCell sx={{ whiteSpace: 'nowrap', fontWeight: 700, color: `${GREEN_UI.greenDark} !important` }}>{p.netPay}</TableCell>
                   <TableCell>
                     <Chip label={p.status} size="small" variant="outlined" sx={payrollStatusChipSx(p.status)} />
                   </TableCell>
@@ -1421,7 +1470,7 @@ export default function PayrollComputation() {
                         sx={{
                           minWidth: 116,
                           justifyContent: 'center',
-                          fontWeight: 800,
+                          fontWeight: 600,
                           borderColor: GREEN_UI.borderStrong,
                           color: GREEN_UI.greenDark,
                           bgcolor: '#ffffff',
@@ -1440,7 +1489,7 @@ export default function PayrollComputation() {
                           sx={{
                             minWidth: 96,
                             justifyContent: 'center',
-                            fontWeight: 800,
+                            fontWeight: 600,
                             borderColor: '#a9dfb6',
                             color: GREEN_UI.greenDark,
                             bgcolor: '#f4fbf5',
@@ -1460,7 +1509,7 @@ export default function PayrollComputation() {
                           sx={{
                             minWidth: 86,
                             justifyContent: 'center',
-                            fontWeight: 800,
+                            fontWeight: 600,
                             borderColor: '#efb8b8',
                             color: '#9c2f2f',
                             bgcolor: '#fffafa',
@@ -1495,7 +1544,7 @@ export default function PayrollComputation() {
               <TaskAlt fontSize="small" />
             </Box>
             <Box>
-              <Typography fontWeight={900} sx={{ color: GREEN_UI.text }}>
+              <Typography fontWeight={700} sx={{ color: GREEN_UI.text }}>
                 Summary {filterPeriod ? `— ${filterPeriod}` : '(All Periods)'}
               </Typography>
               <Typography variant="caption" sx={{ color: GREEN_UI.muted }}>
@@ -1513,8 +1562,8 @@ export default function PayrollComputation() {
             ].map(([l, v]) => (
               <Grid key={String(l)} size={{ xs: 6, md: 3 }}>
                 <Paper elevation={0} sx={{ ...innerCardSx, p: 1.75, minHeight: 86 }}>
-                  <Typography variant="body2" sx={{ color: GREEN_UI.muted, fontWeight: 800 }}>{l}</Typography>
-                  <Typography variant="h6" fontWeight={900} sx={{ color: l === 'Total Net Pay' ? GREEN_UI.greenDark : GREEN_UI.text, mt: 0.5 }}>{v}</Typography>
+                  <Typography variant="body2" sx={{ color: GREEN_UI.muted, fontWeight: 600 }}>{l}</Typography>
+                  <Typography variant="h6" fontWeight={700} sx={{ color: l === 'Total Net Pay' ? GREEN_UI.greenDark : GREEN_UI.text, mt: 0.5 }}>{v}</Typography>
                 </Paper>
               </Grid>
             ))}
@@ -1524,7 +1573,7 @@ export default function PayrollComputation() {
 
       {/* Generate Payroll Dialog */}
       <Dialog open={generateDialog} onClose={() => { setGenerateDialog(false); setGeneratePosition(''); }} maxWidth="sm" fullWidth PaperProps={{ sx: dialogPaperSx }}>
-        <DialogTitle fontWeight={900} sx={dialogTitleSx}>Generate Payroll</DialogTitle>
+        <DialogTitle fontWeight={700} sx={dialogTitleSx}>Generate Payroll</DialogTitle>
         <DialogContent sx={{ display: 'flex', flexDirection: 'column', gap: 2, pt: '18px !important', px: { xs: 2, sm: 3 }, bgcolor: '#fbfff9' }}>
           <Alert severity="info" sx={{ fontSize: '0.8rem' }}>
             Auto-generates payroll for <strong>Active</strong> employees. Select a position to target only that role, or leave blank for all. This generates payroll directly from Attendance Monitoring records saved in Supabase attendance_logs for the selected month.
@@ -1559,10 +1608,37 @@ export default function PayrollComputation() {
 
       {/* Manual Add Dialog */}
       <Dialog open={addDialog} onClose={() => setAddDialog(false)} maxWidth="sm" fullWidth PaperProps={{ sx: dialogPaperSx }}>
-        <DialogTitle fontWeight={900} sx={dialogTitleSx}>Manual Payroll Entry</DialogTitle>
+        <DialogTitle fontWeight={700} sx={dialogTitleSx}>Manual Payroll Entry</DialogTitle>
         <DialogContent sx={{ display: 'flex', flexDirection: 'column', gap: 2, pt: '18px !important', px: { xs: 2, sm: 3 }, bgcolor: '#fbfff9' }}>
-          <TextField label="Employee ID" fullWidth required value={form.employee} onChange={e => setForm({ ...form, employee: e.target.value })} />
-          <TextField label="Position" fullWidth value={form.position} onChange={e => setForm({ ...form, position: e.target.value })} />
+          <TextField
+            select
+            label="Employee ID"
+            fullWidth
+            required
+            value={form.employee}
+            onChange={e => handleManualEmployeeChange(e.target.value)}
+            InputLabelProps={{ shrink: true }}
+          >
+            <MenuItem value="">Select employee…</MenuItem>
+            {employeeOptions.map(employee => (
+              <MenuItem key={employee.employeeId} value={employee.employeeId}>
+                {employee.employeeId} — {employee.name}
+              </MenuItem>
+            ))}
+          </TextField>
+          <TextField
+            select
+            label="Position"
+            fullWidth
+            value={form.position}
+            onChange={e => setForm({ ...form, position: e.target.value })}
+            InputLabelProps={{ shrink: true }}
+          >
+            <MenuItem value="">Select position…</MenuItem>
+            {AVAILABLE_POSITIONS.map(position => (
+              <MenuItem key={position} value={position}>{position}</MenuItem>
+            ))}
+          </TextField>
           <TextField label="Period" type="month" fullWidth value={form.period} onChange={e => setForm({ ...form, period: e.target.value })} InputLabelProps={{ shrink: true }} />
           <Grid container spacing={2}>
             <Grid size={6}><TextField label="Total Hours" fullWidth value={form.totalHours} onChange={e => setForm({ ...form, totalHours: e.target.value })} /></Grid>
@@ -1576,7 +1652,7 @@ export default function PayrollComputation() {
           <Button onClick={() => setAddDialog(false)}>Cancel</Button>
           <Button variant="contained" onClick={handleAdd} disabled={saving}
             startIcon={saving ? <CircularProgress size={16} color="inherit" /> : undefined}>
-            {saving ? 'Saving…' : 'Save Payroll'}
+            {saving ? 'Saving…' : 'Generate Payroll'}
           </Button>
         </DialogActions>
       </Dialog>
@@ -1597,7 +1673,7 @@ export default function PayrollComputation() {
                 <Box sx={{ border: '1px solid #999', fontSize: '0.78rem', lineHeight: 1.5, mb: 2 }}>
                   {/* Company Header */}
                   <Box sx={{ textAlign: 'center', py: 1, px: 2, borderBottom: '1px solid #999', bgcolor: '#f9f9f9' }}>
-                    <Typography sx={{ fontWeight: 'bold', fontSize: '0.88rem', letterSpacing: 0.5 }}>BUENAVENTURA ESTATE</Typography>
+                    <Typography sx={{ fontWeight: 700, fontSize: '0.88rem', letterSpacing: 0.5 }}>BUENAVENTURA ESTATE</Typography>
                     <Typography sx={{ fontSize: '0.68rem', color: '#777' }}>ELECTRONIC PAYSLIP — EDITING</Typography>
                   </Box>
                   {/* Department */}
@@ -1731,7 +1807,7 @@ export default function PayrollComputation() {
                   return (
                     <Box sx={{ border: '1px solid #999', fontSize: '0.78rem', lineHeight: 1.5, mb: 2 }}>
                       {/* Company Header */}
-                      <Box sx={{ textAlign: 'center', fontWeight: 'bold', py: 1, px: 2, borderBottom: '1px solid #999', fontSize: '0.88rem', letterSpacing: 0.5 }}>
+                      <Box sx={{ textAlign: 'center', fontWeight: 700, py: 1, px: 2, borderBottom: '1px solid #999', fontSize: '0.88rem', letterSpacing: 0.5 }}>
                         BUENAVENTURA ESTATE
                       </Box>
 

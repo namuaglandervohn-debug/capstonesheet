@@ -218,16 +218,16 @@ export default function GMDashboard() {
                 mb: 1.5,
                 bgcolor: GREEN_UI.greenSoft,
                 color: GREEN_UI.greenDark,
-                fontWeight: 800,
+                fontWeight: 600,
                 '& .MuiChip-icon': { color: GREEN_UI.greenDark },
               }}
             />
             <Typography
               variant="h4"
-              fontWeight={900}
+              fontWeight={700}
               sx={{
                 color: GREEN_UI.text,
-                fontSize: { xs: '1.45rem', sm: '1.85rem', md: '2.35rem' },
+                fontSize: { xs: '1.55rem', sm: '2rem', md: '2.35rem' },
                 letterSpacing: '-0.045em',
                 lineHeight: 1.08,
               }}
@@ -281,10 +281,10 @@ export default function GMDashboard() {
               <EmojiEvents sx={{ fontSize: 42 }} />
             </Box>
             <Box>
-              <Typography variant="caption" sx={{ opacity: 0.9, letterSpacing: 1, fontWeight: 900 }}>
+              <Typography variant="caption" sx={{ opacity: 0.9, letterSpacing: 1, fontWeight: 700 }}>
                 🏆 EMPLOYEE OF THE MONTH
               </Typography>
-              <Typography variant="h5" fontWeight={900} sx={{ letterSpacing: '-0.03em' }}>
+              <Typography variant="h5" fontWeight={700} sx={{ letterSpacing: '-0.03em' }}>
                 {stats.eotmEmployee}
               </Typography>
               <Typography variant="body2" sx={{ opacity: 0.88 }}>
@@ -312,12 +312,12 @@ export default function GMDashboard() {
               <CardContent sx={{ p: { xs: 2, sm: 2.25 }, height: '100%', '&:last-child': { pb: { xs: 2, sm: 2.25 } } }}>
                 <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 2 }}>
                   <Box sx={{ minWidth: 0 }}>
-                    <Typography variant="body2" sx={{ color: GREEN_UI.muted, fontWeight: 800 }}>
+                    <Typography variant="body2" sx={{ color: GREEN_UI.muted, fontWeight: 600 }}>
                       {stat.title}
                     </Typography>
                     <Typography
                       variant="h4"
-                      fontWeight={900}
+                      fontWeight={700}
                       sx={{ color: GREEN_UI.text, mt: 0.8, letterSpacing: '-0.045em' }}
                     >
                       {stat.value}
@@ -366,7 +366,7 @@ export default function GMDashboard() {
                   <CalendarMonth />
                 </Box>
                 <Box>
-                  <Typography variant="h6" fontWeight={900} sx={{ color: GREEN_UI.text, letterSpacing: '-0.025em' }}>
+                  <Typography variant="h6" fontWeight={700} sx={{ color: GREEN_UI.text, letterSpacing: '-0.025em' }}>
                     Applicants for Interview
                   </Typography>
                   <Typography variant="caption" sx={{ color: GREEN_UI.muted, fontWeight: 700 }}>
@@ -392,7 +392,7 @@ export default function GMDashboard() {
                 <Box sx={{ ...softIconBoxSx, mx: 'auto', mb: 1 }}>
                   <FactCheck />
                 </Box>
-                <Typography fontWeight={900} sx={{ color: GREEN_UI.text }}>
+                <Typography fontWeight={700} sx={{ color: GREEN_UI.text }}>
                   No scheduled interviews
                 </Typography>
                 <Typography variant="body2" sx={{ color: GREEN_UI.muted, mt: 0.5 }}>
@@ -419,7 +419,7 @@ export default function GMDashboard() {
                         <PersonAddAlt1 fontSize="small" />
                       </Box>
                       <Box sx={{ minWidth: 0 }}>
-                        <Typography variant="body2" fontWeight={900} sx={{ color: GREEN_UI.text }} noWrap>
+                        <Typography variant="body2" fontWeight={700} sx={{ color: GREEN_UI.text }} noWrap>
                           {a.name || 'Unnamed Applicant'}
                         </Typography>
                         <Typography variant="caption" sx={{ color: GREEN_UI.muted }} noWrap>
@@ -435,7 +435,7 @@ export default function GMDashboard() {
                         bgcolor: '#e9f6ff',
                         color: '#1d6f9c',
                         borderColor: '#b7dff7',
-                        fontWeight: 800,
+                        fontWeight: 600,
                       }}
                     />
                   </Paper>
@@ -455,7 +455,7 @@ export default function GMDashboard() {
                 <Insights />
               </Box>
               <Box>
-                <Typography variant="h6" fontWeight={900} sx={{ color: GREEN_UI.text, letterSpacing: '-0.025em' }}>
+                <Typography variant="h6" fontWeight={700} sx={{ color: GREEN_UI.text, letterSpacing: '-0.025em' }}>
                   DSS Evaluations — Pending Your Approval
                 </Typography>
                 <Typography variant="caption" sx={{ color: GREEN_UI.muted, fontWeight: 700 }}>
@@ -488,13 +488,13 @@ export default function GMDashboard() {
                     label={`#${i + 1}`}
                     size="small"
                     sx={{
-                      fontWeight: 900,
+                      fontWeight: 700,
                       bgcolor: i === 0 ? '#fff7e0' : GREEN_UI.greenSoft,
                       color: i === 0 ? '#9b6b00' : GREEN_UI.greenDark,
                     }}
                   />
                   <Box sx={{ minWidth: 0 }}>
-                    <Typography variant="body2" fontWeight={900} sx={{ color: GREEN_UI.text }} noWrap>
+                    <Typography variant="body2" fontWeight={700} sx={{ color: GREEN_UI.text }} noWrap>
                       {e.employee}
                     </Typography>
                     <Typography variant="caption" sx={{ color: GREEN_UI.muted }} noWrap>
@@ -502,7 +502,7 @@ export default function GMDashboard() {
                     </Typography>
                   </Box>
                 </Box>
-                <Typography variant="body1" fontWeight={900} sx={{ color: GREEN_UI.greenDark }}>
+                <Typography variant="body1" fontWeight={700} sx={{ color: GREEN_UI.greenDark }}>
                   {e.finalScore?.toFixed(2)}%
                 </Typography>
               </Paper>

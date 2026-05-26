@@ -167,7 +167,7 @@ const innerCardSx = {
 const pillButtonSx = {
   borderRadius: '12px',
   textTransform: 'none',
-  fontWeight: 800,
+  fontWeight: 600,
   px: 2,
 };
 
@@ -182,7 +182,7 @@ const tableHeadRowSx = {
   background: 'linear-gradient(90deg, #eff8eb 0%, #f8fcf5 100%)',
   '& th': {
     color: GREEN_UI.greenDark,
-    fontWeight: 900,
+    fontWeight: 700,
     fontSize: '0.78rem',
     letterSpacing: '0.02em',
     textTransform: 'uppercase',
@@ -627,13 +627,13 @@ export default function SupervisorDashboard() {
                 mb: 1.2,
                 bgcolor: GREEN_UI.greenSoft,
                 color: GREEN_UI.greenDark,
-                fontWeight: 900,
+                fontWeight: 700,
                 '& .MuiChip-icon': { color: GREEN_UI.greenDark },
               }}
             />
             <Typography
               variant="h4"
-              fontWeight={900}
+              fontWeight={700}
               sx={{
                 fontSize: { xs: '1.55rem', sm: '2rem', md: '2.35rem' },
                 color: GREEN_UI.text,
@@ -701,10 +701,10 @@ export default function SupervisorDashboard() {
             >
               <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 1.5 }}>
                 <Box>
-                  <Typography variant="body2" sx={{ color: GREEN_UI.muted, fontWeight: 800 }}>
+                  <Typography variant="body2" sx={{ color: GREEN_UI.muted, fontWeight: 600 }}>
                     {stat.title}
                   </Typography>
-                  <Typography variant="h4" fontWeight={900} sx={{ color: GREEN_UI.text, mt: 0.5, letterSpacing: '-0.04em' }}>
+                  <Typography variant="h4" fontWeight={700} sx={{ color: GREEN_UI.text, mt: 0.5, letterSpacing: '-0.04em' }}>
                     {stat.value}
                   </Typography>
                 </Box>
@@ -731,13 +731,13 @@ export default function SupervisorDashboard() {
                   </Box>
                   <Box sx={{ minWidth: 0 }}>
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap' }}>
-                      <Typography variant="h6" fontWeight={900} sx={{ color: GREEN_UI.text, letterSpacing: '-0.02em' }}>
+                      <Typography variant="h6" fontWeight={700} sx={{ color: GREEN_UI.text, letterSpacing: '-0.02em' }}>
                         Published Schedules
                       </Typography>
                       <Chip
                         label={stats.publishedSchedules}
                         size="small"
-                        sx={{ bgcolor: GREEN_UI.greenSoft, color: GREEN_UI.greenDark, fontWeight: 900 }}
+                        sx={{ bgcolor: GREEN_UI.greenSoft, color: GREEN_UI.greenDark, fontWeight: 700 }}
                       />
                     </Box>
                     <Typography variant="caption" sx={{ color: GREEN_UI.muted, fontWeight: 600 }}>
@@ -774,7 +774,7 @@ export default function SupervisorDashboard() {
                 <Box sx={{ ...iconTileSx, width: 58, height: 58, bgcolor: GREEN_UI.greenSoft, color: GREEN_UI.greenDark, mx: 'auto', mb: 1.5 }}>
                   <CalendarMonth sx={{ fontSize: 30 }} />
                 </Box>
-                <Typography fontWeight={900} sx={{ color: GREEN_UI.text }}>No published schedules yet.</Typography>
+                <Typography fontWeight={700} sx={{ color: GREEN_UI.text }}>No published schedules yet.</Typography>
                 <Typography variant="body2" sx={{ color: GREEN_UI.muted, mt: 0.5 }}>
                   Go to Schedule Management to create and publish employee schedules.
                 </Typography>
@@ -804,13 +804,13 @@ export default function SupervisorDashboard() {
                   <TableBody>
                     {publishedSchedules.map((schedule) => (
                       <TableRow key={schedule.id} hover>
-                        <TableCell sx={{ fontWeight: 900, color: GREEN_UI.text, whiteSpace: 'nowrap' }}>
+                        <TableCell sx={{ fontWeight: 700, color: GREEN_UI.text, whiteSpace: 'nowrap' }}>
                           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                             <Box sx={{ ...iconTileSx, width: 32, height: 32, borderRadius: '12px', bgcolor: GREEN_UI.greenSoft, color: GREEN_UI.greenDark }}>
                               <PeopleAlt sx={{ fontSize: 18 }} />
                             </Box>
                             <Box>
-                              <Typography variant="body2" fontWeight={900} sx={{ lineHeight: 1.2 }}>
+                              <Typography variant="body2" fontWeight={700} sx={{ lineHeight: 1.2 }}>
                                 {schedule.employee}
                               </Typography>
                               <Typography variant="caption" sx={{ color: GREEN_UI.muted }}>
@@ -833,7 +833,7 @@ export default function SupervisorDashboard() {
                           return (
                             <TableCell key={String(day)} sx={{ textAlign: 'center', p: '7px 5px' }}>
                               {isOff ? (
-                                <Typography variant="caption" sx={{ color: '#a4b2a7', fontWeight: 900 }}>
+                                <Typography variant="caption" sx={{ color: '#a4b2a7', fontWeight: 700 }}>
                                   —
                                 </Typography>
                               ) : (
@@ -847,7 +847,7 @@ export default function SupervisorDashboard() {
                                     color: GREEN_UI.greenDark,
                                     borderColor: GREEN_UI.borderStrong,
                                     fontSize: '0.68rem',
-                                    fontWeight: 900,
+                                    fontWeight: 700,
                                     '& .MuiChip-label': { px: 0.8 },
                                   }}
                                 />
@@ -863,7 +863,7 @@ export default function SupervisorDashboard() {
                             sx={{
                               bgcolor: GREEN_UI.greenSoft,
                               color: GREEN_UI.greenDark,
-                              fontWeight: 900,
+                              fontWeight: 700,
                               '& .MuiChip-icon': { color: GREEN_UI.greenDark },
                             }}
                           />
@@ -886,13 +886,13 @@ export default function SupervisorDashboard() {
                 </Box>
                 <Box>
                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap' }}>
-                    <Typography variant="h6" fontWeight={900} sx={{ color: GREEN_UI.text, letterSpacing: '-0.02em' }}>
+                    <Typography variant="h6" fontWeight={700} sx={{ color: GREEN_UI.text, letterSpacing: '-0.02em' }}>
                       Pending Requests
                     </Typography>
                     <Chip
                       label={stats.pendingRequests}
                       size="small"
-                      sx={{ bgcolor: GREEN_UI.amberSoft, color: GREEN_UI.amberDark, fontWeight: 900 }}
+                      sx={{ bgcolor: GREEN_UI.amberSoft, color: GREEN_UI.amberDark, fontWeight: 700 }}
                     />
                   </Box>
                   <Typography variant="caption" sx={{ color: GREEN_UI.muted, fontWeight: 600 }}>
@@ -920,7 +920,7 @@ export default function SupervisorDashboard() {
                 <Box sx={{ ...iconTileSx, width: 58, height: 58, bgcolor: GREEN_UI.greenSoft, color: GREEN_UI.greenDark, mx: 'auto', mb: 1.5 }}>
                   <TaskAlt sx={{ fontSize: 30 }} />
                 </Box>
-                <Typography fontWeight={900} sx={{ color: GREEN_UI.text }}>No pending requests</Typography>
+                <Typography fontWeight={700} sx={{ color: GREEN_UI.text }}>No pending requests</Typography>
                 <Typography variant="body2" sx={{ color: GREEN_UI.muted, mt: 0.5 }}>
                   All clear for now.
                 </Typography>
@@ -932,7 +932,7 @@ export default function SupervisorDashboard() {
                     <Box sx={{ display: 'flex', justifyContent: 'space-between', gap: 1.2, alignItems: 'flex-start' }}>
                       <Box sx={{ minWidth: 0, flex: 1 }}>
                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.8, flexWrap: 'wrap', mb: 0.7 }}>
-                          <Typography variant="body2" fontWeight={900} sx={{ color: GREEN_UI.text }}>
+                          <Typography variant="body2" fontWeight={700} sx={{ color: GREEN_UI.text }}>
                             {request.employee}
                           </Typography>
                           <Chip
@@ -942,7 +942,7 @@ export default function SupervisorDashboard() {
                               height: 24,
                               bgcolor: GREEN_UI.amberSoft,
                               color: GREEN_UI.amberDark,
-                              fontWeight: 900,
+                              fontWeight: 700,
                               '& .MuiChip-label': { px: 1 },
                             }}
                           />

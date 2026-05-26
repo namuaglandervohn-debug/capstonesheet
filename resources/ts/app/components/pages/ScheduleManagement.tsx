@@ -143,7 +143,7 @@ const statusChipSx = (status: Schedule['status']) => {
     bgcolor: selected.bg,
     color: selected.color,
     borderColor: selected.border,
-    fontWeight: 800,
+    fontWeight: 600,
     '& .MuiChip-label': { px: 1.25 },
   };
 };
@@ -159,7 +159,7 @@ const actionChipSx = (tone: 'primary' | 'success' | 'danger' | 'neutral' = 'prim
   return {
     minWidth: 110,
     justifyContent: 'center',
-    fontWeight: 800,
+    fontWeight: 600,
     borderColor: styles.border,
     color: styles.color,
     bgcolor: styles.bg,
@@ -168,7 +168,7 @@ const actionChipSx = (tone: 'primary' | 'success' | 'danger' | 'neutral' = 'prim
 };
 
 const outletChipSx = {
-  fontWeight: 800,
+  fontWeight: 600,
   bgcolor: '#f8fcf5',
   borderColor: GREEN_UI.border,
   color: GREEN_UI.greenDark,
@@ -255,16 +255,33 @@ export default function ScheduleManagement() {
 
     const { data: employeeData, error: employeeError } = await supabase
       .from("employees")
-      .select("employee_id, first_name, middle_name, last_name, suffix");
+      .select("employee_id, first_name, middle_name, last_name, suffix, position, outlet");
 
     if (employeeError) throw employeeError;
 
-    const employeeMap = new Map(
+    const { data: userAccountsData, error: userAccountsError } = await supabase
+      .from("user_accounts")
+      .select("employee_id, outlet");
+
+    if (userAccountsError) throw userAccountsError;
+
+    const outletMap = new Map(
+      (userAccountsData ?? []).map((u: any) => [
+        u.employee_id,
+        u.outlet,
+      ])
+    );
+
+    const employeeMap = new Map<string, { name: string; position: string; outlet: string }>(
       (employeeData ?? []).map((e: any) => [
         e.employee_id,
-        `${e.first_name ?? ""} ${e.middle_name ?? ""} ${e.last_name ?? ""} ${e.suffix ?? ""}`
-          .replace(/\s+/g, " ")
-          .trim(),
+        {
+          name: `${e.first_name ?? ""} ${e.middle_name ?? ""} ${e.last_name ?? ""} ${e.suffix ?? ""}`
+            .replace(/\s+/g, " ")
+            .trim(),
+          position: e.position ?? "",
+          outlet: outletMap.get(e.employee_id) || e.outlet || "",
+        },
       ])
     );
 
@@ -276,9 +293,9 @@ export default function ScheduleManagement() {
     const mappedSchedules: Schedule[] = visibleSchedules.map((s: any) => ({
       id: s.schedule_id ?? "—",
       employeeId: s.employee_id ?? "",
-      employee: employeeMap.get(s.employee_id) ?? "—",
-      position: s.position ?? "",
-      outlet: s.outlet ?? "",
+      employee: employeeMap.get(s.employee_id)?.name ?? "—",
+      position: employeeMap.get(s.employee_id)?.position || s.position || "",
+      outlet: employeeMap.get(s.employee_id)?.outlet || s.outlet || "",
       week: s.week ?? "",
       timeIn: s.time_in ?? "",
       timeOut: s.time_out ?? "",
@@ -321,13 +338,29 @@ export default function ScheduleManagement() {
       return;
     }
 
+    const { data: userAccountsData, error: userAccountsError } = await supabase
+      .from("user_accounts")
+      .select("employee_id, outlet");
+
+    if (userAccountsError) {
+      console.error("Failed to fetch user account outlets:", userAccountsError);
+      return;
+    }
+
+    const outletMap = new Map(
+      (userAccountsData ?? []).map((u: any) => [
+        u.employee_id,
+        u.outlet,
+      ])
+    );
+
     const list = (data ?? []).map((e: any) => ({
       employeeId: e.employee_id,
       name: `${e.first_name ?? ""} ${e.middle_name ?? ""} ${e.last_name ?? ""}`
         .replace(/\s+/g, " ")
         .trim(),
       position: e.position ?? "",
-      outlet: e.outlet ?? "",
+      outlet: outletMap.get(e.employee_id) || e.outlet || "",
     }));
 
     setEmployeeList(list);
@@ -336,9 +369,18 @@ export default function ScheduleManagement() {
   fetchEmployees();
 }, []);
 
+  const getEmployeeById = (employeeId: string) =>
+    employeeList.find(emp => emp.employeeId === employeeId);
+
+  const hasEmployeeOutlet = (employeeId: string) =>
+    Boolean(getEmployeeById(employeeId)?.outlet);
+
   const handleSaveDraft = async () => {
   try {
     setSaving(true);
+    const selectedEmployee = getEmployeeById(form.employeeId);
+    const employeePosition = selectedEmployee?.position || form.position || "";
+    const employeeOutlet = selectedEmployee?.outlet || form.outlet || "";
 
     const year = new Date().getFullYear();
 
@@ -368,8 +410,8 @@ const scheduleId =
   schedule_id: scheduleId,
 
   employee_id: form.employeeId ?? "",
-  position: form.position ?? "",
-  outlet: form.outlet ?? "",
+  position: employeePosition,
+  outlet: employeeOutlet,
   week: form.week ?? "",
 
   time_in: form.timeIn || null,
@@ -552,9 +594,14 @@ const scheduleId =
 };
 
   const openEditDialog = (s: Schedule) => {
+    const linkedEmployee = getEmployeeById(s.employeeId);
     setEditRecord(s);
     setEditForm({
-      employee: s.employee, position: s.position, outlet: s.outlet, week: s.week,
+      employeeId: s.employeeId,
+      employee: linkedEmployee?.name || s.employee,
+      position: linkedEmployee?.position || s.position,
+      outlet: linkedEmployee?.outlet || s.outlet,
+      week: s.week,
       timeIn: s.timeIn, timeOut: s.timeOut, breakTime: s.breakTime,
       monday: s.monday, tuesday: s.tuesday, wednesday: s.wednesday,
       thursday: s.thursday, friday: s.friday, saturday: s.saturday, sunday: s.sunday,
@@ -569,11 +616,15 @@ const scheduleId =
   setSaving(true);
 
   try {
+    const linkedEmployee = getEmployeeById(editRecord.employeeId);
+    const employeePosition = linkedEmployee?.position || editForm.position || "";
+    const employeeOutlet = linkedEmployee?.outlet || editForm.outlet || "";
+
     const { error } = await supabase
       .from("schedule")
       .update({
-        position: editForm.position ?? "",
-        outlet: editForm.outlet ?? "",
+        position: employeePosition,
+        outlet: employeeOutlet,
         week: editForm.week ?? "",
         time_in: editForm.timeIn || null,
         time_out: editForm.timeOut || null,
@@ -817,13 +868,13 @@ const scheduleId =
                 mb: 1.2,
                 bgcolor: GREEN_UI.greenSoft,
                 color: GREEN_UI.greenDark,
-                fontWeight: 900,
+                fontWeight: 700,
                 '& .MuiChip-icon': { color: GREEN_UI.greenDark },
               }}
             />
             <Typography
               variant="h4"
-              fontWeight={900}
+              fontWeight={700}
               sx={{
                 fontSize: { xs: '1.55rem', sm: '2rem', md: '2.35rem' },
                 color: GREEN_UI.text,
@@ -918,10 +969,10 @@ const scheduleId =
             >
               <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 1.5 }}>
                 <Box>
-                  <Typography variant="body2" sx={{ color: GREEN_UI.muted, fontWeight: 800 }}>
+                  <Typography variant="body2" sx={{ color: GREEN_UI.muted, fontWeight: 600 }}>
                     {stat.label}
                   </Typography>
-                  <Typography variant="h4" fontWeight={900} sx={{ color: GREEN_UI.text, mt: 0.5, letterSpacing: '-0.04em' }}>
+                  <Typography variant="h4" fontWeight={700} sx={{ color: GREEN_UI.text, mt: 0.5, letterSpacing: '-0.04em' }}>
                     {stat.value}
                   </Typography>
                 </Box>
@@ -979,7 +1030,7 @@ const scheduleId =
               <FilterAlt fontSize="small" />
             </Box>
             <Box>
-              <Typography fontWeight={900} sx={{ color: GREEN_UI.text }}>
+              <Typography fontWeight={700} sx={{ color: GREEN_UI.text }}>
                 Filter Schedules
               </Typography>
               <Typography variant="caption" sx={{ color: GREEN_UI.muted }}>
@@ -1056,7 +1107,7 @@ const scheduleId =
                   background: 'linear-gradient(90deg, #eff8eb 0%, #f8fcf5 100%)',
                   '& th': {
                     color: GREEN_UI.greenDark,
-                    fontWeight: 900,
+                    fontWeight: 700,
                     fontSize: '0.78rem',
                     letterSpacing: '0.02em',
                     textTransform: 'uppercase',
@@ -1095,7 +1146,7 @@ const scheduleId =
                       >
                         <InsertDriveFile />
                       </Box>
-                      <Typography fontWeight={900} sx={{ color: GREEN_UI.text }}>
+                      <Typography fontWeight={700} sx={{ color: GREEN_UI.text }}>
                         {schedules.length === 0 ? 'No schedules yet' : 'No schedules match your filter'}
                       </Typography>
                       <Typography variant="body2" sx={{ color: GREEN_UI.muted, mt: 0.5 }}>
@@ -1122,7 +1173,7 @@ const scheduleId =
                       label={s.id}
                       size="small"
                       variant="outlined"
-                      sx={{fontWeight: 800, bgcolor: '#f8fcf5', borderColor: GREEN_UI.border, '& .MuiChip-icon': { color: GREEN_UI.greenDark } }}
+                      sx={{fontWeight: 600, bgcolor: '#f8fcf5', borderColor: GREEN_UI.border, '& .MuiChip-icon': { color: GREEN_UI.greenDark } }}
                     />
                   </TableCell>
                   <TableCell sx={{ whiteSpace: 'nowrap' }}>
@@ -1142,7 +1193,7 @@ const scheduleId =
                         <PersonOutline fontSize="small" />
                       </Box>
                       <Box>
-                        <Typography fontWeight={800} sx={{ color: GREEN_UI.text, lineHeight: 1.2 }}>
+                        <Typography fontWeight={600} sx={{ color: GREEN_UI.text, lineHeight: 1.2 }}>
                           {s.employee || '—'}
                         </Typography>
                         <Typography variant="caption" sx={{ color: GREEN_UI.muted }}>
@@ -1182,7 +1233,7 @@ const scheduleId =
                       label={s.breakTime || '—'}
                       size="small"
                       variant="outlined"
-                      sx={{ fontWeight: 800, bgcolor: '#ffffff', borderColor: GREEN_UI.border, color: GREEN_UI.muted, '& .MuiChip-icon': { color: GREEN_UI.muted } }}
+                      sx={{ fontWeight: 600, bgcolor: '#ffffff', borderColor: GREEN_UI.border, color: GREEN_UI.muted, '& .MuiChip-icon': { color: GREEN_UI.muted } }}
                     />
                   </TableCell>
                   {DAYS.map(d => {
@@ -1200,7 +1251,7 @@ const scheduleId =
                             bgcolor: isOff ? '#f4f7f3' : '#f8fcf5',
                             color: isOff ? '#9aa6a0' : GREEN_UI.text,
                             border: `1px solid ${GREEN_UI.border}`,
-                            fontWeight: 800,
+                            fontWeight: 600,
                             borderRadius: '8px',
                             whiteSpace: 'nowrap',
                           }}
@@ -1304,7 +1355,7 @@ const scheduleId =
         }}
       >
         <DialogTitle
-          fontWeight={900}
+          fontWeight={700}
           sx={{
             px: { xs: 2, sm: 3 },
             py: 2.25,
@@ -1317,7 +1368,7 @@ const scheduleId =
               <AddCircleOutline fontSize="small" />
             </Box>
             <Box>
-              <Typography fontWeight={900} sx={{ color: GREEN_UI.text }}>
+              <Typography fontWeight={700} sx={{ color: GREEN_UI.text }}>
                 Create Weekly Schedule
               </Typography>
               <Typography variant="caption" sx={{ color: GREEN_UI.muted }}>
@@ -1331,7 +1382,7 @@ const scheduleId =
           <Paper elevation={0} sx={{ ...innerCardSx, p: { xs: 1.5, sm: 2 }, mb: 2 }}>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1.5 }}>
               <PersonOutline sx={{ color: GREEN_UI.greenDark }} />
-              <Typography fontWeight={900} sx={{ color: GREEN_UI.text }}>Employee Assignment</Typography>
+              <Typography fontWeight={700} sx={{ color: GREEN_UI.text }}>Employee Assignment</Typography>
             </Box>
             <Grid container spacing={2}>
               <Grid size={{ xs: 12, md: 4 }}>
@@ -1384,6 +1435,7 @@ const scheduleId =
                   value={form.outlet}
                   size="small"
                   sx={softTextFieldSx}
+                  disabled={hasEmployeeOutlet(form.employeeId)}
                   onChange={e => setForm(prev => ({ ...prev, outlet: e.target.value }))}
                   InputLabelProps={{ shrink: true }}
                 >
@@ -1397,7 +1449,7 @@ const scheduleId =
           <Paper elevation={0} sx={{ ...innerCardSx, p: { xs: 1.5, sm: 2 }, mb: 2 }}>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1.5 }}>
               <CalendarMonth sx={{ color: GREEN_UI.greenDark }} />
-              <Typography fontWeight={900} sx={{ color: GREEN_UI.text }}>Week and Break Setup</Typography>
+              <Typography fontWeight={700} sx={{ color: GREEN_UI.text }}>Week and Break Setup</Typography>
             </Box>
             <Grid container spacing={2}>
               <Grid size={{ xs: 12, md: 6 }}>
@@ -1450,7 +1502,7 @@ const scheduleId =
           <Paper elevation={0} sx={{ ...innerCardSx, p: { xs: 1.5, sm: 2 } }}>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1.5 }}>
               <AccessTime sx={{ color: GREEN_UI.greenDark }} />
-              <Typography fontWeight={900} sx={{ color: GREEN_UI.text }}>Daily Schedule Assignment</Typography>
+              <Typography fontWeight={700} sx={{ color: GREEN_UI.text }}>Daily Schedule Assignment</Typography>
             </Box>
             <Grid container spacing={1.5}>
               {DAYS.map(day => (
@@ -1510,7 +1562,7 @@ const scheduleId =
         }}
       >
         <DialogTitle
-          fontWeight={900}
+          fontWeight={700}
           sx={{
             px: { xs: 2, sm: 3 },
             py: 2.25,
@@ -1523,7 +1575,7 @@ const scheduleId =
               <EditIcon fontSize="small" />
             </Box>
             <Box>
-              <Typography fontWeight={900} sx={{ color: GREEN_UI.text }}>
+              <Typography fontWeight={700} sx={{ color: GREEN_UI.text }}>
                 Edit Schedule — {editRecord?.id}
               </Typography>
               <Typography variant="caption" sx={{ color: GREEN_UI.muted }}>
@@ -1540,7 +1592,7 @@ const scheduleId =
           <Paper elevation={0} sx={{ ...innerCardSx, p: { xs: 1.5, sm: 2 }, mb: 2 }}>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1.5 }}>
               <PersonOutline sx={{ color: GREEN_UI.greenDark }} />
-              <Typography fontWeight={900} sx={{ color: GREEN_UI.text }}>Employee Assignment</Typography>
+              <Typography fontWeight={700} sx={{ color: GREEN_UI.text }}>Employee Assignment</Typography>
             </Box>
             <Grid container spacing={2}>
               <Grid size={{ xs: 12, md: 4 }}>
@@ -1575,6 +1627,7 @@ const scheduleId =
                   select
                   label="Outlet / Branch"
                   value={editForm.outlet}
+                  disabled={hasEmployeeOutlet(editRecord?.employeeId ?? editForm.employeeId)}
                   onChange={e => setEditForm(prev => ({ ...prev, outlet: e.target.value }))}
                   InputLabelProps={{ shrink: true }}
                   size="small"
@@ -1590,7 +1643,7 @@ const scheduleId =
           <Paper elevation={0} sx={{ ...innerCardSx, p: { xs: 1.5, sm: 2 }, mb: 2 }}>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1.5 }}>
               <CalendarMonth sx={{ color: GREEN_UI.greenDark }} />
-              <Typography fontWeight={900} sx={{ color: GREEN_UI.text }}>Week and Break Setup</Typography>
+              <Typography fontWeight={700} sx={{ color: GREEN_UI.text }}>Week and Break Setup</Typography>
             </Box>
             <Grid container spacing={2}>
               <Grid size={{ xs: 12, md: 6 }}>
@@ -1643,7 +1696,7 @@ const scheduleId =
           <Paper elevation={0} sx={{ ...innerCardSx, p: { xs: 1.5, sm: 2 } }}>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1.5 }}>
               <AccessTime sx={{ color: GREEN_UI.greenDark }} />
-              <Typography fontWeight={900} sx={{ color: GREEN_UI.text }}>Daily Schedule Assignment</Typography>
+              <Typography fontWeight={700} sx={{ color: GREEN_UI.text }}>Daily Schedule Assignment</Typography>
             </Box>
             <Grid container spacing={1.5}>
               {DAYS.map(day => (

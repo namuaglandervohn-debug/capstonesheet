@@ -112,7 +112,12 @@ const DEPARTMENTS = [
   "Café",
 ];
 
-const EMPLOYMENT_TYPES = ["Full-Time", "Part-Time", "Contractual", "Internship"];
+const EMPLOYMENT_TYPES = [
+  "Full-Time",
+  "Part-Time",
+  "Contractual",
+  "Internship",
+];
 
 const REQUIRED_FIELDS: Array<keyof JobForm> = [
   "title",
@@ -156,7 +161,10 @@ function formatSalaryInput(value: string) {
 
   return cleanedValue.replace(/\d+(?:\.\d*)?/g, (numberPart) => {
     const [wholeNumber, decimalPart] = numberPart.split(".");
-    const formattedWholeNumber = wholeNumber.replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+    const formattedWholeNumber = wholeNumber.replace(
+      /\B(?=(\d{3})+(?!\d))/g,
+      ",",
+    );
 
     return decimalPart !== undefined
       ? `${formattedWholeNumber}.${decimalPart}`
@@ -168,7 +176,9 @@ function getSalaryLabel(salary?: string | null) {
   if (!salary?.trim()) return "Salary Negotiable";
 
   const formattedSalary = formatSalaryInput(salary.trim());
-  return formattedSalary.includes("₱") ? formattedSalary : `₱ ${formattedSalary}`;
+  return formattedSalary.includes("₱")
+    ? formattedSalary
+    : `₱ ${formattedSalary}`;
 }
 
 function normalizeSalaryValue(value: string) {
@@ -178,7 +188,9 @@ function normalizeSalaryValue(value: string) {
 function formatSalary(salary?: string | null) {
   if (!salary?.trim()) return "Salary not set";
   const formattedSalary = formatSalaryInput(salary.trim());
-  return formattedSalary.includes("₱") ? formattedSalary : `₱ ${formattedSalary}`;
+  return formattedSalary.includes("₱")
+    ? formattedSalary
+    : `₱ ${formattedSalary}`;
 }
 
 function formatDate(date?: string | null) {
@@ -196,7 +208,8 @@ function formatDate(date?: string | null) {
 }
 
 const GREEN_UI = {
-  pageBg: "radial-gradient(circle at top left, rgba(220, 246, 219, 0.95), rgba(248, 252, 245, 0.98) 34%, #f7fbf3 100%)",
+  pageBg:
+    "radial-gradient(circle at top left, rgba(220, 246, 219, 0.95), rgba(248, 252, 245, 0.98) 34%, #f7fbf3 100%)",
   cardBg: "rgba(255, 255, 255, 0.92)",
   cardBgSoft: "rgba(245, 252, 241, 0.88)",
   border: "rgba(139, 184, 144, 0.24)",
@@ -308,6 +321,24 @@ const fullRowSx = {
   gridColumn: { xs: "1", md: "1 / -1" },
 };
 
+const dialogSectionSx = {
+  p: { xs: 1.5, sm: 2 },
+  borderRadius: "22px",
+  border: `1px solid ${GREEN_UI.border}`,
+  background:
+    "linear-gradient(135deg, rgba(255,255,255,0.96), rgba(244,251,241,0.92))",
+  boxShadow: "0 12px 28px rgba(43, 91, 55, 0.06)",
+};
+
+const dialogSectionTitleSx = {
+  mb: 1.6,
+  color: GREEN_UI.greenDark,
+  fontWeight: 700,
+  fontSize: "0.88rem",
+  letterSpacing: "0.02em",
+  textTransform: "uppercase",
+};
+
 const textFieldSx = {
   minWidth: 0,
   "& .MuiOutlinedInput-root": {
@@ -319,8 +350,14 @@ const textFieldSx = {
     "&.Mui-focused fieldset": { borderColor: GREEN_UI.green, borderWidth: 1.5 },
     "&.Mui-disabled": { backgroundColor: "#f6fbf4" },
   },
-  "& .MuiInputLabel-root": { color: GREEN_UI.muted },
+  "& .MuiInputLabel-root": { color: GREEN_UI.muted, fontWeight: 400 },
   "& .MuiInputLabel-root.Mui-focused": { color: GREEN_UI.greenDark },
+  "& .MuiInputBase-input, & .MuiSelect-select": {
+    color: GREEN_UI.text,
+    fontWeight: 400,
+  },
+  "& .MuiInputBase-input::placeholder": { fontWeight: 400 },
+  "& .MuiFormHelperText-root": { fontWeight: 400, lineHeight: 1.35 },
   "& .MuiInputBase-input.Mui-disabled": { WebkitTextFillColor: GREEN_UI.text },
 };
 
@@ -383,7 +420,7 @@ export default function JobPostingManagement() {
     const departments = new Set(
       jobs
         .map((job) => job.department?.trim())
-        .filter((department): department is string => Boolean(department))
+        .filter((department): department is string => Boolean(department)),
     ).size;
 
     return {
@@ -398,7 +435,7 @@ export default function JobPostingManagement() {
     (message: string, severity: SnackbarState["severity"] = "success") => {
       setSnackbar({ open: true, message, severity });
     },
-    []
+    [],
   );
 
   const fetchJobs = useCallback(async () => {
@@ -459,7 +496,8 @@ export default function JobPostingManagement() {
   };
 
   const updateFormField = (field: keyof JobForm, value: string) => {
-    const nextValue = field === "salary_range" ? formatSalaryInput(value) : value;
+    const nextValue =
+      field === "salary_range" ? formatSalaryInput(value) : value;
     setForm((prev) => ({ ...prev, [field]: nextValue }));
   };
 
@@ -473,7 +511,7 @@ export default function JobPostingManagement() {
     if (missing.length > 0) {
       showSnackbar(
         `Please complete: ${missing.map((field) => FIELD_LABELS[field]).join(", ")}.`,
-        "warning"
+        "warning",
       );
       return;
     }
@@ -494,7 +532,9 @@ export default function JobPostingManagement() {
         if (error) throw error;
 
         setJobs((prev) =>
-          prev.map((job) => (job.id === editing.id ? (data as JobPosting) : job))
+          prev.map((job) =>
+            job.id === editing.id ? (data as JobPosting) : job,
+          ),
         );
 
         showSnackbar("Job posting updated successfully.");
@@ -526,14 +566,21 @@ export default function JobPostingManagement() {
   };
 
   const handleDelete = async (id: string) => {
-    if (!window.confirm("Permanently delete this job posting? This cannot be undone.")) {
+    if (
+      !window.confirm(
+        "Permanently delete this job posting? This cannot be undone.",
+      )
+    ) {
       return;
     }
 
     setBusyJobId(id);
 
     try {
-      const { error } = await supabase.from("job_postings").delete().eq("id", id);
+      const { error } = await supabase
+        .from("job_postings")
+        .delete()
+        .eq("id", id);
 
       if (error) throw error;
 
@@ -561,12 +608,17 @@ export default function JobPostingManagement() {
       if (error) throw error;
 
       setJobs((prev) =>
-        prev.map((item) => (item.id === job.id ? (data as JobPosting) : item))
+        prev.map((item) => (item.id === job.id ? (data as JobPosting) : item)),
       );
 
-      showSnackbar(`Job posting ${newStatus ? "activated" : "deactivated"} successfully.`);
+      showSnackbar(
+        `Job posting ${newStatus ? "activated" : "deactivated"} successfully.`,
+      );
     } catch (error: any) {
-      showSnackbar(error?.message || "Failed to update job posting status.", "error");
+      showSnackbar(
+        error?.message || "Failed to update job posting status.",
+        "error",
+      );
     } finally {
       setBusyJobId(null);
     }
@@ -598,13 +650,13 @@ export default function JobPostingManagement() {
                     mb: 1.2,
                     bgcolor: GREEN_UI.greenSoft,
                     color: GREEN_UI.greenDark,
-                    fontWeight: 900,
+                    fontWeight: 700,
                   }}
                 />
 
                 <Typography
                   variant="h4"
-                  fontWeight={900}
+                  fontWeight={700}
                   sx={{
                     color: GREEN_UI.text,
                     letterSpacing: "-0.04em",
@@ -615,16 +667,10 @@ export default function JobPostingManagement() {
                   Job Posting Management
                 </Typography>
 
-                <Typography
-                  sx={{
-                    mt: 1.2,
-                    maxWidth: 620,
-                    color: GREEN_UI.muted,
-                    lineHeight: 1.7,
-                  }}
-                >
-                  Create, update, and publish open positions using a clean career-board
-                  layout inspired by the soft green dashboard design.
+                <Typography variant="body2" sx={{ color: GREEN_UI.muted, maxWidth: 650, lineHeight: 1.7 }}>
+                  Create, update, and publish open positions using a clean
+                  career-board layout inspired by the soft green dashboard
+                  design.
                 </Typography>
               </Box>
 
@@ -692,21 +738,26 @@ export default function JobPostingManagement() {
                     <Typography
                       sx={{
                         color: GREEN_UI.muted,
-                        fontWeight: 800,
+                        fontWeight: 600,
                         fontSize: "0.78rem",
-                        
                       }}
                     >
                       {stat.label}
                     </Typography>
                     <Typography
                       variant="h4"
-                      fontWeight={900}
-                      sx={{ color: GREEN_UI.text, lineHeight: 1.05, letterSpacing: "-0.04em" }}
+                      fontWeight={600}
+                      sx={{
+                        color: GREEN_UI.text,
+                        lineHeight: 1.05,
+                        letterSpacing: "-0.04em",
+                      }}
                     >
                       {loading ? "—" : stat.value}
                     </Typography>
-                    <Typography sx={{ color: GREEN_UI.muted, fontSize: "0.82rem" }}>
+                    <Typography
+                      sx={{ color: GREEN_UI.muted, fontSize: "0.82rem" }}
+                    >
                       {stat.helper}
                     </Typography>
                   </Box>
@@ -727,7 +778,7 @@ export default function JobPostingManagement() {
         >
           <Box>
             <Typography
-              fontWeight={900}
+              fontWeight={600}
               sx={{
                 color: "#1E2B22",
                 fontSize: { xs: "1.15rem", sm: "1.35rem" },
@@ -736,10 +787,10 @@ export default function JobPostingManagement() {
               Available Career Posts
             </Typography>
             <Typography sx={{ color: "#7F907F", fontSize: "0.92rem" }}>
-              Review each listing, then edit, delete, activate, or pause when needed.
+              Review each listing, then edit, delete, activate, or pause when
+              needed.
             </Typography>
           </Box>
-          
         </Stack>
 
         {loading ? (
@@ -758,15 +809,35 @@ export default function JobPostingManagement() {
               >
                 <CardContent sx={{ p: { xs: 2.2, sm: 3 } }}>
                   <Stack spacing={1.5}>
-                    <Skeleton variant="rounded" width={90} height={28} sx={{ borderRadius: 8 }} />
+                    <Skeleton
+                      variant="rounded"
+                      width={90}
+                      height={28}
+                      sx={{ borderRadius: 8 }}
+                    />
                     <Skeleton variant="text" width="75%" height={38} />
-                    <Skeleton variant="rounded" width="100%" height={86} sx={{ borderRadius: 4 }} />
+                    <Skeleton
+                      variant="rounded"
+                      width="100%"
+                      height={86}
+                      sx={{ borderRadius: 4 }}
+                    />
                     <Divider sx={{ my: 1 }} />
                     <Skeleton variant="text" width="95%" />
                     <Skeleton variant="text" width="85%" />
                     <Stack direction="row" spacing={1}>
-                      <Skeleton variant="rounded" width={72} height={36} sx={{ borderRadius: 10 }} />
-                      <Skeleton variant="rounded" width={72} height={36} sx={{ borderRadius: 10 }} />
+                      <Skeleton
+                        variant="rounded"
+                        width={72}
+                        height={36}
+                        sx={{ borderRadius: 10 }}
+                      />
+                      <Skeleton
+                        variant="rounded"
+                        width={72}
+                        height={36}
+                        sx={{ borderRadius: 10 }}
+                      />
                     </Stack>
                   </Stack>
                 </CardContent>
@@ -802,11 +873,16 @@ export default function JobPostingManagement() {
                 <Work />
               </Box>
 
-              <Typography variant="h6" fontWeight={900} sx={{ color: "#1E2B22" }}>
+              <Typography
+                variant="h6"
+                fontWeight={600}
+                sx={{ color: "#1E2B22" }}
+              >
                 No job postings found
               </Typography>
               <Typography color="text.secondary" sx={{ mt: 0.8, mb: 3 }}>
-                Create your first job posting to display available career opportunities.
+                Create your first job posting to display available career
+                opportunities.
               </Typography>
 
               <Button
@@ -880,7 +956,7 @@ export default function JobPostingManagement() {
                           size="small"
                           sx={{
                             mb: 1.2,
-                            fontWeight: 900,
+                            fontWeight: 700,
                             color: job.is_active ? "#1E7B45" : "#6D786D",
                             backgroundColor: job.is_active
                               ? "rgba(216, 247, 222, 0.95)"
@@ -890,7 +966,7 @@ export default function JobPostingManagement() {
 
                         <Typography
                           variant="h5"
-                          fontWeight={900}
+                          fontWeight={600}
                           sx={{
                             color: GREEN_UI.text,
                             fontSize: { xs: "1.18rem", sm: "1.35rem" },
@@ -953,7 +1029,8 @@ export default function JobPostingManagement() {
                       >
                         <Work fontSize="small" sx={{ color: "#3B9C5E" }} />
                         <Box component="span">
-                          <strong>Department:</strong> {job.department || "Not specified"}
+                          <strong>Department:</strong>{" "}
+                          {job.department || "Not specified"}
                         </Box>
                       </Typography>
 
@@ -966,9 +1043,13 @@ export default function JobPostingManagement() {
                           wordBreak: "break-word",
                         }}
                       >
-                        <LocationOn fontSize="small" sx={{ color: "#3B9C5E" }} />
+                        <LocationOn
+                          fontSize="small"
+                          sx={{ color: "#3B9C5E" }}
+                        />
                         <Box component="span">
-                          <strong>Location:</strong> {job.location || "Not specified"}
+                          <strong>Location:</strong>{" "}
+                          {job.location || "Not specified"}
                         </Box>
                       </Typography>
 
@@ -981,31 +1062,40 @@ export default function JobPostingManagement() {
                           wordBreak: "break-word",
                         }}
                       >
-                        <AccessTime fontSize="small" sx={{ color: "#3B9C5E" }} />
+                        <AccessTime
+                          fontSize="small"
+                          sx={{ color: "#3B9C5E" }}
+                        />
                         <Box component="span">
-                          <strong>Type:</strong> {job.employment_type || "Not specified"}
+                          <strong>Type:</strong>{" "}
+                          {job.employment_type || "Not specified"}
                         </Box>
                       </Typography>
                     </Stack>
 
-                    <Stack direction="row" flexWrap="wrap" gap={1} sx={{ mb: 2 }}>
+                    <Stack
+                      direction="row"
+                      flexWrap="wrap"
+                      gap={1}
+                      sx={{ mb: 2 }}
+                    >
                       <Typography
                         sx={{
-                        display: "flex",
-                        alignItems: "center",
-                        gap: 1,
-                        color: "#166534",
-                        fontWeight: 850,
-                        wordBreak: "break-word",
+                          display: "flex",
+                          alignItems: "center",
+                          gap: 1,
+                          color: "#166534",
+                          fontWeight: 600,
+                          wordBreak: "break-word",
                         }}
-                        >
+                      >
                         <strong>Salary:</strong>
-                        </Typography>
+                      </Typography>
                       <Chip
                         label={formatSalary(job.salary_range)}
                         size="small"
                         sx={{
-                          fontWeight: 900,
+                          fontWeight: 700,
                           color: "#166534",
                           backgroundColor: "rgba(220, 247, 226, 0.9)",
                           border: "1px solid rgba(86, 188, 112, 0.22)",
@@ -1019,17 +1109,19 @@ export default function JobPostingManagement() {
                           variant="outlined"
                           sx={{
                             color: "#55705A",
-                            fontWeight: 800,
+                            fontWeight: 600,
                             borderColor: "rgba(135, 174, 140, 0.45)",
                           }}
                         />
                       )}
                     </Stack>
 
-                    <Divider sx={{ borderColor: "rgba(214, 233, 213, 0.85)", mb: 2 }} />
+                    <Divider
+                      sx={{ borderColor: "rgba(214, 233, 213, 0.85)", mb: 2 }}
+                    />
 
                     <Typography
-                      fontWeight={900}
+                      fontWeight={600}
                       sx={{
                         mb: 0.8,
                         color: "#1F2F23",
@@ -1108,7 +1200,11 @@ export default function JobPostingManagement() {
                               : "rgba(229, 249, 233, 0.48)",
                         }}
                       >
-                        {isBusy ? "Updating..." : job.is_active ? "Set Inactive" : "Set Active"}
+                        {isBusy
+                          ? "Updating..."
+                          : job.is_active
+                            ? "Set Inactive"
+                            : "Set Active"}
                       </Button>
                     </Stack>
                   </CardContent>
@@ -1122,7 +1218,7 @@ export default function JobPostingManagement() {
       <Dialog
         open={open}
         onClose={handleCloseDialog}
-        maxWidth="md"
+        maxWidth="lg"
         fullWidth
         fullScreen={isMobile}
         PaperProps={{
@@ -1161,7 +1257,10 @@ export default function JobPostingManagement() {
             </Box>
 
             <Box>
-              <Typography fontWeight={900} sx={{ color: "#1E2B22", fontSize: "1.2rem" }}>
+              <Typography
+                fontWeight={600}
+                sx={{ color: "#1E2B22", fontSize: "1.2rem" }}
+              >
                 {editing ? "Edit Job Posting" : "Create Job Posting"}
               </Typography>
               <Typography sx={{ color: "#7F907F", fontSize: "0.86rem" }}>
@@ -1171,129 +1270,180 @@ export default function JobPostingManagement() {
           </Stack>
         </DialogTitle>
 
-        <DialogContent dividers sx={{ px: { xs: 2.5, sm: 3.2 }, py: { xs: 2.5, sm: 3 } }}>
-          <Box sx={dialogGridSx}>
-            <TextField
-              fullWidth
-              required
-              select
-              label="Job Title"
-              value={form.title}
-              error={hasFieldError("title")}
-              helperText={hasFieldError("title") ? "Job title is required." : " "}
-              onChange={(e) => updateFormField("title", e.target.value)}
-              InputLabelProps={{ shrink: true }}
-              sx={textFieldSx}
-            >
-              <MenuItem value="">Select Job Title...</MenuItem>
-              {JOB_TITLES.map((title) => (
-                <MenuItem key={title} value={title}>
-                  {title}
-                </MenuItem>
-              ))}
-            </TextField>
+        <DialogContent
+          dividers
+          sx={{ px: { xs: 2.5, sm: 3.2 }, py: { xs: 2.5, sm: 3 } }}
+        >
+          <Stack spacing={2.2}>
+            <Box sx={dialogSectionSx}>
+              <Typography sx={dialogSectionTitleSx}>
+                I. Job Information
+              </Typography>
+              <Box sx={dialogGridSx}>
+                <TextField
+                  fullWidth
+                  required
+                  select
+                  label="Job Title"
+                  value={form.title}
+                  error={hasFieldError("title")}
+                  helperText={
+                    hasFieldError("title") ? "Job title is required." : " "
+                  }
+                  onChange={(e) => updateFormField("title", e.target.value)}
+                  InputLabelProps={{ shrink: true }}
+                  sx={textFieldSx}
+                >
+                  <MenuItem value="" sx={{ fontWeight: 400 }}>
+                    Select Job Title...
+                  </MenuItem>
+                  {JOB_TITLES.map((title) => (
+                    <MenuItem
+                      key={title}
+                      value={title}
+                      sx={{ fontWeight: 400 }}
+                    >
+                      {title}
+                    </MenuItem>
+                  ))}
+                </TextField>
 
-            <TextField
-              fullWidth
-              required
-              select
-              label="Department"
-              value={form.department}
-              error={hasFieldError("department")}
-              helperText={hasFieldError("department") ? "Department is required." : " "}
-              onChange={(e) => updateFormField("department", e.target.value)}
-              InputLabelProps={{ shrink: true }}
-              sx={textFieldSx}
-            >
-              <MenuItem value="">Select Department...</MenuItem>
-              {DEPARTMENTS.map((dept) => (
-                <MenuItem key={dept} value={dept}>
-                  {dept}
-                </MenuItem>
-              ))}
-            </TextField>
+                <TextField
+                  fullWidth
+                  required
+                  select
+                  label="Department"
+                  value={form.department}
+                  error={hasFieldError("department")}
+                  helperText={
+                    hasFieldError("department")
+                      ? "Department is required."
+                      : " "
+                  }
+                  onChange={(e) =>
+                    updateFormField("department", e.target.value)
+                  }
+                  InputLabelProps={{ shrink: true }}
+                  sx={textFieldSx}
+                >
+                  <MenuItem value="" sx={{ fontWeight: 400 }}>
+                    Select Department...
+                  </MenuItem>
+                  {DEPARTMENTS.map((dept) => (
+                    <MenuItem key={dept} value={dept} sx={{ fontWeight: 400 }}>
+                      {dept}
+                    </MenuItem>
+                  ))}
+                </TextField>
 
-            <TextField
-              fullWidth
-              required
-              label="Location"
-              value={form.location}
-              error={hasFieldError("location")}
-              helperText={hasFieldError("location") ? "Location is required." : " "}
-              onChange={(e) => updateFormField("location", e.target.value)}
-              sx={textFieldSx}
-            />
+                <TextField
+                  fullWidth
+                  required
+                  label="Location"
+                  value={form.location}
+                  error={hasFieldError("location")}
+                  helperText={
+                    hasFieldError("location") ? "Location is required." : " "
+                  }
+                  onChange={(e) => updateFormField("location", e.target.value)}
+                  sx={textFieldSx}
+                />
 
-            <TextField
-              fullWidth
-              required
-              select
-              label="Employment Type"
-              value={form.employment_type}
-              error={hasFieldError("employment_type")}
-              helperText={
-                hasFieldError("employment_type") ? "Employment type is required." : " "
-              }
-              onChange={(e) => updateFormField("employment_type", e.target.value)}
-              InputLabelProps={{ shrink: true }}
-              sx={textFieldSx}
-            >
-              <MenuItem value="">Select Employment Type...</MenuItem>
-              {EMPLOYMENT_TYPES.map((type) => (
-                <MenuItem key={type} value={type}>
-                  {type}
-                </MenuItem>
-              ))}
-            </TextField>
+                <TextField
+                  fullWidth
+                  required
+                  select
+                  label="Employment Type"
+                  value={form.employment_type}
+                  error={hasFieldError("employment_type")}
+                  helperText={
+                    hasFieldError("employment_type")
+                      ? "Employment type is required."
+                      : " "
+                  }
+                  onChange={(e) =>
+                    updateFormField("employment_type", e.target.value)
+                  }
+                  InputLabelProps={{ shrink: true }}
+                  sx={textFieldSx}
+                >
+                  <MenuItem value="" sx={{ fontWeight: 400 }}>
+                    Select Employment Type...
+                  </MenuItem>
+                  {EMPLOYMENT_TYPES.map((type) => (
+                    <MenuItem key={type} value={type} sx={{ fontWeight: 400 }}>
+                      {type}
+                    </MenuItem>
+                  ))}
+                </TextField>
 
-            <TextField
-              fullWidth
-              required
-              label="Salary Range / Daily Rate"
-              value={form.salary_range}
-              error={hasFieldError("salary_range")}
-              helperText={
-                hasFieldError("salary_range")
-                  ? "Salary rate is required for payroll computation."
-                  : "Example: 510 for Service Crew daily rate. Payroll uses this to compute hourly pay, OT, late, and undertime deductions."
-              }
-              onChange={(e) => updateFormField("salary_range", e.target.value)}
-              sx={textFieldSx}
-            />
+                <TextField
+                  fullWidth
+                  required
+                  label="Salary Range / Daily Rate"
+                  value={form.salary_range}
+                  error={hasFieldError("salary_range")}
+                  helperText={
+                    hasFieldError("salary_range")
+                      ? "Salary rate is required for payroll computation."
+                      : "Example: 510 for Service Crew daily rate. Payroll uses this to compute hourly pay, OT, late, and undertime deductions."
+                  }
+                  onChange={(e) =>
+                    updateFormField("salary_range", e.target.value)
+                  }
+                  sx={{ ...textFieldSx, ...fullRowSx }}
+                />
+              </Box>
+            </Box>
 
-            <TextField
-              fullWidth
-              required
-              multiline
-              minRows={3}
-              label="Description"
-              value={form.description}
-              error={hasFieldError("description")}
-              helperText={hasFieldError("description") ? "Description is required." : " "}
-              onChange={(e) => updateFormField("description", e.target.value)}
-              sx={{ ...textFieldSx, ...fullRowSx }}
-            />
+            <Box sx={dialogSectionSx}>
+              <Typography sx={dialogSectionTitleSx}>II. Job Details</Typography>
+              <Box sx={dialogGridSx}>
+                <TextField
+                  fullWidth
+                  required
+                  multiline
+                  minRows={3}
+                  label="Description"
+                  value={form.description}
+                  error={hasFieldError("description")}
+                  helperText={
+                    hasFieldError("description")
+                      ? "Description is required."
+                      : " "
+                  }
+                  onChange={(e) =>
+                    updateFormField("description", e.target.value)
+                  }
+                  sx={{ ...textFieldSx, ...fullRowSx }}
+                />
 
-            <TextField
-              fullWidth
-              multiline
-              minRows={3}
-              label="Qualifications"
-              value={form.qualifications}
-              onChange={(e) => updateFormField("qualifications", e.target.value)}
-              sx={textFieldSx}
-            />
+                <TextField
+                  fullWidth
+                  multiline
+                  minRows={3}
+                  label="Qualifications"
+                  value={form.qualifications}
+                  onChange={(e) =>
+                    updateFormField("qualifications", e.target.value)
+                  }
+                  sx={textFieldSx}
+                />
 
-            <TextField
-              fullWidth
-              multiline
-              minRows={3}
-              label="Responsibilities"
-              value={form.responsibilities}
-              onChange={(e) => updateFormField("responsibilities", e.target.value)}
-              sx={textFieldSx}
-            />
-          </Box>
+                <TextField
+                  fullWidth
+                  multiline
+                  minRows={3}
+                  label="Responsibilities"
+                  value={form.responsibilities}
+                  onChange={(e) =>
+                    updateFormField("responsibilities", e.target.value)
+                  }
+                  sx={textFieldSx}
+                />
+              </Box>
+            </Box>
+          </Stack>
         </DialogContent>
 
         <DialogActions
@@ -1323,7 +1473,9 @@ export default function JobPostingManagement() {
             variant="contained"
             onClick={handleSave}
             disabled={saving || (submitted && missingFields.length > 0)}
-            startIcon={saving ? <CircularProgress color="inherit" size={16} /> : null}
+            startIcon={
+              saving ? <CircularProgress color="inherit" size={16} /> : null
+            }
             sx={{
               ...greenButtonSx,
               minWidth: 116,

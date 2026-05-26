@@ -640,7 +640,7 @@ export default function HRDashboard() {
                 color: GREEN_UI.greenDark,
                 border: `1px solid ${GREEN_UI.borderStrong}`,
                 fontSize: "0.78rem",
-                fontWeight: 800,
+                fontWeight: 600,
                 letterSpacing: "0.02em",
               }}
             >
@@ -657,7 +657,7 @@ export default function HRDashboard() {
 
             <Typography
               variant="h4"
-              fontWeight={900}
+              fontWeight={700}
               sx={{
                 color: GREEN_UI.text,
                 lineHeight: 1.08,
@@ -692,7 +692,7 @@ export default function HRDashboard() {
             <Typography
               sx={{
                 fontSize: "0.78rem",
-                fontWeight: 800,
+                fontWeight: 600,
                 color: GREEN_UI.muted,
                 mb: 1,
               }}
@@ -722,7 +722,7 @@ export default function HRDashboard() {
                 <Typography
                   sx={{
                     color: GREEN_UI.text,
-                    fontWeight: 900,
+                    fontWeight: 700,
                     fontSize: "0.95rem",
                   }}
                 >
@@ -819,7 +819,7 @@ export default function HRDashboard() {
                       sx={{
                         color: GREEN_UI.muted,
                         fontSize: "0.78rem",
-                        fontWeight: 800,
+                        fontWeight: 600,
                         textTransform: "uppercase",
                         letterSpacing: "0.06em",
                         mb: 1.1,
@@ -828,7 +828,7 @@ export default function HRDashboard() {
                       {stat.title}
                     </Typography>
                     <Typography
-                      fontWeight={900}
+                      fontWeight={700}
                       sx={{
                         color: GREEN_UI.text,
                         fontSize: {
@@ -902,7 +902,7 @@ export default function HRDashboard() {
                     sx={{
                       color: GREEN_UI.text,
                       fontSize: "1.05rem",
-                      fontWeight: 900,
+                      fontWeight: 700,
                     }}
                   >
                     Today’s Snapshot
@@ -939,7 +939,7 @@ export default function HRDashboard() {
                         sx={{
                           color: "#506352",
                           fontSize: "0.82rem",
-                          fontWeight: 800,
+                          fontWeight: 600,
                         }}
                       >
                         {item.label}
@@ -948,7 +948,7 @@ export default function HRDashboard() {
                         sx={{
                           color: GREEN_UI.text,
                           fontSize: "0.85rem",
-                          fontWeight: 900,
+                          fontWeight: 700,
                         }}
                       >
                         {item.value}
@@ -1017,7 +1017,7 @@ export default function HRDashboard() {
                   sx={{
                     color: GREEN_UI.text,
                     fontSize: "1.05rem",
-                    fontWeight: 900,
+                    fontWeight: 700,
                   }}
                 >
                   Performance Highlight
@@ -1040,7 +1040,7 @@ export default function HRDashboard() {
                     border: "1px solid rgba(143, 183, 141, 0.18)",
                   }}
                 >
-                  <Typography noWrap sx={{ color: GREEN_UI.text, fontWeight: 900 }}>
+                  <Typography noWrap sx={{ color: GREEN_UI.text, fontWeight: 700 }}>
                     {loading ? "Loading…" : (stats.topEvaluee ?? "No data yet")}
                   </Typography>
                   <Typography
