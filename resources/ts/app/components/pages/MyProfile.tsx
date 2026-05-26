@@ -11,7 +11,7 @@ import {
   DeleteOutline as DeleteIcon, FileDownload,
 } from '@mui/icons-material';
 import { useAuth } from '../../context/AuthContext';
-import { API, HEADERS } from '../../lib/api';
+import { supabase } from '../../lib/supabaseClient';
 
 interface Employee {
   id: string; name: string; position: string; department?: string;
@@ -142,24 +142,61 @@ export default function MyProfile() {
     if (!user) return;
     (async () => {
       try {
-        const [empRes, appRes] = await Promise.all([
-          fetch(`${API}/employees`, { headers: HEADERS }),
-          fetch(`${API}/applications`, { headers: HEADERS }),
-        ]);
-        const [empData, appData] = await Promise.all([empRes.json(), appRes.json()]);
-        const employees: Employee[] = empData.employees ?? [];
-        const found = employees.find(
-          e => (user.employeeId && e.id === user.employeeId) ||
-               e.name === user.name ||
-               e.email?.toLowerCase() === user.email?.toLowerCase()
-        );
-        setEmployee(found ?? null);
+        let found: Employee | null = null;
+
+        if (user.employeeId) {
+          const { data: row } = await supabase
+            .from('employees')
+            .select('*')
+            .eq('employee_id', user.employeeId)
+            .maybeSingle();
+
+          if (row) {
+            const fullName = [row.first_name, row.middle_name, row.last_name, row.suffix]
+              .filter(Boolean)
+              .join(' ')
+              .trim();
+            found = {
+              id: row.employee_id,
+              name: fullName || user.name,
+              position: row.position ?? '',
+              department: row.department ?? '',
+              outlet: row.outlet ?? '',
+              status: row.status ?? 'Active',
+              contact: row.phone_number ?? '',
+              email: row.email ?? user.email,
+              address: row.address ?? '',
+              dateHired: row.hire_date ?? '',
+              emergencyContact: row.emergency_contact ?? '',
+            };
+          }
+        }
+
+        setEmployee(found);
         setEditForm(found ?? {});
-        const applications: Application[] = appData.applications ?? [];
-        const foundApp = applications.find(
-          a => a.email?.toLowerCase() === user.email?.toLowerCase() || a.name === user.name
+
+        const { data: applicant } = await supabase
+          .from('applicants')
+          .select('applicant_id, name, position_applied, created_at, status, email, education, experience')
+          .eq('email', user.email)
+          .order('created_at', { ascending: false })
+          .limit(1)
+          .maybeSingle();
+
+        setApplication(
+          applicant
+            ? {
+                id: applicant.applicant_id,
+                name: applicant.name ?? user.name,
+                position: applicant.position_applied ?? '',
+                dateApplied: applicant.created_at ?? '',
+                status: applicant.status ?? '',
+                email: applicant.email ?? undefined,
+                education: applicant.education ?? undefined,
+                experience: applicant.experience ?? undefined,
+              }
+            : null
         );
-        setApplication(foundApp ?? null);
       } catch (e) {
         console.error('MyProfile load error:', e);
       } finally {
@@ -181,15 +218,21 @@ export default function MyProfile() {
   };
 
   const handleSave = async () => {
-    if (!employee) return;
+    if (!employee || !user?.employeeId) return;
     setSaving(true);
     try {
-      const res = await fetch(`${API}/employees/${employee.id}`, {
-        method: 'PUT',
-        headers: HEADERS,
-        body: JSON.stringify(editForm),
-      });
-      if (!res.ok) throw new Error('Update failed');
+      const { error } = await supabase
+        .from('employees')
+        .update({
+          phone_number: editForm.contact ?? null,
+          email: editForm.email ?? null,
+          address: editForm.address ?? null,
+          emergency_contact: editForm.emergencyContact ?? null,
+        })
+        .eq('employee_id', user.employeeId);
+
+      if (error) throw error;
+
       const updated = { ...employee, ...editForm } as Employee;
       setEmployee(updated);
       setEditing(false);

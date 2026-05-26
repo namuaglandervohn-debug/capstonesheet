@@ -6,11 +6,11 @@ import {
   Chip, Snackbar,
 } from '@mui/material';
 import { ArrowBackIosNew, Send, TaskAlt, ContentCopy } from '@mui/icons-material';
-import { API, HEADERS } from '../../lib/api';
 import { POSITIONS } from '../../lib/constants';
 import FileUploadField from '../FileUploadField';
 import { copyToClipboard } from '../../lib/copyToClipboard';
-import { saveApplicationFiles } from '../../lib/localDb';
+import { saveApplicationFiles } from '../../lib/applicationFiles';
+import { supabase } from '../../lib/supabaseClient';
 
 /** Convert a File to a base64 data URI */
 function fileToBase64(file: File): Promise<string> {
@@ -56,39 +56,42 @@ export default function ApplicationForm() {
         }))
       );
 
-      const res = await fetch(`${API}/applications`, {
-        method: 'POST',
-        headers: HEADERS,
-        body: JSON.stringify({
-          name: `${formData.firstName} ${formData.lastName}`.trim(),
-          firstName: formData.firstName,
-          lastName: formData.lastName,
-          position: formData.position,
-          email: formData.email,
-          phone: formData.phone,
-          experience: formData.experience,
-          education: formData.education,
-          coverLetter: formData.coverLetter,
-          resumeFileName,
-          resumeFileData,
-          supportingDocuments: supportingFiles.map(f => f.name),
-          supportingDocumentFiles,
-        }),
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error ?? 'Submission failed');
+      const { count, error: countError } = await supabase
+        .from('applicants')
+        .select('*', { count: 'exact', head: true });
+      if (countError) throw countError;
 
-      // ── Always persist file data directly in the client-side store.
-      // This guarantees files appear in the HR view regardless of whether
-      // the server saved them (large base64 payloads can exceed KV limits).
-      saveApplicationFiles(data.application.id, {
+      const applicantId = `APP-2026-${String((count ?? 0) + 1).padStart(4, '0')}`;
+      const fullName = `${formData.firstName} ${formData.lastName}`.trim();
+
+      const { error: insertError } = await supabase.from('applicants').insert({
+        applicant_id: applicantId,
+        name: fullName,
+        first_name: formData.firstName.trim(),
+        last_name: formData.lastName.trim(),
+        suffix: '',
+        email: formData.email.trim().toLowerCase(),
+        phone_number: formData.phone,
+        position_applied: formData.position,
+        experience: formData.experience,
+        education: formData.education,
+        cover_letter: formData.coverLetter,
+        resume_file_name: resumeFileName,
+        resume_file_data: resumeFileData,
+        supporting_documents: supportingFiles.map((f) => f.name),
+        supporting_document_files: supportingDocumentFiles,
+        status: 'Submitted',
+      });
+      if (insertError) throw insertError;
+
+      saveApplicationFiles(applicantId, {
         resumeFileName,
         resumeFileData,
-        supportingDocuments: supportingFiles.map(f => f.name),
+        supportingDocuments: supportingFiles.map((f) => f.name),
         supportingDocumentFiles,
       });
 
-      setNewAppId(data.application.id);
+      setNewAppId(applicantId);
       setSuccessDialog(true);
     } catch (e: any) {
       setError(e.message);

@@ -46,7 +46,7 @@ import {
 
 import AuthBackground from '../AuthBackground';
 import { copyToClipboard } from '../../lib/copyToClipboard';
-import { saveApplicationFiles } from '../../lib/localDb';
+import { saveApplicationFiles } from '../../lib/applicationFiles';
 import { supabase } from '../../lib/supabaseClient';
 
 const CIVIL_STATUS = ['Single', 'Married', 'Widowed', 'Separated'];

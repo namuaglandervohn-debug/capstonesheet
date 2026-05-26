@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   Box,
   Typography,
@@ -25,18 +25,83 @@ import {
 import { supabase } from "../../lib/supabaseClient";
 import { useAuth } from "../../context/AuthContext";
 
-interface DTRRecord {
-  id?: string;
-  attendance_id?: string;
+interface AttendanceLogRow {
+  log_id: string;
   employee_id: string;
   attendance_date: string;
-  am_arrival?: string;
-  am_departure?: string;
-  pm_arrival?: string;
-  pm_departure?: string;
-  overtime_arrival?: string;
-  overtime_departure?: string;
-  total_hours?: number | string;
+  time_in?: string | null;
+  time_out?: string | null;
+  raw_time_in?: string | null;
+  raw_time_out?: string | null;
+  total_hours?: number | string | null;
+  overtime_minutes?: number | null;
+  is_overtime?: boolean | null;
+}
+
+interface DTRRecord {
+  id: string;
+  employee_id: string;
+  attendance_date: string;
+  am_arrival: string;
+  am_departure: string;
+  pm_arrival: string;
+  pm_departure: string;
+  overtime_arrival: string;
+  overtime_departure: string;
+  total_hours: string;
+}
+
+function parseClockToMinutes(value: string): number | null {
+  const trimmed = value.trim();
+  if (!trimmed) return null;
+
+  const match12 = trimmed.match(/^(\d{1,2}):(\d{2})(?::\d{2})?\s*(AM|PM)$/i);
+  if (match12) {
+    let hours = Number(match12[1]) % 12;
+    const minutes = Number(match12[2]);
+    if (match12[3].toUpperCase() === "PM") hours += 12;
+    return hours * 60 + minutes;
+  }
+
+  const match24 = trimmed.match(/^(\d{1,2}):(\d{2})(?::\d{2})?$/);
+  if (match24) return Number(match24[1]) * 60 + Number(match24[2]);
+
+  return null;
+}
+
+function formatMinutesAsTime(totalMinutes: number) {
+  const hours24 = Math.floor(totalMinutes / 60) % 24;
+  const minutes = totalMinutes % 60;
+  const period = hours24 >= 12 ? "PM" : "AM";
+  const hours12 = hours24 % 12 || 12;
+  return `${hours12}:${String(minutes).padStart(2, "0")} ${period}`;
+}
+
+function formatDbTime(value: unknown) {
+  if (!value) return "";
+  const text = String(value).slice(0, 8);
+  const minutes = parseClockToMinutes(text);
+  return minutes === null ? String(value) : formatMinutesAsTime(minutes);
+}
+
+function mapAttendanceLogToDTR(row: AttendanceLogRow): DTRRecord {
+  const timeIn = String(row.raw_time_in ?? "").trim() || formatDbTime(row.time_in);
+  const timeOut = String(row.raw_time_out ?? "").trim() || formatDbTime(row.time_out);
+  const overtimeMinutes = Number(row.overtime_minutes ?? 0);
+
+  return {
+    id: row.log_id,
+    employee_id: row.employee_id,
+    attendance_date: row.attendance_date,
+    am_arrival: timeIn,
+    am_departure: "",
+    pm_arrival: "",
+    pm_departure: timeOut,
+    overtime_arrival: overtimeMinutes > 0 || row.is_overtime ? timeOut : "",
+    overtime_departure:
+      overtimeMinutes > 0 ? `${overtimeMinutes} min` : row.is_overtime ? "Yes" : "",
+    total_hours: String(row.total_hours ?? ""),
+  };
 }
 
 const GREEN_UI = {
@@ -137,10 +202,20 @@ export default function EmployeeDTR() {
   const now = new Date();
   const monthName = now.toLocaleString("default", { month: "long" });
   const year = now.getFullYear();
-  const daysInMonth = new Date(year, now.getMonth() + 1, 0).getDate();
+  const month = now.getMonth();
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  const periodStart = useMemo(
+    () => `${year}-${String(month + 1).padStart(2, "0")}-01`,
+    [year, month]
+  );
+  const periodEnd = useMemo(
+    () => `${year}-${String(month + 1).padStart(2, "0")}-${String(daysInMonth).padStart(2, "0")}`,
+    [year, month, daysInMonth]
+  );
 
-  const fetchDTR = async () => {
+  const fetchDTR = useCallback(async () => {
     if (!user?.employeeId) {
+      setRecords([]);
       setLoading(false);
       return;
     }
@@ -148,23 +223,28 @@ export default function EmployeeDTR() {
     setLoading(true);
 
     const { data, error } = await supabase
-      .from("attendance")
-      .select("*")
+      .from("attendance_logs")
+      .select(
+        "log_id, employee_id, attendance_date, time_in, time_out, raw_time_in, raw_time_out, total_hours, overtime_minutes, is_overtime"
+      )
       .eq("employee_id", user.employeeId)
+      .gte("attendance_date", periodStart)
+      .lte("attendance_date", periodEnd)
       .order("attendance_date", { ascending: true });
 
     if (error) {
       console.error("DTR fetch error:", error);
+      setRecords([]);
     } else {
-      setRecords(data ?? []);
+      setRecords((data ?? []).map((row) => mapAttendanceLogToDTR(row as AttendanceLogRow)));
     }
 
     setLoading(false);
-  };
+  }, [periodEnd, periodStart, user?.employeeId]);
 
   useEffect(() => {
     fetchDTR();
-  }, [user]);
+  }, [fetchDTR]);
 
   const recordMap = useMemo(() => {
     const map = new Map<number, DTRRecord>();

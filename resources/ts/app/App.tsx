@@ -2,8 +2,6 @@ import { RouterProvider } from 'react-router';
 import { router } from './routes';
 import { AuthProvider } from './context/AuthContext';
 import { ThemeProvider, createTheme, CssBaseline } from '@mui/material';
-import { localDbFetch } from './lib/localDb';
-import { projectId, publicAnonKey } from "../utils/supabase/info";
 // ── Suppress Figma Make preview-environment prop warnings ─────────────────────
 // FGCmp (Figma's inspector wrapper) injects data-fg-* / data-fgid-* props onto
 // every component — MUI rejects them. We scan ALL console.error arguments
@@ -22,85 +20,6 @@ import { projectId, publicAnonKey } from "../utils/supabase/info";
   console.error = (...args: unknown[]) => { if (!shouldSuppress(...args)) _err(...args); };
   const _warn = console.warn.bind(console);
   console.warn  = (...args: unknown[]) => { if (!shouldSuppress(...args)) _warn(...args); };
-})();
-// ─────────────────────────────────────────────────────────────────────────────
-
-// ── Smart Supabase ↔ localStorage Interceptor ─────────────────────────────────
-// On startup, probes the Supabase edge function with a /health check (3 s timeout).
-// • If reachable  → all HRIS API calls go to Supabase KV (real persistence).
-// • If unreachable → falls back to localStorage (zero network noise, fully offline).
-// Any runtime 403 / 503 also triggers an immediate switch to localStorage.
-// The current mode is exposed as window.__hrisDbMode and broadcast via the
-// custom event "hris-db-mode" so React components can display the status.
-(function installFetchInterceptor() {
-  if ((window as any).__hrisFetchPatched) return;
-  (window as any).__hrisFetchPatched = true;
-  const _orig = window.fetch.bind(window);
-
-  const HEALTH = `https://${projectId}.supabase.co/functions/v1/make-server-24f1182d/health`;
-  const HDRS   = { 'Content-Type': 'application/json', Authorization: `Bearer ${publicAnonKey}` };
-
-  type DbMode = 'supabase' | 'local' | 'checking';
-  let mode: DbMode = 'checking';
-  let modeResolve!: (m: 'supabase' | 'local') => void;
-  const modePromise = new Promise<'supabase' | 'local'>(r => { modeResolve = r; });
-
-  function setMode(m: 'supabase' | 'local') {
-    if (mode === m) return;
-    mode = m;
-    (window as any).__hrisDbMode = m;
-    window.dispatchEvent(new CustomEvent('hris-db-mode', { detail: m }));
-    modeResolve(m);
-  }
-
-  // Health check — non-blocking; runs in background immediately
-  ;(async () => {
-    try {
-      const ctrl = new AbortController();
-      const tid  = setTimeout(() => ctrl.abort(), 3500);
-      const res  = await _orig(HEALTH, { headers: HDRS, signal: ctrl.signal });
-      clearTimeout(tid);
-      if (res.ok) {
-        console.log('%c✅ HRIS: Supabase KV connected', 'color:#1F7A47;font-weight:700');
-        setMode('supabase');
-        return;
-      }
-      console.warn(`HRIS: Supabase /health → HTTP ${res.status}. Using localStorage fallback.`);
-    } catch {
-      console.warn('HRIS: Supabase unreachable (timeout/network). Using localStorage fallback.');
-    }
-    setMode('local');
-  })();
-
-  window.fetch = async (input: RequestInfo | URL, init?: RequestInit): Promise<Response> => {
-    const url = typeof input === 'string' ? input
-      : input instanceof URL ? input.href
-      : (input as Request).url;
-
-    // Pass non-HRIS requests straight through (auth, images, etc.)
-    if (!url.includes('make-server-24f1182d')) return _orig(input, init);
-
-    // Wait for mode if the health check is still running
-    const m = mode !== 'checking' ? mode : await modePromise;
-
-    if (m === 'local') return localDbFetch(url, init);
-
-    // ── Supabase path ──────────────────────────────────────────────────────
-    try {
-      const res = await _orig(input, init);
-      // 403 = function deployed but auth blocked; 503 = function down
-      if (res.status === 403 || res.status === 503) {
-        console.warn(`HRIS: Supabase returned ${res.status} on ${url} → switching to localStorage`);
-        setMode('local');
-        return localDbFetch(url, init);
-      }
-      return res;
-    } catch (err) {
-      console.warn('HRIS: Supabase request failed → localStorage fallback:', err);
-      setMode('local');
-      return localDbFetch(url, init);
-    }
-  };
 })();
 // ─────────────────────────────────────────────────────────────────────────────
 

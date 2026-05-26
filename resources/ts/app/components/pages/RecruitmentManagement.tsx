@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { supabase } from '../../lib/supabaseClient';
-import { loadApplicationFiles } from '../../lib/localDb';
+import { loadApplicationFiles } from '../../lib/applicationFiles';
 import {
   Sync,
   CalendarMonth,

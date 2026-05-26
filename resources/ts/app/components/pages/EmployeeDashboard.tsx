@@ -25,7 +25,7 @@ import {
   FactCheckRounded,
 } from '@mui/icons-material';
 import { useAuth } from '../../context/AuthContext';
-import { API, HEADERS } from '../../lib/api';
+import { supabase } from '../../lib/supabaseClient';
 
 const GREEN_UI = {
   pageBg: 'radial-gradient(circle at top left, rgba(220, 246, 219, 0.95), rgba(248, 252, 245, 0.98) 34%, #f7fbf3 100%)',
@@ -119,22 +119,72 @@ export default function EmployeeDashboard() {
 
   useEffect(() => {
     (async () => {
+      if (!user?.employeeId) {
+        setMySchedule(null);
+        setMyRequests([]);
+        setMyPayslips([]);
+        setMyAttendance([]);
+        setLoading(false);
+        return;
+      }
+
       try {
-        const [schedRes, reqRes, attRes, payRes] = await Promise.all([
-          fetch(`${API}/schedules`, { headers: HEADERS }),
-          fetch(`${API}/requests`, { headers: HEADERS }),
-          fetch(`${API}/attendance`, { headers: HEADERS }),
-          fetch(`${API}/payroll`, { headers: HEADERS }),
+        const employeeId = user.employeeId;
+        const [scheduleRes, requestsRes, payrollRes, logsRes] = await Promise.all([
+          supabase
+            .from('schedule')
+            .select('*')
+            .eq('employee_id', employeeId)
+            .order('week', { ascending: false })
+            .limit(1)
+            .maybeSingle(),
+          supabase
+            .from('employee_requests')
+            .select('request_id, request_type, start_date, reason, status')
+            .eq('employee_id', employeeId)
+            .order('created_at', { ascending: false })
+            .limit(10),
+          supabase
+            .from('payroll_items')
+            .select('payroll_item_id, net_pay, payroll_id, created_at')
+            .eq('employee_id', employeeId)
+            .order('created_at', { ascending: false })
+            .limit(5),
+          supabase
+            .from('attendance_logs')
+            .select('log_id, attendance_date, raw_time_in, raw_time_out, time_in, time_out, total_hours, is_absent, is_late')
+            .eq('employee_id', employeeId)
+            .order('attendance_date', { ascending: false })
+            .limit(7),
         ]);
-        const [sched, req, att, pay] = await Promise.all([
-          schedRes.json(), reqRes.json(), attRes.json(), payRes.json(),
-        ]);
-        const name = user?.name ?? '';
-        const allSchedules = (sched.schedules ?? []).filter((s: any) => s?.employee === name);
-        setMySchedule(allSchedules[allSchedules.length - 1] ?? null);
-        setMyRequests((req.requests ?? []).filter((r: any) => r?.employee === name));
-        setMyAttendance((att.attendance ?? []).filter((a: any) => a?.employee === name).slice(-7));
-        setMyPayslips((pay.payrolls ?? []).filter((p: any) => p?.employee === name));
+
+        setMySchedule(scheduleRes.data ?? null);
+        setMyRequests(
+          (requestsRes.data ?? []).map((row) => ({
+            id: row.request_id,
+            type: row.request_type,
+            date: row.start_date,
+            reason: row.reason,
+            status: row.status,
+          }))
+        );
+        setMyPayslips(
+          (payrollRes.data ?? []).map((row) => ({
+            id: row.payroll_item_id,
+            netPay: row.net_pay,
+            period: row.payroll_id,
+          }))
+        );
+        setMyAttendance(
+          (logsRes.data ?? []).map((row) => ({
+            id: row.log_id,
+            date: row.attendance_date,
+            timeIn: row.raw_time_in || row.time_in || '—',
+            timeOut: row.raw_time_out || row.time_out || '—',
+            totalHours: row.total_hours ?? '—',
+            status: row.is_absent ? 'Absent' : row.is_late ? 'Late' : 'Present',
+          }))
+        );
       } catch (e) {
         console.error('Employee dashboard error:', e);
       } finally {
@@ -152,7 +202,7 @@ export default function EmployeeDashboard() {
       title: 'Attendance Today',
       value: loading ? '…' : (todayAtt ? todayAtt.status : 'No entry'),
       icon: <Fingerprint />,
-      helper: todayAtt ? `${todayAtt.timeIn || '—'} – ${todayAtt.timeOut || '—'}` : 'Record will appear after time-in',
+      helper: todayAtt ? `${todayAtt.timeIn || '—'} – ${todayAtt.timeOut || '—'}` : 'View your DTR for official records',
       color: '#2F8F8B',
       bg: '#e8f7f5',
     },
@@ -382,7 +432,7 @@ export default function EmployeeDashboard() {
                   size="small"
                   variant="outlined"
                   endIcon={<ArrowForwardRounded />}
-                  onClick={() => navigate('/dashboard/time')}
+                  onClick={() => navigate('/dashboard/dtr')}
                   sx={{ ...pillButtonSx, borderColor: GREEN_UI.borderStrong, color: GREEN_UI.greenDark }}
                 >
                   View All
@@ -525,7 +575,7 @@ export default function EmployeeDashboard() {
             No recent employee activity yet
           </Typography>
           <Typography variant="body2" sx={{ color: GREEN_UI.muted, mt: 0.5 }}>
-            Attendance entries and requests will appear here once records are available.
+            DTR entries and requests will appear here once records are available.
           </Typography>
         </Paper>
       )}
