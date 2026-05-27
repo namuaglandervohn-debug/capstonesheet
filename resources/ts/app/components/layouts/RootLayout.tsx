@@ -147,26 +147,6 @@ export default function RootLayout() {
         overflow: 'hidden',
         color: NAV_UI.sidebarText,
         background: NAV_UI.sidebarBg,
-        '&:before': {
-          content: '""',
-          position: 'absolute',
-          width: 220,
-          height: 220,
-          borderRadius: '50%',
-          top: -96,
-          left: -94,
-          background: 'rgba(255,255,255,0.10)',
-        },
-        '&:after': {
-          content: '""',
-          position: 'absolute',
-          width: 190,
-          height: 190,
-          borderRadius: '50%',
-          right: -95,
-          bottom: 108,
-          background: 'rgba(244,189,79,0.10)',
-        },
         '& > *': { position: 'relative', zIndex: 1 },
       }}
     >
