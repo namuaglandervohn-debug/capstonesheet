@@ -1644,7 +1644,7 @@ export default function PerformanceEvaluation() {
           </Box>
         </DialogTitle>
         <DialogContent sx={{ px: { xs: 2, sm: 3 }, py: 2.5, bgcolor: "#fbfff9" }}>
-          <Grid container spacing={2} sx={{ mt: 0.5 }}>
+          <Grid container spacing={2} sx={{ mt: 2.25 }}>
             <Grid size={{ xs: 12, md: 6 }}>
               <TextField
                 fullWidth

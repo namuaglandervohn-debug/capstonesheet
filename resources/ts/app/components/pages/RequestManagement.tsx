@@ -1391,7 +1391,7 @@ export default function RequestManagement() {
           </Box>
         </DialogTitle>
         <DialogContent sx={{ p: { xs: 2, sm: 3 }, bgcolor: '#fbfff9' }}>
-          <Grid container spacing={2} sx={{ mt: 0.25 }}>
+          <Grid container spacing={2} sx={{ mt: 2.25 }}>
             <Grid size={12}>
               <TextField
                 fullWidth

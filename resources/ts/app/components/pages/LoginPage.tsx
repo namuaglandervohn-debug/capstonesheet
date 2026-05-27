@@ -116,7 +116,6 @@ export default function LoginPage() {
     "& .MuiInputBase-input": {
       color: "#11221A",
       fontSize: "0.94rem",
-      fontWeight: 700,
     },
     "& .MuiFormHelperText-root": {
       color: "#7C8D80",
@@ -324,7 +323,6 @@ export default function LoginPage() {
                         boxShadow: "0 18px 40px rgba(17, 48, 34, 0.18)",
                         "& .MuiMenuItem-root": {
                           fontSize: "0.9rem",
-                          fontWeight: 700,
                           borderRadius: "12px",
                           mx: 1,
                           my: 0.4,
