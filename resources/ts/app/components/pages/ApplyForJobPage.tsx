@@ -42,7 +42,8 @@ import {
   CheckCircleOutlineRounded,
   LocationOnOutlined,
   ArticleOutlined,
-  FavoriteBorderRounded,
+  WorkOutlined,
+  LocalPhoneRounded,
 } from '@mui/icons-material';
 
 import AuthBackground from '../AuthBackground';
@@ -65,7 +66,7 @@ const EDUCATIONAL_ATTAINMENT = [
 const HEAR_ABOUT_OPTIONS = ['Facebook', 'Referral', 'Walk-in', 'Job Posting', 'Other'];
 
 const COUNTRIES = [
-  'Philippines', 'Afghanistan', 'Albania', 'Algeria', 'Andorra', 'Angola', 'Argentina', 'Armenia',
+  'Afghanistan', 'Albania', 'Algeria', 'Andorra', 'Angola', 'Argentina', 'Armenia',
   'Australia', 'Austria', 'Azerbaijan', 'Bahamas', 'Bahrain', 'Bangladesh', 'Barbados', 'Belarus',
   'Belgium', 'Belize', 'Benin', 'Bhutan', 'Bolivia', 'Bosnia and Herzegovina', 'Brazil', 'Brunei',
   'Bulgaria', 'Cambodia', 'Cameroon', 'Canada', 'Chile', 'China', 'Colombia', 'Costa Rica',
@@ -74,7 +75,7 @@ const COUNTRIES = [
   'Guatemala', 'Honduras', 'Hungary', 'Iceland', 'India', 'Indonesia', 'Iran', 'Iraq', 'Ireland',
   'Israel', 'Italy', 'Jamaica', 'Japan', 'Jordan', 'Kazakhstan', 'Kenya', 'Kuwait', 'Laos', 'Latvia',
   'Lebanon', 'Libya', 'Lithuania', 'Malaysia', 'Mexico', 'Mongolia', 'Morocco', 'Myanmar', 'Nepal',
-  'New Zealand', 'Nigeria', 'Norway', 'Oman', 'Pakistan', 'Palestine', 'Panama', 'Paraguay', 'Peru',
+  'New Zealand', 'Nigeria', 'Norway', 'Oman', 'Pakistan', 'Palestine', 'Panama', 'Paraguay', 'Peru', 'Philippines',
   'Poland', 'Portugal', 'Qatar', 'Romania', 'Russia', 'Saudi Arabia', 'Singapore', 'South Africa',
   'South Korea', 'Spain', 'Sri Lanka', 'Sweden', 'Switzerland', 'Taiwan', 'Thailand', 'Turkey',
   'Ukraine', 'United Arab Emirates', 'United Kingdom', 'United States', 'Uruguay', 'Venezuela', 'Vietnam',
@@ -1164,7 +1165,7 @@ export default function ApplyForJobPage() {
 
               {activeStep === 2 && (
                 <Paper elevation={0} sx={stepPaperSx}>
-                  <SectionTitle icon={<SchoolOutlined />} title="III. Educational Background and IV. Work Experience" description="Provide your educational background and previous work experience, if applicable." />
+                  <SectionTitle icon={<SchoolOutlined />} title="III. Highest Educational Background" description="Provide your highest educational background." />
                   <Stack spacing={3}>
                     <Paper elevation={0} sx={nestedPaperSx}>
                       <Stack direction="row" spacing={1} alignItems="center" sx={{ mb: 2 }}><SchoolOutlined sx={{ color: '#166534' }} /><Typography fontWeight={700} sx={{ color: '#14532d' }}>Educational Background</Typography></Stack>
@@ -1176,9 +1177,9 @@ export default function ApplyForJobPage() {
                         <Grid size={fullOnMobileGrid}><TextField fullWidth label="Honors / Awards" value={formData.honorsAwards} onChange={set('honorsAwards')} inputProps={{ maxLength: 160 }} sx={textFieldSx} /></Grid>
                       </Grid>
                     </Paper>
+                    <SectionTitle icon={<WorkOutlined />} title="IV. Work Experience" description="Provide your previous work experience, if applicable." />
                     <Paper elevation={0} sx={nestedPaperSx}>
-                      <Stack direction={{ xs: 'column', sm: 'row' }} justifyContent="space-between" alignItems={{ xs: 'stretch', sm: 'center' }} spacing={2} sx={{ mb: 2 }}>
-                        <Stack direction="row" spacing={1} alignItems="center"><WorkOutline sx={{ color: '#166534' }} /><Typography fontWeight={700} sx={{ color: '#14532d' }}>Work Experience</Typography></Stack>
+                      <Stack direction={{ xs: 'column', sm: 'row' }} justifyContent="flex-end" alignItems={{ xs: 'stretch', sm: 'center' }} spacing={2} sx={{ mb: 2 }} >
                         <Button type="button" variant="outlined" startIcon={<Add />} onClick={addWorkExperience} sx={{ ...softButtonSx, borderColor: '#166534', color: '#166534', background: '#ffffff', minHeight: { xs: 44, sm: 46 } }}>Add Work Experience</Button>
                       </Stack>
                       <Stack spacing={2.5}>
@@ -1248,14 +1249,14 @@ export default function ApplyForJobPage() {
                   {fieldErrors.emergencyContactRelationOther && <Alert severity="warning" sx={{ mb: 2 }}>{fieldErrors.emergencyContactRelationOther}</Alert>}
                   {fieldErrors.emergencyContactPhone && <Alert severity="warning" sx={{ mb: 2 }}>{fieldErrors.emergencyContactPhone}</Alert>}
                   <Stack direction={{ xs: 'column', sm: 'row' }} alignItems={{ xs: 'stretch', sm: 'center' }} justifyContent="space-between" spacing={2} sx={{ mt: 4, mb: 2 }}>
-                    <Stack direction="row" spacing={1} alignItems="center"><FavoriteBorderRounded sx={{ color: '#166534' }} /><Typography variant="h6" fontWeight={700} sx={{ color: '#14532d' }}>Emergency Contact</Typography></Stack>
+                    <Stack direction="row" spacing={1} alignItems="center"><LocalPhoneRounded sx={{ color: '#166534' }} /><Typography variant="h6" fontWeight={700} sx={{ color: '#14532d' }}>Emergency Contact</Typography></Stack>
                     <Button type="button" variant="outlined" startIcon={<Add />} onClick={addEmergencyContact} sx={{ ...softButtonSx, borderColor: '#166534', color: '#166534', background: '#ffffff', minHeight: { xs: 44, sm: 46 } }}>Add Emergency Contact</Button>
                   </Stack>
                   <Stack spacing={2.5}>
                     {emergencyContacts.map((emergencyContact, index) => (
                       <Paper key={`emergency-contact-${index}`} elevation={0} sx={nestedPaperSx}>
                         <Stack direction={{ xs: 'column', sm: 'row' }} justifyContent="space-between" alignItems={{ xs: 'stretch', sm: 'center' }} spacing={2} sx={{ mb: 2 }}>
-                          <Stack direction="row" spacing={1} alignItems="center"><FavoriteBorderRounded sx={{ color: '#166534' }} /><Typography fontWeight={700} sx={{ color: '#14532d' }}>Emergency Contact {index + 1}</Typography></Stack>
+                          <Stack direction="row" spacing={1} alignItems="center"><LocalPhoneRounded sx={{ color: '#166534' }} /><Typography fontWeight={700} sx={{ color: '#14532d' }}>Emergency Contact {index + 1}</Typography></Stack>
                           {emergencyContacts.length > 1 && <Button type="button" color="error" variant="outlined" startIcon={<Delete />} onClick={() => removeEmergencyContact(index)} sx={{ ...softButtonSx, minHeight: 40 }}>Remove</Button>}
                         </Stack>
                         <Grid container spacing={2.5}>
