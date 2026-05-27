@@ -8,7 +8,7 @@ import {
 } from '@mui/material';
 import {
   AddCircleOutline, Sync, EditNote, Visibility, VisibilityOff, Password, DeleteOutline,
-  AdminPanelSettings, Badge,
+  AdminPanelSettings, Badge, ManageSearch,
 } from '@mui/icons-material';
 import { supabase } from "../../lib/supabaseClient";
 import { OUTLETS } from '../../lib/constants';
@@ -154,6 +154,7 @@ export default function UserManagement() {
   const [form, setForm]             = useState(EMPTY_FORM);
   const [editForm, setEditForm]     = useState<Partial<UserAccount>>({});
   const [employeeOptions, setEmployeeOptions] = useState<EmployeeOption[]>([]);
+  const [search, setSearch]         = useState('');
   const [newPwd, setNewPwd]         = useState('');
   const [showPwd, setShowPwd]       = useState(false);
   const [showEditPwd, setShowEditPwd] = useState(false);
@@ -528,6 +529,21 @@ export default function UserManagement() {
   const activeUsers = users.filter(u => u.active !== false).length;
   const inactiveUsers = users.filter(u => u.active === false).length;
   const employeeUsers = users.filter(u => u.role === 'employee').length;
+  const searchQuery = search.trim().toLowerCase();
+  const filteredUsers = searchQuery
+    ? users.filter(u =>
+        [
+          u.id,
+          u.name,
+          u.email,
+          u.role,
+          u.employeeId,
+          u.applicantId,
+          u.outlet,
+          ROLES.find(r => r.value === u.role)?.label,
+        ].some(value => String(value ?? '').toLowerCase().includes(searchQuery))
+      )
+    : users;
 
   const summaryCards = [
     { label: 'Total Accounts', value: totalUsers, caption: 'All Supabase user records', icon: <AdminPanelSettings fontSize="small" /> },
@@ -769,6 +785,47 @@ export default function UserManagement() {
         </Alert>
       )}
 
+      <Paper elevation={0} sx={{ ...softCardSx, p: { xs: 1.5, sm: 2 }, mb: 2 }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.2, mb: 1.5 }}>
+          <Box
+            sx={{
+              width: 40,
+              height: 40,
+              borderRadius: '16px',
+              display: 'grid',
+              placeItems: 'center',
+              bgcolor: GREEN_UI.greenSoft,
+              color: GREEN_UI.greenDark,
+            }}
+          >
+            <ManageSearch fontSize="small" />
+          </Box>
+          <Box>
+            <Typography fontWeight={700} sx={{ color: GREEN_UI.text }}>
+              User Account Directory
+            </Typography>
+            <Typography variant="caption" sx={{ color: GREEN_UI.muted }}>
+              Search by account, email, role, employee ID, applicant ID, or outlet.
+            </Typography>
+          </Box>
+        </Box>
+        <TextField
+          fullWidth
+          size="small"
+          placeholder="Search user accounts..."
+          value={search}
+          onChange={event => setSearch(event.target.value)}
+          sx={softTextFieldSx}
+          InputProps={{
+            startAdornment: (
+              <InputAdornment position="start">
+                <ManageSearch sx={{ color: GREEN_UI.greenDark }} fontSize="small" />
+              </InputAdornment>
+            ),
+          }}
+        />
+      </Paper>
+
       <TableContainer
         component={Paper}
         elevation={0}
@@ -809,7 +866,7 @@ export default function UserManagement() {
               </TableRow>
             </TableHead>
             <TableBody>
-              {users.length === 0 ? (
+              {users.length === 0 || filteredUsers.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={6} align="center" sx={{ py: 7 }}>
                     <Box sx={{ maxWidth: 360, mx: 'auto' }}>
@@ -829,16 +886,18 @@ export default function UserManagement() {
                         <AdminPanelSettings />
                       </Box>
                       <Typography fontWeight={700} sx={{ color: GREEN_UI.text }}>
-                        No user accounts yet
+                        {users.length === 0 ? 'No user accounts yet' : 'No user accounts match your search'}
                       </Typography>
                       <Typography variant="body2" sx={{ color: GREEN_UI.muted, mt: 0.5 }}>
-                        Create the first account to start assigning role-based system access.
+                        {users.length === 0
+                          ? 'Create the first account to start assigning role-based system access.'
+                          : 'Try another name, email, role, ID, or outlet keyword.'}
                       </Typography>
                     </Box>
                   </TableCell>
                 </TableRow>
               ) : (
-                users.map(u => (
+                filteredUsers.map(u => (
                   <TableRow
                     key={u.id}
                     hover

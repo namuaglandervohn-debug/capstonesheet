@@ -41,6 +41,7 @@ import {
   FormGroup,
   Grid,
   IconButton,
+  InputAdornment,
   LinearProgress,
   MenuItem,
   Paper,
@@ -683,6 +684,7 @@ export default function RecruitmentManagement() {
 
   // Edit application
   const [editAppForm, setEditAppForm] = useState<Partial<Application>>({});
+  const [search, setSearch] = useState('');
 
   // Edit requirements checklist dialog
   const [editReqDialog, setEditReqDialog] = useState(false);
@@ -1106,21 +1108,40 @@ export default function RecruitmentManagement() {
   };
 
 
+  const searchedApplications = useMemo(() => {
+    const query = search.trim().toLowerCase();
+    if (!query) return applications;
+
+    return applications.filter(app =>
+      [
+        app.id,
+        app.name,
+        app.position,
+        app.email,
+        app.phone,
+        app.status,
+        app.date,
+        app.interviewDate,
+        app.hearAbout,
+      ].some(value => String(value ?? '').toLowerCase().includes(query))
+    );
+  }, [applications, search]);
+
   const tabData = useMemo(
     () => [
-      { label: 'All', data: applications },
-      { label: 'Submitted', data: applications.filter(a => a.status === 'Submitted') },
-      { label: 'Under Review', data: applications.filter(a => a.status === 'Under Review') },
-      { label: 'Missing Requirements', data: applications.filter(a => a.status === 'Missing Requirements') },
-      { label: 'For Interview', data: applications.filter(a => a.status === 'For Interview') },
-      { label: 'Hired', data: applications.filter(a => a.status === 'Hired') },
-      { label: 'Not Qualified', data: applications.filter(a => a.status === 'Not Qualified') },
-      { label: 'Not Hired', data: applications.filter(a => a.status === 'Not Hired') },
+      { label: 'All', data: searchedApplications },
+      { label: 'Submitted', data: searchedApplications.filter(a => a.status === 'Submitted') },
+      { label: 'Under Review', data: searchedApplications.filter(a => a.status === 'Under Review') },
+      { label: 'Missing Requirements', data: searchedApplications.filter(a => a.status === 'Missing Requirements') },
+      { label: 'For Interview', data: searchedApplications.filter(a => a.status === 'For Interview') },
+      { label: 'Hired', data: searchedApplications.filter(a => a.status === 'Hired') },
+      { label: 'Not Qualified', data: searchedApplications.filter(a => a.status === 'Not Qualified') },
+      { label: 'Not Hired', data: searchedApplications.filter(a => a.status === 'Not Hired') },
     ],
-    [applications]
+    [searchedApplications]
   );
 
-  const displayData = tabData[tab]?.data ?? applications;
+  const displayData = tabData[tab]?.data ?? searchedApplications;
 
   const recruitmentStats = useMemo(
     () => [
@@ -1775,6 +1796,47 @@ export default function RecruitmentManagement() {
           {error}
         </Alert>
       )}
+
+      <Paper elevation={0} sx={{ ...softCardSx, p: { xs: 1.5, sm: 2 }, mb: 2 }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.2, mb: 1.5 }}>
+          <Box
+            sx={{
+              width: 40,
+              height: 40,
+              borderRadius: '16px',
+              display: 'grid',
+              placeItems: 'center',
+              bgcolor: GREEN_UI.greenSoft,
+              color: GREEN_UI.greenDark,
+            }}
+          >
+            <PersonSearch fontSize="small" />
+          </Box>
+          <Box>
+            <Typography fontWeight={700} sx={{ color: GREEN_UI.text }}>
+              Applicant Directory
+            </Typography>
+            <Typography variant="caption" sx={{ color: GREEN_UI.muted }}>
+              Search by application ID, applicant, position, contact, status, or source.
+            </Typography>
+          </Box>
+        </Box>
+        <TextField
+          fullWidth
+          size="small"
+          placeholder="Search applications..."
+          value={search}
+          onChange={event => setSearch(event.target.value)}
+          sx={softTextFieldSx}
+          InputProps={{
+            startAdornment: (
+              <InputAdornment position="start">
+                <PersonSearch sx={{ color: GREEN_UI.greenDark }} fontSize="small" />
+              </InputAdornment>
+            ),
+          }}
+        />
+      </Paper>
 
       <Paper elevation={0} sx={{ ...softCardSx, mb: 2, p: { xs: 0.75, sm: 1 }, overflow: 'hidden' }}>
         <Tabs

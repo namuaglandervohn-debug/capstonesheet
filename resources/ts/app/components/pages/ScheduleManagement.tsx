@@ -3,7 +3,7 @@ import {
   Box, Typography, Paper, Button, Table, TableBody, TableCell,
   TableContainer, TableHead, TableRow, Dialog, DialogTitle,
   DialogContent, DialogActions, TextField, MenuItem, Chip, Grid,
-  CircularProgress, Alert, Snackbar, Tooltip,
+  CircularProgress, Alert, Snackbar, Tooltip, InputAdornment,
   Autocomplete,
 } from '@mui/material';
 import {
@@ -17,8 +17,8 @@ import {
   DoneAll,
   EditOutlined as EditIcon,
   EventAvailable,
-  FilterAlt,
   InsertDriveFile,
+  ManageSearch,
   PersonOutline,
   Storefront,
   Sync,
@@ -200,6 +200,7 @@ export default function ScheduleManagement() {
   const [saving, setSaving] = useState(false);
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' as 'success' | 'error' });
   const [filterOutlet, setFilterOutlet] = useState('all');
+  const [search, setSearch] = useState('');
   const [editDialog, setEditDialog] = useState(false);
   const [editRecord, setEditRecord] = useState<Schedule | null>(null);
   const [editForm, setEditForm] = useState(EMPTY);
@@ -669,16 +670,37 @@ const scheduleId =
 };
 
   const filtered = schedules.filter(s => {
-  if (canConfirm) {
-    if (s.employeeId !== currentEmployeeId) return false;
+    if (canConfirm) {
+      if (s.employeeId !== currentEmployeeId) return false;
 
-    if (!["Published", "Confirmed", "Declined"].includes(s.status)) {
-      return false;
+      if (!["Published", "Confirmed", "Declined"].includes(s.status)) {
+        return false;
+      }
     }
-  }
 
-  return filterOutlet === "all" || s.outlet === filterOutlet;
-});
+    if (filterOutlet !== "all" && s.outlet !== filterOutlet) return false;
+
+    const query = search.trim().toLowerCase();
+    if (!query) return true;
+
+    return [
+      s.id,
+      s.employeeId,
+      s.employee,
+      s.position,
+      s.outlet,
+      s.week,
+      s.status,
+      s.breakTime,
+      s.monday,
+      s.tuesday,
+      s.wednesday,
+      s.thursday,
+      s.friday,
+      s.saturday,
+      s.sunday,
+    ].some(value => String(value ?? '').toLowerCase().includes(query));
+  });
 
   const nextScheduleIds = async (count: number) => {
     const year = new Date().getFullYear();
@@ -1027,14 +1049,14 @@ const scheduleId =
                 color: GREEN_UI.greenDark,
               }}
             >
-              <FilterAlt fontSize="small" />
+              <ManageSearch fontSize="small" />
             </Box>
             <Box>
               <Typography fontWeight={700} sx={{ color: GREEN_UI.text }}>
-                Filter Schedules
+                Schedule Directory
               </Typography>
               <Typography variant="caption" sx={{ color: GREEN_UI.muted }}>
-                Narrow records by outlet or branch.
+                Search schedules, then narrow records by outlet or branch.
               </Typography>
             </Box>
           </Box>
@@ -1049,6 +1071,25 @@ const scheduleId =
 
         <Grid container spacing={1.5} alignItems="center">
           <Grid size={{ xs: 12, md: 5 }}>
+            <TextField
+              fullWidth
+              label="Search Schedules"
+              placeholder="Search by ID, employee, position, outlet, week, shift, or status..."
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+              InputLabelProps={{ shrink: true }}
+              size="small"
+              sx={softTextFieldSx}
+              InputProps={{
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <ManageSearch sx={{ color: GREEN_UI.greenDark }} fontSize="small" />
+                  </InputAdornment>
+                ),
+              }}
+            />
+          </Grid>
+          <Grid size={{ xs: 12, md: 4 }}>
             <TextField
               fullWidth
               select
@@ -1068,7 +1109,10 @@ const scheduleId =
               fullWidth
               variant="outlined"
               startIcon={<CancelOutlined />}
-              onClick={() => setFilterOutlet('all')}
+              onClick={() => {
+                setFilterOutlet('all');
+                setSearch('');
+              }}
               sx={{
                 ...pillButtonSx,
                 height: 40,
@@ -1078,7 +1122,7 @@ const scheduleId =
                 '&:hover': { borderColor: GREEN_UI.green, bgcolor: GREEN_UI.greenSoft },
               }}
             >
-              Clear Filter
+              Clear
             </Button>
           </Grid>
         </Grid>
@@ -1147,12 +1191,12 @@ const scheduleId =
                         <InsertDriveFile />
                       </Box>
                       <Typography fontWeight={700} sx={{ color: GREEN_UI.text }}>
-                        {schedules.length === 0 ? 'No schedules yet' : 'No schedules match your filter'}
+                        {schedules.length === 0 ? 'No schedules yet' : 'No schedules match your search'}
                       </Typography>
                       <Typography variant="body2" sx={{ color: GREEN_UI.muted, mt: 0.5 }}>
                         {schedules.length === 0
                           ? 'Create a weekly schedule or import an Excel file to start assigning shifts.'
-                          : 'Try clearing the outlet filter to view more schedule records.'}
+                          : 'Try clearing the search or outlet filter to view more schedule records.'}
                       </Typography>
                     </Box>
                   </TableCell>

@@ -24,6 +24,7 @@ import {
   Tooltip,
   Tabs,
   Tab,
+  InputAdornment,
 } from '@mui/material';
 import {
   AddCircleOutline,
@@ -46,6 +47,7 @@ import {
   DoneAll,
   PlaylistAddCheck,
   InfoOutlined,
+  ManageSearch,
 } from '@mui/icons-material';
 import { useAuth } from '../../context/AuthContext';
 import { supabase } from "../../lib/supabaseClient";
@@ -409,6 +411,7 @@ export default function RequestManagement() {
   const [newRequest, setNewRequest] = useState<NewRequestState>(EMPTY);
   const [saving, setSaving] = useState(false);
   const [tab, setTab] = useState(0);
+  const [search, setSearch] = useState('');
   const [snackbar, setSnackbar] = useState({
     open: false,
     message: '',
@@ -735,16 +738,37 @@ export default function RequestManagement() {
     }
   };
 
+  const requestSearchQuery = search.trim().toLowerCase();
+  const searchedRequests = requestSearchQuery
+    ? requests.filter(r =>
+        [
+          r.requestId,
+          r.databaseRequestId,
+          r.employeeId,
+          r.employee,
+          r.type,
+          r.leaveType,
+          r.status,
+          r.reason,
+          r.startDate,
+          r.endDate,
+          r.submittedDate,
+          r.supervisorName,
+          r.hrName,
+        ].some(value => String(value ?? '').toLowerCase().includes(requestSearchQuery))
+      )
+    : requests;
+
   const tabData = [
-    { label: 'All', data: requests },
-    { label: 'Pending', data: requests.filter(r => r.status === 'Pending') },
-    { label: 'Supervisor Approved', data: requests.filter(r => r.status === 'Supervisor Approved') },
-    { label: 'Approved', data: requests.filter(r => r.status === 'Approved') },
-    { label: 'Disapproved', data: requests.filter(r => r.status === 'Disapproved' || r.status === 'Rejected') },
-    { label: 'Cancelled', data: requests.filter(r => r.status === 'Cancelled') },
+    { label: 'All', data: searchedRequests },
+    { label: 'Pending', data: searchedRequests.filter(r => r.status === 'Pending') },
+    { label: 'Supervisor Approved', data: searchedRequests.filter(r => r.status === 'Supervisor Approved') },
+    { label: 'Approved', data: searchedRequests.filter(r => r.status === 'Approved') },
+    { label: 'Disapproved', data: searchedRequests.filter(r => r.status === 'Disapproved' || r.status === 'Rejected') },
+    { label: 'Cancelled', data: searchedRequests.filter(r => r.status === 'Cancelled') },
   ];
 
-  const displayData = tabData[tab]?.data ?? requests;
+  const displayData = tabData[tab]?.data ?? searchedRequests;
 
   const requestStats = [
     {
@@ -993,6 +1017,47 @@ export default function RequestManagement() {
         </Alert>
       )}
 
+      <Paper elevation={0} sx={{ ...softCardSx, p: { xs: 1.5, sm: 2 }, mb: 2 }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.2, mb: 1.5 }}>
+          <Box
+            sx={{
+              width: 40,
+              height: 40,
+              borderRadius: '16px',
+              display: 'grid',
+              placeItems: 'center',
+              bgcolor: GREEN_UI.greenSoft,
+              color: GREEN_UI.greenDark,
+            }}
+          >
+            <ManageSearch fontSize="small" />
+          </Box>
+          <Box>
+            <Typography fontWeight={700} sx={{ color: GREEN_UI.text }}>
+              Request Directory
+            </Typography>
+            <Typography variant="caption" sx={{ color: GREEN_UI.muted }}>
+              Search by request ID, employee, type, leave category, date, reason, or status.
+            </Typography>
+          </Box>
+        </Box>
+        <TextField
+          fullWidth
+          size="small"
+          placeholder="Search requests..."
+          value={search}
+          onChange={event => setSearch(event.target.value)}
+          sx={softTextFieldSx}
+          InputProps={{
+            startAdornment: (
+              <InputAdornment position="start">
+                <ManageSearch sx={{ color: GREEN_UI.greenDark }} fontSize="small" />
+              </InputAdornment>
+            ),
+          }}
+        />
+      </Paper>
+
       <Paper elevation={0} sx={{ ...softCardSx, mb: 2, p: { xs: 0.75, sm: 1 }, overflow: 'hidden' }}>
         <Tabs
           value={tab}
@@ -1089,10 +1154,12 @@ export default function RequestManagement() {
                         <AssignmentTurnedIn />
                       </Box>
                       <Typography fontWeight={700} sx={{ color: GREEN_UI.text }}>
-                        No requests in this category
+                        {requests.length === 0 ? 'No requests yet' : 'No requests match your search'}
                       </Typography>
                       <Typography variant="body2" sx={{ color: GREEN_UI.muted, mt: 0.5 }}>
-                        Once requests reach this status, they will appear here automatically.
+                        {requests.length === 0
+                          ? 'Submitted requests will appear here automatically.'
+                          : 'Try another request ID, employee, date, reason, or status keyword.'}
                       </Typography>
                     </Box>
                   </TableCell>
