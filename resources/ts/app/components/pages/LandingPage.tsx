@@ -812,26 +812,6 @@ export default function LandingPage() {
               </Typography>
             </Box>
 
-            {(user?.role === "hr" || user?.role === "gm") && (
-              <Button
-                variant="contained"
-                startIcon={<Edit />}
-                onClick={handleOpenCreate}
-                fullWidth={isMobile}
-                sx={{
-                  borderRadius: '12px',
-                  px: 3,
-                  py: 1.25,
-                  fontWeight: 950,
-                  textTransform: "none",
-                  background: "linear-gradient(135deg, #154f31 0%, #1F7A47 65%, #4caf70 100%)",
-                  alignSelf: { xs: "stretch", md: "center" },
-                  boxShadow: "0 18px 34px rgba(31,122,71,0.24)",
-                }}
-              >
-                Create Job Posting
-              </Button>
-            )}
           </Box>
 
           {loading ? (
@@ -1041,28 +1021,7 @@ export default function LandingPage() {
                       >
                         Apply for this Position
                       </Button>
-
-                      {(user?.role === "hr" || user?.role === "gm") && (
-                        <Stack direction={{ xs: "column", sm: "row" }} spacing={1} sx={{ mt: 2 }}>
-                          <Button
-                            fullWidth
-                            variant="outlined"
-                            onClick={() => handleEdit(job)}
-                            sx={{ borderRadius: 3, fontWeight: 850, textTransform: "none" }}
-                          >
-                            Edit
-                          </Button>
-                          <Button
-                            fullWidth
-                            variant="outlined"
-                            color="error"
-                            onClick={() => handleDeactivate(job.id)}
-                            sx={{ borderRadius: 3, fontWeight: 850, textTransform: "none" }}
-                          >
-                            Remove
-                          </Button>
-                        </Stack>
-                      )}
+                      
                     </CardContent>
                   </Card>
                 </Grid>
