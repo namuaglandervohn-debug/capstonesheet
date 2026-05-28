@@ -14,7 +14,6 @@ import {
   DialogActions,
   TextField,
   CircularProgress,
-  Snackbar,
   Alert,
   Divider,
   Paper,
@@ -45,6 +44,7 @@ import {
 } from "@mui/icons-material";
 import { supabase } from "../../lib/supabaseClient";
 import { useAuth } from "../../context/AuthContext";
+import ActionSnackbar from "../ActionSnackbar";
 
 interface JobPosting {
   id: string;
@@ -1413,16 +1413,12 @@ export default function LandingPage() {
         </DialogActions>
       </Dialog>
 
-      <Snackbar
+      <ActionSnackbar
         open={snackbar.open}
-        autoHideDuration={4000}
+        message={snackbar.message}
+        severity={snackbar.severity}
         onClose={() => setSnackbar({ ...snackbar, open: false })}
-        anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
-      >
-        <Alert severity={snackbar.severity} variant="filled" sx={{ borderRadius: 3, fontWeight: 800 }}>
-          {snackbar.message}
-        </Alert>
-      </Snackbar>
+      />
     </Box>
   );
 }

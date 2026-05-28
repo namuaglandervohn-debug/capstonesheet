@@ -3,7 +3,7 @@ import {
   Box, Typography, Paper, Button, Table, TableBody, TableCell,
   TableContainer, TableHead, TableRow, Chip, Dialog, DialogTitle,
   DialogContent, DialogActions, TextField, MenuItem, Grid,
-  CircularProgress, Alert, Snackbar, Tooltip, IconButton, InputAdornment,
+  CircularProgress, Alert, Tooltip, IconButton, InputAdornment,
   Divider,
 } from '@mui/material';
 import {
@@ -12,6 +12,7 @@ import {
 } from '@mui/icons-material';
 import { supabase } from "../../lib/supabaseClient";
 import { OUTLETS } from '../../lib/constants';
+import ActionSnackbar from '../ActionSnackbar';
 
 type UserRole = 'hr' | 'employee' | 'supervisor' | 'gm' | 'accounting';
 
@@ -1434,20 +1435,12 @@ export default function UserManagement() {
         </DialogActions>
       </Dialog>
 
-      <Snackbar
+      <ActionSnackbar
         open={snackbar.open}
-        autoHideDuration={5000}
+        message={snackbar.message}
+        severity={snackbar.severity}
         onClose={() => setSnackbar(s => ({ ...s, open: false }))}
-        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
-      >
-        <Alert
-          severity={snackbar.severity}
-          onClose={() => setSnackbar(s => ({ ...s, open: false }))}
-          sx={{ borderRadius: '18px', boxShadow: GREEN_UI.shadowSoft }}
-        >
-          {snackbar.message}
-        </Alert>
-      </Snackbar>
+      />
     </Box>
   );
 }

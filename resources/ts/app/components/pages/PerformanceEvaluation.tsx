@@ -15,7 +15,6 @@ import {
   MenuItem,
   Paper,
   Slider,
-  Snackbar,
   Table,
   TableBody,
   TableCell,
@@ -42,6 +41,7 @@ import {
 import { supabase } from "../../lib/supabaseClient";
 import { OUTLETS, POSITIONS } from "../../lib/constants";
 import { useAuth } from "../../context/AuthContext";
+import ActionSnackbar from "../ActionSnackbar";
 
 const AVAILABLE_POSITIONS = POSITIONS.filter((position) => position !== "Payroll Staff");
 
@@ -1944,16 +1944,12 @@ export default function PerformanceEvaluation() {
         </DialogActions>
       </Dialog>
 
-      <Snackbar
+      <ActionSnackbar
         open={snackbar.open}
-        autoHideDuration={5000}
+        message={snackbar.message}
+        severity={snackbar.severity}
         onClose={() => setSnackbar((s) => ({ ...s, open: false }))}
-        anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
-      >
-        <Alert severity={snackbar.severity} onClose={() => setSnackbar((s) => ({ ...s, open: false }))} sx={{ borderRadius: "18px" }}>
-          {snackbar.message}
-        </Alert>
-      </Snackbar>
+      />
     </Box>
   );
 }

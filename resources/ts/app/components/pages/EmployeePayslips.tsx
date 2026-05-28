@@ -3,7 +3,7 @@ import {
   Box, Typography, Paper, Button, Table, TableBody, TableCell,
   TableContainer, TableHead, TableRow, Chip, CircularProgress,
   Alert, Dialog, DialogTitle, DialogContent, DialogActions,
-  Snackbar, Divider, Tooltip,
+  Divider, Tooltip,
 } from '@mui/material';
 import {
   AccountBalanceWallet,
@@ -21,6 +21,7 @@ import {
 } from '@mui/icons-material';
 import { useAuth } from '../../context/AuthContext';
 import { supabase } from '../../lib/supabaseClient';
+import ActionSnackbar from '../ActionSnackbar';
 
 interface Payslip {
   id: string;
@@ -1138,20 +1139,12 @@ export default function EmployeePayslips() {
         </DialogActions>
       </Dialog>
 
-      <Snackbar
+      <ActionSnackbar
         open={snackbar.open}
-        autoHideDuration={4000}
+        message={snackbar.message}
+        severity={snackbar.severity}
         onClose={() => setSnackbar(s => ({ ...s, open: false }))}
-        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
-      >
-        <Alert
-          severity={snackbar.severity}
-          onClose={() => setSnackbar(s => ({ ...s, open: false }))}
-          sx={{ borderRadius: '16px', border: `1px solid ${GREEN_UI.border}` }}
-        >
-          {snackbar.message}
-        </Alert>
-      </Snackbar>
+      />
     </Box>
   );
 }

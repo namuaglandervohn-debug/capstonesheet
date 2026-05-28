@@ -26,7 +26,6 @@ import {
   CircularProgress,
   LinearProgress,
   Alert,
-  Snackbar,
   Tooltip,
   IconButton,
 } from "@mui/material";
@@ -56,6 +55,7 @@ import {
 } from "@mui/icons-material";
 import { supabase } from "../../lib/supabaseClient";
 import { useAuth } from "../../context/AuthContext";
+import ActionSnackbar from "../ActionSnackbar";
 
 interface Attendance {
   id: string;
@@ -3020,22 +3020,12 @@ export default function AttendanceMonitoring() {
         </DialogActions>
       </Dialog>
 
-      <Snackbar
+      <ActionSnackbar
         open={snackbar.open}
-        autoHideDuration={5000}
+        message={snackbar.message}
+        severity={snackbar.severity}
         onClose={() => setSnackbar((s) => ({ ...s, open: false }))}
-        anchorOrigin={{
-          vertical: "bottom",
-          horizontal: "center",
-        }}
-      >
-        <Alert
-          severity={snackbar.severity}
-          onClose={() => setSnackbar((s) => ({ ...s, open: false }))}
-        >
-          {snackbar.message}
-        </Alert>
-      </Snackbar>
+      />
     </Box>
   );
 }

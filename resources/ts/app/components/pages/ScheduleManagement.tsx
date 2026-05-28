@@ -3,7 +3,7 @@ import {
   Box, Typography, Paper, Button, Table, TableBody, TableCell,
   TableContainer, TableHead, TableRow, Dialog, DialogTitle,
   DialogContent, DialogActions, TextField, MenuItem, Chip, Grid,
-  CircularProgress, Alert, Snackbar, Tooltip, InputAdornment,
+  CircularProgress, Alert, Tooltip, InputAdornment,
   Autocomplete,
 } from '@mui/material';
 import {
@@ -29,6 +29,7 @@ import {
 import * as XLSX from 'xlsx';
 import { supabase } from "../../lib/supabaseClient";
 import { OUTLETS, POSITIONS } from '../../lib/constants';
+import ActionSnackbar from '../ActionSnackbar';
 
 const AVAILABLE_POSITIONS = POSITIONS.filter(position => position !== 'Payroll Staff');
 import { useAuth } from '../../context/AuthContext';
@@ -1784,20 +1785,12 @@ const scheduleId =
         </DialogActions>
       </Dialog>
 
-      <Snackbar
+      <ActionSnackbar
         open={snackbar.open}
-        autoHideDuration={5000}
+        message={snackbar.message}
+        severity={snackbar.severity}
         onClose={() => setSnackbar(s => ({ ...s, open: false }))}
-        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
-      >
-        <Alert
-          severity={snackbar.severity}
-          onClose={() => setSnackbar(s => ({ ...s, open: false }))}
-          sx={{ borderRadius: '16px', boxShadow: GREEN_UI.shadowSoft }}
-        >
-          {snackbar.message}
-        </Alert>
-      </Snackbar>
+      />
     </Box>
   );
 

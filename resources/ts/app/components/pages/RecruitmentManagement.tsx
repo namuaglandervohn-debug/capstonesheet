@@ -45,7 +45,6 @@ import {
   LinearProgress,
   MenuItem,
   Paper,
-  Snackbar,
   Tab,
   Table,
   TableBody,
@@ -59,6 +58,7 @@ import {
   Typography,
 } from '@mui/material';
 import { useAuth } from '../../context/AuthContext';
+import ActionSnackbar from '../ActionSnackbar';
 
 interface DocFile {
   name: string;
@@ -2805,16 +2805,12 @@ export default function RecruitmentManagement() {
         </DialogActions>
       </Dialog>
 
-      <Snackbar
+      <ActionSnackbar
         open={snackbar.open}
-        autoHideDuration={5000}
+        message={snackbar.message}
+        severity={snackbar.severity}
         onClose={() => setSnackbar(state => ({ ...state, open: false }))}
-        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
-      >
-        <Alert severity={snackbar.severity} onClose={() => setSnackbar(state => ({ ...state, open: false }))}>
-          {snackbar.message}
-        </Alert>
-      </Snackbar>
+      />
     </Box>
   );
 }

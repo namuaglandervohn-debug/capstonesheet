@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router';
 import {
   Box, Typography, Button, Paper, TextField, Divider, Chip, Grid,
-  CircularProgress, Alert, Snackbar, MenuItem, Dialog, DialogTitle,
+  CircularProgress, Alert, MenuItem, Dialog, DialogTitle,
   DialogContent, DialogActions, IconButton, Tooltip, InputAdornment, Autocomplete,
 } from '@mui/material';
 import {
@@ -34,6 +34,7 @@ import { supabase } from '../../lib/supabaseClient';
 import { OUTLETS, POSITIONS, DEPARTMENTS } from '../../lib/constants';
 import FileUploadField from '../FileUploadField';
 import { useAuth } from '../../context/AuthContext';
+import ActionSnackbar from '../ActionSnackbar';
 
 interface DocFile {
   name: string; type: string; data: string;
@@ -1517,9 +1518,12 @@ export default function EmployeeProfile() {
         </DialogActions>
       </Dialog>
 
-      <Snackbar open={snackbar.open} autoHideDuration={4000} onClose={() => setSnackbar(s => ({ ...s, open: false }))} anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}>
-        <Alert severity={snackbar.severity} onClose={() => setSnackbar(s => ({ ...s, open: false }))}>{snackbar.message}</Alert>
-      </Snackbar>
+      <ActionSnackbar
+        open={snackbar.open}
+        message={snackbar.message}
+        severity={snackbar.severity}
+        onClose={() => setSnackbar(s => ({ ...s, open: false }))}
+      />
     </Box>
   );
 }

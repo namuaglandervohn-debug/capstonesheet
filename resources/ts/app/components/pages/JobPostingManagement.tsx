@@ -14,7 +14,6 @@ import {
   Divider,
   MenuItem,
   Skeleton,
-  Snackbar,
   Stack,
   TextField,
   Typography,
@@ -31,6 +30,7 @@ import {
   TuneOutlined,
 } from "@mui/icons-material";
 import { supabase } from "../../lib/supabaseClient";
+import ActionSnackbar from "../ActionSnackbar";
 
 interface JobPosting {
   id: string;
@@ -1463,21 +1463,12 @@ export default function JobPostingManagement() {
         </DialogActions>
       </Dialog>
 
-      <Snackbar
+      <ActionSnackbar
         open={snackbar.open}
-        autoHideDuration={4000}
+        message={snackbar.message}
+        severity={snackbar.severity}
         onClose={() => setSnackbar((prev) => ({ ...prev, open: false }))}
-        anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
-      >
-        <Alert
-          severity={snackbar.severity}
-          variant="filled"
-          onClose={() => setSnackbar((prev) => ({ ...prev, open: false }))}
-          sx={{ width: "100%", borderRadius: "18px", fontWeight: 700 }}
-        >
-          {snackbar.message}
-        </Alert>
-      </Snackbar>
+      />
     </Box>
   );
 }

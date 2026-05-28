@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router';
 import {
   Box, Typography, Paper, TextField, Button, MenuItem, Alert,
   Grid, CircularProgress, Dialog, DialogContent, DialogActions,
-  Chip, Snackbar,
+  Chip,
 } from '@mui/material';
 import { ArrowBackIosNew, Send, TaskAlt, ContentCopy } from '@mui/icons-material';
 import { POSITIONS } from '../../lib/constants';
@@ -11,6 +11,7 @@ import FileUploadField from '../FileUploadField';
 import { copyToClipboard } from '../../lib/copyToClipboard';
 import { saveApplicationFiles } from '../../lib/applicationFiles';
 import { supabase } from '../../lib/supabaseClient';
+import ActionSnackbar from '../ActionSnackbar';
 
 /** Convert a File to a base64 data URI */
 function fileToBase64(file: File): Promise<string> {
@@ -256,9 +257,12 @@ export default function ApplicationForm() {
         </DialogActions>
       </Dialog>
 
-      <Snackbar open={snackbar.open} autoHideDuration={4000} onClose={() => setSnackbar(s => ({ ...s, open: false }))} anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}>
-        <Alert severity="success">{snackbar.message}</Alert>
-      </Snackbar>
+      <ActionSnackbar
+        open={snackbar.open}
+        message={snackbar.message}
+        severity="success"
+        onClose={() => setSnackbar(s => ({ ...s, open: false }))}
+      />
     </Box>
   );
 }

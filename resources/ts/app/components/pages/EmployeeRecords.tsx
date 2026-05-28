@@ -21,7 +21,6 @@ import {
   MenuItem,
   CircularProgress,
   Alert,
-  Snackbar,
   Tooltip,
   Grid,
   Autocomplete,
@@ -49,6 +48,7 @@ import {
   CloseRounded,
   PersonAddAlt1Rounded,
 } from "@mui/icons-material";
+import ActionSnackbar from "../ActionSnackbar";
 import { supabase } from "../../lib/supabaseClient";
 import {
   OUTLETS,
@@ -1296,28 +1296,12 @@ export default function EmployeeRecords() {
         </DialogActions>
       </Dialog>
 
-      {/* Snackbar feedback */}
-      <Snackbar
+      <ActionSnackbar
         open={snackbar.open}
-        autoHideDuration={4000}
-        onClose={() =>
-          setSnackbar((s) => ({ ...s, open: false }))
-        }
-        anchorOrigin={{
-          vertical: "bottom",
-          horizontal: "center",
-        }}
-      >
-        <Alert
-          severity={snackbar.severity}
-          onClose={() =>
-            setSnackbar((s) => ({ ...s, open: false }))
-          }
-          sx={{ borderRadius: '18px', boxShadow: GREEN_UI.shadowSoft }}
-        >
-          {snackbar.message}
-        </Alert>
-      </Snackbar>
+        message={snackbar.message}
+        severity={snackbar.severity}
+        onClose={() => setSnackbar((s) => ({ ...s, open: false }))}
+      />
     </Box>
   );
 }

@@ -3,12 +3,13 @@ import {
   Box, Typography, Paper, Button, Table, TableBody, TableCell,
   TableContainer, TableHead, TableRow, TextField, Chip, Dialog,
   DialogTitle, DialogContent, DialogActions, Grid, CircularProgress,
-  Alert, Snackbar, Tooltip, IconButton, MenuItem,
+  Alert, Tooltip, IconButton, MenuItem,
 } from '@mui/material';
 import { Calculate, Visibility, Send, AddCircleOutline, Sync, Payments, TaskAlt, DeleteOutline, Print } from '@mui/icons-material';
 import { supabase } from '../../lib/supabaseClient';
 import { useAuth } from '../../context/AuthContext';
 import { POSITIONS } from '../../lib/constants';
+import ActionSnackbar from '../ActionSnackbar';
 
 // ── Position → Default Monthly Salary mapping ────────────────────────────
 const POSITION_SALARIES: Record<string, number> = {
@@ -2045,9 +2046,12 @@ export default function PayrollComputation() {
         </DialogActions>
       </Dialog>
 
-      <Snackbar open={snackbar.open} autoHideDuration={5000} onClose={() => setSnackbar(s => ({ ...s, open: false }))} anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}>
-        <Alert severity={snackbar.severity} onClose={() => setSnackbar(s => ({ ...s, open: false }))} sx={{ borderRadius: '16px' }}>{snackbar.message}</Alert>
-      </Snackbar>
+      <ActionSnackbar
+        open={snackbar.open}
+        message={snackbar.message}
+        severity={snackbar.severity}
+        onClose={() => setSnackbar(s => ({ ...s, open: false }))}
+      />
     </Box>
   );
 }

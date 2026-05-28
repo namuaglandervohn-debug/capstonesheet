@@ -20,7 +20,6 @@ import {
   Grid,
   CircularProgress,
   Alert,
-  Snackbar,
   Tooltip,
   Tabs,
   Tab,
@@ -51,6 +50,7 @@ import {
 } from '@mui/icons-material';
 import { useAuth } from '../../context/AuthContext';
 import { supabase } from "../../lib/supabaseClient";
+import ActionSnackbar from '../ActionSnackbar';
 
 type RequestType = 'Leave' | 'Overtime' | 'Undertime';
 type RequestStatus = 'Pending' | 'Supervisor Approved' | 'Approved' | 'Disapproved' | 'Rejected' | 'Cancelled';
@@ -1717,20 +1717,12 @@ export default function RequestManagement() {
         </DialogActions>
       </Dialog>
 
-      <Snackbar
+      <ActionSnackbar
         open={snackbar.open}
-        autoHideDuration={5000}
+        message={snackbar.message}
+        severity={snackbar.severity}
         onClose={() => setSnackbar(previous => ({ ...previous, open: false }))}
-        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
-      >
-        <Alert
-          severity={snackbar.severity}
-          onClose={() => setSnackbar(previous => ({ ...previous, open: false }))}
-          sx={{ borderRadius: '16px', boxShadow: GREEN_UI.shadowSoft }}
-        >
-          {snackbar.message}
-        </Alert>
-      </Snackbar>
+      />
     </Box>
   );
 }

@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import {
   Box, Typography, Paper, Grid, Chip, Divider, CircularProgress,
   Alert, Card, CardContent, Avatar, TextField, Button, IconButton,
-  Snackbar, Stack, LinearProgress, Tooltip, Dialog, DialogTitle,
+  Stack, LinearProgress, Tooltip, Dialog, DialogTitle,
   DialogContent, DialogActions,
 } from '@mui/material';
 import {
@@ -13,6 +13,7 @@ import {
 } from '@mui/icons-material';
 import { useAuth } from '../../context/AuthContext';
 import { supabase } from '../../lib/supabaseClient';
+import ActionSnackbar from '../ActionSnackbar';
 
 interface Employee {
   id: string; name: string; position: string; department?: string;
@@ -1086,20 +1087,12 @@ export default function MyProfile() {
         </Grid>
       </Grid>
 
-      <Snackbar
+      <ActionSnackbar
         open={snackbar.open}
-        autoHideDuration={4000}
+        message={snackbar.message}
+        severity={snackbar.severity}
         onClose={() => setSnackbar(s => ({ ...s, open: false }))}
-        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
-      >
-        <Alert
-          severity={snackbar.severity}
-          onClose={() => setSnackbar(s => ({ ...s, open: false }))}
-          sx={{ borderRadius: '18px', border: `1px solid ${GREEN_UI.border}` }}
-        >
-          {snackbar.message}
-        </Alert>
-      </Snackbar>
+      />
 
       <Dialog
         open={Boolean(previewDoc)}
