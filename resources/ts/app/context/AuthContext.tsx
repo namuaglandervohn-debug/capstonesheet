@@ -26,10 +26,11 @@ const getStoredUser = (): AuthUser | null => {
   if (typeof window === "undefined") return null;
 
   try {
-    const rawUser = window.localStorage.getItem(AUTH_STORAGE_KEY);
+    window.localStorage.removeItem(AUTH_STORAGE_KEY);
+    const rawUser = window.sessionStorage.getItem(AUTH_STORAGE_KEY);
     return rawUser ? (JSON.parse(rawUser) as AuthUser) : null;
   } catch {
-    window.localStorage.removeItem(AUTH_STORAGE_KEY);
+    window.sessionStorage.removeItem(AUTH_STORAGE_KEY);
     return null;
   }
 };
@@ -37,10 +38,12 @@ const getStoredUser = (): AuthUser | null => {
 const storeUser = (user: AuthUser | null) => {
   if (typeof window === "undefined") return;
 
+  window.localStorage.removeItem(AUTH_STORAGE_KEY);
+
   if (user) {
-    window.localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(user));
+    window.sessionStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(user));
   } else {
-    window.localStorage.removeItem(AUTH_STORAGE_KEY);
+    window.sessionStorage.removeItem(AUTH_STORAGE_KEY);
   }
 };
 

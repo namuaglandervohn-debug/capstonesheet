@@ -110,7 +110,7 @@ const softCardSx = {
 const innerCardSx = {
   borderRadius: '20px',
   border: `1px solid ${GREEN_UI.border}`,
-  background: GREEN_UI.cardBgSoft,
+  bgcolor: '#ffffff',
   boxShadow: GREEN_UI.shadowSoft,
 };
 
@@ -395,13 +395,27 @@ export default function AccountingDashboard() {
           overflow: 'hidden',
           position: 'relative',
           mb: 3,
-          '&::before': {
+          background:
+            'linear-gradient(135deg, rgba(255,255,255,0.98) 0%, rgba(239,250,235,0.96) 60%, rgba(225,248,224,0.94) 100%)',
+          '&:before': {
             content: '""',
             position: 'absolute',
-            inset: 0,
-            background:
-              'linear-gradient(135deg, rgba(58, 168, 101, 0.14), rgba(255,255,255,0) 45%), radial-gradient(circle at 90% 15%, rgba(58, 168, 101, 0.18), transparent 32%)',
-            pointerEvents: 'none',
+            width: 260,
+            height: 260,
+            borderRadius: '50%',
+            right: -90,
+            top: -110,
+            background: 'rgba(76, 175, 80, 0.12)',
+          },
+          '&:after': {
+            content: '""',
+            position: 'absolute',
+            width: 160,
+            height: 160,
+            borderRadius: '50%',
+            left: { xs: '72%', md: '46%' },
+            bottom: -95,
+            background: 'rgba(174, 222, 144, 0.18)',
           },
         }}
       >
@@ -443,55 +457,10 @@ export default function AccountingDashboard() {
               Accounting & Finance Dashboard
             </Typography>
             <Typography
-              variant="body2"
-              sx={{
-                color: GREEN_UI.muted,
-                mt: 1,
-                maxWidth: 680,
-                fontSize: { xs: '0.88rem', sm: '0.95rem' },
-              }}
+               variant="body2" sx={{ color: GREEN_UI.muted, mt: 1, lineHeight: 1.7, maxWidth: 650 }}
             >
               Welcome, {(user as any)?.name ?? (user as any)?.full_name ?? (user as any)?.email ?? 'Accounting Staff'} — monitor payroll reviews, releases, and payable totals for Buenaventura Estate.
             </Typography>
-          </Box>
-
-          <Box
-            sx={{
-              display: 'flex',
-              alignItems: { xs: 'stretch', sm: 'center' },
-              gap: 1,
-              flexDirection: { xs: 'column', sm: 'row' },
-              width: { xs: '100%', md: 'auto' },
-            }}
-          >
-            {(loading || refreshing) && (
-              <Chip
-                icon={<CircularProgress size={14} color="inherit" />}
-                label={loading ? 'Loading indicators…' : 'Refreshing…'}
-                sx={{
-                  bgcolor: 'rgba(255,255,255,0.72)',
-                  color: GREEN_UI.greenDark,
-                  border: `1px solid ${GREEN_UI.border}`,
-                  fontWeight: 600,
-                  justifyContent: 'center',
-                }}
-              />
-            )}
-            <Button
-              variant="contained"
-              startIcon={<Refresh />}
-              onClick={() => loadDashboard(true)}
-              disabled={loading || refreshing}
-              sx={{
-                ...pillButtonSx,
-                minHeight: 40,
-                bgcolor: GREEN_UI.green,
-                boxShadow: '0 12px 24px rgba(58, 168, 101, 0.24)',
-                '&:hover': { bgcolor: GREEN_UI.greenDark },
-              }}
-            >
-              Refresh
-            </Button>
           </Box>
         </Box>
       </Paper>

@@ -648,24 +648,6 @@ export default function SupervisorDashboard() {
               Welcome, {currentUserName}. Monitor published schedules, review pending employee requests, and track submitted evaluations in one clean workspace.
             </Typography>
           </Box>
-
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap' }}>
-            <Button
-              variant="contained"
-              startIcon={(loading || refreshing) ? <CircularProgress size={16} color="inherit" /> : <Refresh />}
-              onClick={() => void loadDashboardStats(false)}
-              disabled={loading || refreshing}
-              sx={{
-                ...pillButtonSx,
-                py: 1.1,
-                bgcolor: GREEN_UI.green,
-                boxShadow: '0 12px 24px rgba(58, 168, 101, 0.25)',
-                '&:hover': { bgcolor: GREEN_UI.greenDark, boxShadow: '0 16px 28px rgba(31, 122, 70, 0.28)' },
-              }}
-            >
-              {refreshing ? 'Refreshing…' : 'Refresh'}
-            </Button>
-          </Box>
         </Box>
       </Paper>
 

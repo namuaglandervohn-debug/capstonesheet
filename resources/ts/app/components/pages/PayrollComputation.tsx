@@ -177,7 +177,7 @@ const softCardSx = {
 const innerCardSx = {
   borderRadius: '20px',
   border: `1px solid ${GREEN_UI.border}`,
-  background: GREEN_UI.cardBgSoft,
+  bgcolor: '#ffffff',
   boxShadow: GREEN_UI.shadowSoft,
 };
 

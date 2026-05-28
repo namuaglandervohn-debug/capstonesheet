@@ -388,7 +388,7 @@ export default function GMDashboard() {
             <Divider sx={{ borderColor: GREEN_UI.border, mb: 1.5 }} />
 
             {forInterview.length === 0 ? (
-              <Paper elevation={0} sx={{ ...innerCardSx, p: 2.2, textAlign: 'center' }}>
+              <Paper elevation={0} sx={{ ...innerCardSx, bgcolor: '#ffffff', p: 2.2, textAlign: 'center' }}>
                 <Box sx={{ ...softIconBoxSx, mx: 'auto', mb: 1 }}>
                   <FactCheck />
                 </Box>

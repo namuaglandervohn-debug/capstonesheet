@@ -1407,7 +1407,7 @@ export default function PerformanceEvaluation() {
                 </TableRow>
               ) : (
                 displayedEvaluations.map((r, i) => (
-                  <TableRow key={r.evaluation_id} hover sx={{ bgcolor: i === 0 ? "rgba(231, 247, 229, 0.36)" : "inherit" }}>
+                  <TableRow key={r.evaluation_id} hover sx={{ bgcolor: i === 0 ? "rgba(255, 255, 255, 0.36)" : "inherit" }}>
                     <TableCell>
                       <Chip
                         icon={i === 0 ? <EmojiEvents /> : undefined}
@@ -1571,7 +1571,7 @@ export default function PerformanceEvaluation() {
                   </TableRow>
                 ) : (
                   ranking.map((item) => (
-                    <TableRow key={`${item.result_id}-${item.evaluation_id}`} hover sx={{ bgcolor: item.rank_no === 1 ? "rgba(255, 248, 225, 0.55)" : "inherit" }}>
+                    <TableRow key={`${item.result_id}-${item.evaluation_id}`} hover sx={{ bgcolor: item.rank_no === 1 ? "rgba(255, 255, 255, 0.55)" : "inherit" }}>
                       <TableCell>
                         <Chip
                           icon={item.rank_no === 1 ? <EmojiEvents /> : undefined}
