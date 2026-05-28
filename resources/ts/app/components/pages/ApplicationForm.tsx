@@ -143,7 +143,7 @@ export default function ApplicationForm() {
       <Paper sx={{ p: { xs: 2, sm: 4 } }}>
         <Typography variant="h5" gutterBottom fontWeight={700}>Job Application Form</Typography>
         <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-          Please fill out all required fields — record will be saved to Supabase
+          Please fill out all required fields.
         </Typography>
 
         {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
@@ -234,7 +234,7 @@ export default function ApplicationForm() {
           </Box>
           <Typography variant="h5" fontWeight={700} color="success.main" gutterBottom>Application Submitted!</Typography>
           <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-            The application has been saved to Supabase and assigned the following ID:
+            The application has been saved and assigned the following ID:
           </Typography>
           <Paper sx={{ p: 3, bgcolor: 'primary.light', borderRadius: 2, mb: 2 }}>
             <Typography variant="body2" sx={{ color: 'white' }}>Applicant ID</Typography>

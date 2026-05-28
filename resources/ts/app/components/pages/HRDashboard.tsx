@@ -405,7 +405,7 @@ export default function HRDashboard() {
       console.error("Dashboard live stats error:", error);
       setStats(DEFAULT_STATS);
       setErrorMessage(
-        "Unable to load live dashboard indicators. Please check Supabase access and table permissions.",
+        "Unable to load live dashboard indicators.",
       );
     } finally {
       if (!isMountedRef.current) return;

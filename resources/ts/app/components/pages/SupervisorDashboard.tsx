@@ -485,7 +485,7 @@ export default function SupervisorDashboard() {
         setPendingRequests([]);
         setPublishedSchedules([]);
         setErrorMessage(
-          `Unable to load live supervisor indicators: ${error?.message || 'Please check Supabase access and table permissions.'}`,
+          `Unable to load live supervisor indicators: ${error?.message || 'An unknown error occurred.'}`,
         );
       } finally {
         if (!isMountedRef.current) return;

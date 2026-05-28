@@ -595,7 +595,7 @@ export default function PayrollComputation() {
 
       if (logsError) throw logsError;
       if (!attendanceLogs || attendanceLogs.length === 0) {
-        throw new Error('No attendance logs were found in Supabase attendance_logs for the selected payroll period. Save/import attendance in Attendance Monitoring first, then generate payroll again.');
+        throw new Error('No attendance logs were found for the selected payroll period. Save/import attendance in Attendance Monitoring first, then generate payroll again.');
       }
 
       const employeeIds = [...new Set(attendanceLogs.map((log: any) => String(log.employee_id)).filter(Boolean))];
@@ -1576,7 +1576,7 @@ export default function PayrollComputation() {
         <DialogTitle fontWeight={700} sx={dialogTitleSx}>Generate Payroll</DialogTitle>
         <DialogContent sx={{ display: 'flex', flexDirection: 'column', gap: 2, pt: '18px !important', px: { xs: 2, sm: 3 }, bgcolor: '#fbfff9' }}>
           <Alert severity="info" sx={{ fontSize: '0.8rem' }}>
-            Auto-generates payroll for <strong>Active</strong> employees. Select a position to target only that role, or leave blank for all. This generates payroll directly from Attendance Monitoring records saved in Supabase attendance_logs for the selected month.
+            Auto-generates payroll for <strong>Active</strong> employees. Select a position to target only that role, or leave blank for all. This generates payroll directly from Attendance Monitoring records saved for the selected month.
           </Alert>
           <TextField label="Payroll Period" type="month" fullWidth value={generatePeriod}
             onChange={e => setGeneratePeriod(e.target.value)} InputLabelProps={{ shrink: true }} />

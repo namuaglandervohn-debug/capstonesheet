@@ -961,7 +961,7 @@ async function saveImportTask(task: SaveImportTask): Promise<ImportSaveResult> {
   }
 
   if (!data?.log_id) {
-    return { ok: false, key: task.key, error: "Supabase saved the row but did not return a valid attendance log." };
+    return { ok: false, key: task.key, error: "Saved the row but did not return a valid attendance log." };
   }
 
   return {
@@ -1105,7 +1105,7 @@ export default function AttendanceMonitoring() {
       setForm(EMPTY);
       setSnackbar({
         open: true,
-        message: `Attendance record ${savedRecord.displayId ?? savedRecord.id} saved to Supabase attendance_logs.`,
+        message: `Attendance record ${savedRecord.displayId ?? savedRecord.id} saved.`,
         severity: "success",
       });
     } catch (e: any) {

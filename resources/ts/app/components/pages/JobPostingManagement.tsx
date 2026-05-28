@@ -813,14 +813,14 @@ export default function JobPostingManagement() {
                       variant="rounded"
                       width={90}
                       height={28}
-                      sx={{ borderRadius: 8 }}
+                      sx={{ borderRadius: 4 }}
                     />
                     <Skeleton variant="text" width="75%" height={38} />
                     <Skeleton
                       variant="rounded"
                       width="100%"
                       height={86}
-                      sx={{ borderRadius: 4 }}
+                      sx={{ borderRadius: 2 }}
                     />
                     <Divider sx={{ my: 1 }} />
                     <Skeleton variant="text" width="95%" />
@@ -830,13 +830,13 @@ export default function JobPostingManagement() {
                         variant="rounded"
                         width={72}
                         height={36}
-                        sx={{ borderRadius: 10 }}
+                        sx={{ borderRadius: 5 }}
                       />
                       <Skeleton
                         variant="rounded"
                         width={72}
                         height={36}
-                        sx={{ borderRadius: 10 }}
+                        sx={{ borderRadius: 5 }}
                       />
                     </Stack>
                   </Stack>
@@ -1386,12 +1386,12 @@ export default function JobPostingManagement() {
                   helperText={
                     hasFieldError("salary_range")
                       ? "Salary rate is required for payroll computation."
-                      : "Example: 510 for Service Crew daily rate. Payroll uses this to compute hourly pay, OT, late, and undertime deductions."
+                      : ""
                   }
                   onChange={(e) =>
                     updateFormField("salary_range", e.target.value)
                   }
-                  sx={{ ...textFieldSx, ...fullRowSx }}
+                  sx={{ ...textFieldSx}}
                 />
               </Box>
             </Box>
@@ -1416,30 +1416,6 @@ export default function JobPostingManagement() {
                     updateFormField("description", e.target.value)
                   }
                   sx={{ ...textFieldSx, ...fullRowSx }}
-                />
-
-                <TextField
-                  fullWidth
-                  multiline
-                  minRows={3}
-                  label="Qualifications"
-                  value={form.qualifications}
-                  onChange={(e) =>
-                    updateFormField("qualifications", e.target.value)
-                  }
-                  sx={textFieldSx}
-                />
-
-                <TextField
-                  fullWidth
-                  multiline
-                  minRows={3}
-                  label="Responsibilities"
-                  value={form.responsibilities}
-                  onChange={(e) =>
-                    updateFormField("responsibilities", e.target.value)
-                  }
-                  sx={textFieldSx}
                 />
               </Box>
             </Box>

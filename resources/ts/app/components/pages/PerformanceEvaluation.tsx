@@ -1043,7 +1043,7 @@ export default function PerformanceEvaluation() {
               Performance Evaluation with DSS
             </Typography>
             <Typography variant="body2" sx={{ color: GREEN_UI.muted, maxWidth: 680, lineHeight: 1.7 }}>
-              Supabase-connected criteria management, employee scoring, DSS ranking, and Employee of the Month support in one clean workspace.
+              Connected criteria management, employee scoring, DSS ranking, and Employee of the Month support in one clean workspace.
             </Typography>
           </Box>
 

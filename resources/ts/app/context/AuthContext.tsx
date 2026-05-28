@@ -20,6 +20,29 @@ interface AuthContextType {
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
+const AUTH_STORAGE_KEY = "buenaventura_hris_user";
+
+const getStoredUser = (): AuthUser | null => {
+  if (typeof window === "undefined") return null;
+
+  try {
+    const rawUser = window.localStorage.getItem(AUTH_STORAGE_KEY);
+    return rawUser ? (JSON.parse(rawUser) as AuthUser) : null;
+  } catch {
+    window.localStorage.removeItem(AUTH_STORAGE_KEY);
+    return null;
+  }
+};
+
+const storeUser = (user: AuthUser | null) => {
+  if (typeof window === "undefined") return;
+
+  if (user) {
+    window.localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(user));
+  } else {
+    window.localStorage.removeItem(AUTH_STORAGE_KEY);
+  }
+};
 
 const SYSTEM_ACCOUNTS: Record<string, { user: AuthUser; password: string }> = {
   admin: {
@@ -49,7 +72,7 @@ const SYSTEM_ACCOUNTS: Record<string, { user: AuthUser; password: string }> = {
 };
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<AuthUser | null>(null);
+  const [user, setUser] = useState<AuthUser | null>(() => getStoredUser());
 
   const login = async (email: string, password: string, role?: UserRole) => {
   const loginEmail = email.trim().toLowerCase();
@@ -61,6 +84,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
 
     setUser(systemMatch.user);
+    storeUser(systemMatch.user);
     return;
   }
 
@@ -80,14 +104,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   if (error) throw error;
 
   if (account) {
-    setUser({
+    const authenticatedUser = {
       id: account.user_id,
       name: account.full_name,
       email: account.email,
       role: account.role as UserRole,
       employeeId: account.employee_id ?? null,
       outlet: account.outlet ?? null,
-    });
+    };
+
+    setUser(authenticatedUser);
+    storeUser(authenticatedUser);
     return;
   }
 
@@ -96,6 +123,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const logout = () => {
     setUser(null);
+    storeUser(null);
   };
 
   const changePassword = async (userId: string, newPassword: string) => {

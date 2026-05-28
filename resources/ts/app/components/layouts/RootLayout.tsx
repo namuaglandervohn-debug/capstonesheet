@@ -261,10 +261,7 @@ export default function RootLayout() {
           <IconButton color="inherit" edge="start" onClick={() => setMobileOpen(prev => !prev)} sx={{ display: { md: 'none' } }}><MenuIcon /></IconButton>
           <Box sx={{ flexGrow: 1, minWidth: 0 }}>
             <Typography noWrap sx={{ fontWeight: 700, fontSize: { xs: '1rem', sm: '1.08rem' }, lineHeight: 1.2, letterSpacing: '-0.02em' }}>
-              HRIS — Human Resource Information System
-            </Typography>
-            <Typography noWrap sx={{ color: 'rgba(245,255,246,0.76)', fontSize: '0.74rem', letterSpacing: 0.25, display: { xs: 'none', sm: 'block' } }}>
-              with Decision Support System · Buenaventura Estate
+              Human Resource Information System
             </Typography>
           </Box>
           <Stack direction="row" spacing={1} alignItems="center">
